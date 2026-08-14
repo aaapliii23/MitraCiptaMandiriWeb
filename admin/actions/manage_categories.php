@@ -1,0 +1,39 @@
+<?php
+session_start();
+if (!isset($_SESSION['admin_logged_in'])) {
+    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+    exit;
+}
+require_once '../../includes/db_config.php';
+
+$action = $_POST['action'] ?? '';
+
+if ($action === 'create') {
+    $name = $_POST['name'] ?? '';
+    $slug = strtolower(str_replace(' ', '_', $name));
+    
+    if (empty($name)) {
+        echo json_encode(['status' => 'error', 'message' => 'Nama kategori wajib diisi']);
+        exit;
+    }
+
+    try {
+        $stmt = $pdo->prepare("INSERT INTO class_categories (name, slug) VALUES (?, ?)");
+        $stmt->execute([$name, $slug]);
+        echo json_encode(['status' => 'success', 'message' => 'Kategori berhasil ditambahkan']);
+    } catch (PDOException $e) {
+        echo json_encode(['status' => 'error', 'message' => 'Gagal menambahkan kategori: ' . $e->getMessage()]);
+    }
+}
+
+if ($action === 'delete') {
+    $id = $_POST['id'] ?? '';
+    try {
+        $stmt = $pdo->prepare("DELETE FROM class_categories WHERE id = ?");
+        $stmt->execute([$id]);
+        echo json_encode(['status' => 'success', 'message' => 'Kategori berhasil dihapus']);
+    } catch (PDOException $e) {
+        echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus kategori']);
+    }
+}
+?>
