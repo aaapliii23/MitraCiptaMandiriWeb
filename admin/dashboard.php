@@ -1389,7 +1389,7 @@ try {
                 <p class="text-muted mb-0">Kelola akses dan otoritas admin platform MCM.</p>
             </div>
             <div class="col-md-6 text-md-end">
-                <button class="btn btn-primary px-4 shadow-sm rounded-pill" onclick="showModal('adminModal')">
+                <button class="btn btn-primary px-4 shadow-sm rounded-pill" onclick="resetAdminForm(); showModal('adminModal');">
                     <i class="fas fa-user-plus me-2"></i>Tambah Admin
                 </button>
             </div>
@@ -1422,9 +1422,14 @@ try {
                                     <td class="text-muted small"><?php echo date('d M Y, H:i', strtotime($ad['created_at'])); ?></td>
                                     <td class="text-end pe-4">
                                         <?php if ($ad['username'] !== $_SESSION['admin_username']): ?>
-                                            <button class="btn btn-action btn-soft-danger" onclick="deleteItem('admins', <?php echo $ad['id']; ?>)">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                            <div class="d-inline-flex gap-2">
+                                                <button class="btn btn-action btn-soft-primary" onclick="editAdmin(<?php echo htmlspecialchars(json_encode($ad)); ?>)">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-action btn-soft-danger" onclick="deleteItem('admins', <?php echo $ad['id']; ?>)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
                                         <?php else: ?>
                                             <span class="badge badge-soft-primary">Anda</span>
                                         <?php endif; ?>
@@ -1542,7 +1547,7 @@ try {
                 <p class="text-muted mb-0">Kelola jenis-jenis pelatihan yang tersedia di MCM.</p>
             </div>
             <div class="col-md-6 text-md-end">
-                <button class="btn btn-primary px-4 shadow-sm rounded-pill" onclick="showModal('categoryModal')">
+                <button class="btn btn-primary px-4 shadow-sm rounded-pill" onclick="resetCategoryForm(); showModal('categoryModal');">
                     <i class="fas fa-plus me-2"></i>Tambah Kategori
                 </button>
             </div>
@@ -1570,9 +1575,14 @@ try {
                                         <td><code><?php echo htmlspecialchars($cat['slug']); ?></code></td>
                                         <td><?php echo date('d M Y', strtotime($cat['created_at'])); ?></td>
                                         <td class="text-end pe-4">
-                                            <button class="btn btn-action btn-soft-danger" onclick="deleteItem('categories', <?php echo $cat['id']; ?>)">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                            <div class="d-inline-flex gap-2">
+                                                <button class="btn btn-action btn-soft-primary" onclick="editCategory(<?php echo htmlspecialchars(json_encode($cat)); ?>)">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-action btn-soft-danger" onclick="deleteItem('categories', <?php echo $cat['id']; ?>)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -1676,8 +1686,13 @@ try {
                 <h5 class="modal-title fw-bold" id="classModalTitle">Tambah Kelas</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
+<<<<<<< HEAD
             <form id="classForm" action="<?php echo $adminBase; ?>/actions/manage_classes.php" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault(); submitAjaxForm('classForm');">
                 <div class="modal-body p-4">
+=======
+            <div class="modal-body p-4">
+                <form id="classForm" action="<?php echo $adminBase; ?>/actions/manage_classes.php" method="POST" enctype="multipart/form-data" onsubmit="submitAjaxForm('classForm'); return false;">
+>>>>>>> 55085c04438c8c8247f201d6ec5ec12e3d9d7940
                     <input type="hidden" name="action" id="classAction" value="create">
                     <input type="hidden" name="id" id="classId">
                     
@@ -1773,20 +1788,21 @@ try {
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow" style="border-radius: 1rem;">
             <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
-                <h5 class="modal-title fw-bold">Tambah Kategori Baru</h5>
+                <h5 class="modal-title fw-bold" id="categoryModalTitle">Tambah Kategori Baru</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="categoryForm" action="<?php echo $adminBase; ?>/actions/manage_categories.php" method="POST" onsubmit="event.preventDefault(); submitAjaxForm('categoryForm');">
                 <div class="modal-body p-4">
-                    <input type="hidden" name="action" value="create">
+                    <input type="hidden" name="action" value="create" id="categoryAction">
+                    <input type="hidden" name="id" id="categoryId">
                     <div class="mb-2">
                         <label class="form-label small fw-medium">Nama Kategori</label>
-                        <input type="text" class="form-control" name="name" placeholder="Contoh: Digital Marketing" required>
+                        <input type="text" class="form-control" name="name" id="categoryName" placeholder="Contoh: Digital Marketing" required>
                     </div>
                 </div>
                 <div class="modal-footer border-top-0 px-4 pb-4">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Simpan Kategori</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold" id="categorySubmitBtn">Simpan Kategori</button>
                 </div>
             </form>
         </div>
@@ -1798,24 +1814,26 @@ try {
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow" style="border-radius: 1rem;">
             <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
-                <h5 class="modal-title fw-bold">Tambah Admin Baru</h5>
+                <h5 class="modal-title fw-bold" id="adminModalTitle">Tambah Admin Baru</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="adminForm" action="<?php echo $adminBase; ?>/actions/manage_admins.php" method="POST" onsubmit="event.preventDefault(); submitAjaxForm('adminForm');">
                 <div class="modal-body p-4">
-                    <input type="hidden" name="action" value="create">
+                    <input type="hidden" name="action" value="create" id="adminAction">
+                    <input type="hidden" name="id" id="adminId">
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Username Admin</label>
-                        <input type="text" class="form-control" name="username" required placeholder="Contoh: admin_mcm">
+                        <input type="text" class="form-control" name="username" id="adminUsername" required placeholder="Contoh: admin_mcm">
                     </div>
                     <div class="mb-1">
-                        <label class="form-label small fw-bold">Password Baru</label>
-                        <input type="password" class="form-control" name="password" required placeholder="Minimal 6 karakter">
+                        <label class="form-label small fw-bold" id="adminPasswordLabel">Password Baru</label>
+                        <input type="password" class="form-control" name="password" id="adminPassword" required placeholder="Minimal 6 karakter">
+                        <small class="text-muted d-none" id="adminPasswordHint">Biarkan kosong jika tidak ingin mengubah password.</small>
                     </div>
                 </div>
                 <div class="modal-footer border-top-0 px-4 pb-4">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Buat Akun</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold" id="adminSubmitBtn">Buat Akun</button>
                 </div>
             </form>
         </div>
@@ -2211,6 +2229,50 @@ function editGallery(data) {
     document.getElementById('galleryModalTitle').textContent = 'Edit Foto';
     document.getElementById('gallerySubmitBtn').textContent = 'Simpan Perubahan';
     new bootstrap.Modal(document.getElementById('galleryModal')).show();
+}
+
+function resetCategoryForm() {
+    const form = document.getElementById('categoryForm');
+    if (form) form.reset();
+    document.getElementById('categoryAction').value = 'create';
+    document.getElementById('categoryId').value = '';
+    document.getElementById('categoryModalTitle').textContent = 'Tambah Kategori Baru';
+    document.getElementById('categorySubmitBtn').textContent = 'Simpan Kategori';
+}
+
+function editCategory(data) {
+    resetCategoryForm();
+    document.getElementById('categoryAction').value = 'update';
+    document.getElementById('categoryId').value = data.id;
+    document.getElementById('categoryName').value = data.name;
+    document.getElementById('categoryModalTitle').textContent = 'Edit Kategori';
+    document.getElementById('categorySubmitBtn').textContent = 'Simpan Perubahan';
+    new bootstrap.Modal(document.getElementById('categoryModal')).show();
+}
+
+function resetAdminForm() {
+    const form = document.getElementById('adminForm');
+    if (form) form.reset();
+    document.getElementById('adminAction').value = 'create';
+    document.getElementById('adminId').value = '';
+    document.getElementById('adminModalTitle').textContent = 'Tambah Admin Baru';
+    document.getElementById('adminPasswordLabel').textContent = 'Password Baru';
+    document.getElementById('adminPassword').required = true;
+    document.getElementById('adminPasswordHint').style.display = 'none';
+    document.getElementById('adminSubmitBtn').textContent = 'Buat Akun';
+}
+
+function editAdmin(data) {
+    resetAdminForm();
+    document.getElementById('adminAction').value = 'update';
+    document.getElementById('adminId').value = data.id;
+    document.getElementById('adminUsername').value = data.username;
+    document.getElementById('adminPassword').required = false;
+    document.getElementById('adminPasswordLabel').textContent = 'Password Baru (opsional)';
+    document.getElementById('adminPasswordHint').style.display = '';
+    document.getElementById('adminModalTitle').textContent = 'Edit Data Admin';
+    document.getElementById('adminSubmitBtn').textContent = 'Simpan Perubahan';
+    new bootstrap.Modal(document.getElementById('adminModal')).show();
 }
 
 function deleteItem(type, id) {
