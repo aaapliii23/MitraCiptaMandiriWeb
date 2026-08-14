@@ -26,6 +26,25 @@ if ($action === 'create') {
     }
 }
 
+if ($action === 'update') {
+    $id = $_POST['id'] ?? '';
+    $name = $_POST['name'] ?? '';
+    $slug = strtolower(str_replace(' ', '_', $name));
+
+    if (empty($id) || empty($name)) {
+        echo json_encode(['status' => 'error', 'message' => 'Nama kategori wajib diisi']);
+        exit;
+    }
+
+    try {
+        $stmt = $pdo->prepare("UPDATE class_categories SET name = ?, slug = ? WHERE id = ?");
+        $stmt->execute([$name, $slug, $id]);
+        echo json_encode(['status' => 'success', 'message' => 'Kategori berhasil diperbarui']);
+    } catch (PDOException $e) {
+        echo json_encode(['status' => 'error', 'message' => 'Gagal memperbarui kategori: ' . $e->getMessage()]);
+    }
+}
+
 if ($action === 'delete') {
     $id = $_POST['id'] ?? '';
     try {
