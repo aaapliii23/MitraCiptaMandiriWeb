@@ -214,13 +214,22 @@ foreach($classItems as $c) {
             </div>
 
             <!-- Filters -->
+            <?php
+            $galleryCats = [];
+            foreach ($galleryItems as $item) {
+                $c = $item['category'];
+                if ($c !== '' && $c !== 'all') $galleryCats[$c] = true;
+            }
+            $galleryCats = array_keys($galleryCats);
+            function galleryCatLabel($slug) {
+                return ucwords(str_replace(['_', '-'], ' ', $slug));
+            }
+            ?>
             <div class="gallery-filters" data-aos="fade-up" data-aos-delay="100">
                 <button class="filter-btn active" data-filter="all">Semua</button>
-                <button class="filter-btn" data-filter="public_speaking">Public Speaking</button>
-                <button class="filter-btn" data-filter="tata_rias">Tata Rias</button>
-                <button class="filter-btn" data-filter="pijat">Pijat</button>
-                <button class="filter-btn" data-filter="barber">Barber</button>
-                <button class="filter-btn" data-filter="catering">Catering</button>
+                <?php foreach ($galleryCats as $gc): ?>
+                <button class="filter-btn" data-filter="<?php echo htmlspecialchars($gc); ?>"><?php echo htmlspecialchars(galleryCatLabel($gc)); ?></button>
+                <?php endforeach; ?>
             </div>
 
             <!-- Gallery Grid -->

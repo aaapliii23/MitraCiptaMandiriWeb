@@ -1,5 +1,7 @@
 <?php
 session_start();
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header("Location: ../admin_login.php");
     exit;
@@ -14,6 +16,8 @@ function getImgSrc($path) {
     }
     return '../' . ltrim($path, '/');
 }
+
+$adminBase = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
 
 $page = $_GET['page'] ?? 'dashboard';
 
@@ -1027,7 +1031,7 @@ try {
                 <p class="text-muted mb-0">Dokumentasi visual kegiatan dan fasilitas.</p>
             </div>
             <div class="col-md-6 text-md-end">
-                <button class="btn btn-primary px-4 shadow-sm rounded-pill" onclick="showModal('galleryModal')">
+                <button class="btn btn-primary px-4 shadow-sm rounded-pill" onclick="resetGalleryForm(); showModal('galleryModal');">
                     <i class="fas fa-upload me-2"></i>Tambah Foto
                 </button>
             </div>
@@ -1045,9 +1049,14 @@ try {
                         </div>
                         <div class="card-body p-3 d-flex justify-content-between align-items-center">
                             <h6 class="fw-bold text-dark mb-0"><?php echo htmlspecialchars($g['title']); ?></h6>
-                            <button class="btn btn-action btn-soft-danger" onclick="deleteItem('gallery', <?php echo $g['id']; ?>)">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-action btn-soft-primary" onclick="editGallery(<?php echo htmlspecialchars(json_encode($g)); ?>)">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-action btn-soft-danger" onclick="deleteItem('gallery', <?php echo $g['id']; ?>)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1440,7 +1449,7 @@ try {
                         </div>
                     </div>
                     <div class="card-body p-4 pt-0">
-                        <form action="actions/save_settings.php" method="POST" class="ajax-form">
+                        <form action="<?php echo $adminBase; ?>/actions/save_settings.php" method="POST" class="ajax-form">
                             <div class="row g-4">
                                 <div class="col-md-6">
                                     <label class="form-label small fw-bold text-muted text-uppercase">WhatsApp Bisnis</label>
@@ -1495,7 +1504,7 @@ try {
                             <img src="../assets/img/logo.png" alt="MCM Logo" class="mb-3" style="max-height: 80px;">
                             <p class="small text-muted mb-0">Logo saat ini (.png)</p>
                         </div>
-                        <form action="actions/save_settings.php" method="POST" enctype="multipart/form-data" class="ajax-form">
+                        <form action="<?php echo $adminBase; ?>/actions/save_settings.php" method="POST" enctype="multipart/form-data" class="ajax-form">
                             <div class="mb-3">
                                 <input type="file" class="form-control" name="logo" accept="image/png">
                             </div>
@@ -1635,7 +1644,7 @@ try {
             </div>
             <div class="modal-body p-4">
                 <p class="text-muted small mb-4">Ubah status pesanan untuk <strong id="modalParticipantName" class="text-dark"></strong>.</p>
-                <form id="updateStatusForm" action="actions/update_order.php" method="POST" class="ajax-form">
+                <form id="updateStatusForm" action="<?php echo $adminBase; ?>/actions/update_order.php" method="POST" class="ajax-form">
                     <input type="hidden" name="order_id" id="modalOrderId">
                     <div class="mb-4">
                         <select class="form-select form-control-lg" name="status" id="modalOrderStatus" required>
@@ -1660,7 +1669,7 @@ try {
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <form id="classForm" action="actions/manage_classes.php" method="POST" enctype="multipart/form-data">
+                <form id="classForm" action="<?php echo $adminBase; ?>/actions/manage_classes.php" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="action" id="classAction" value="create">
                     <input type="hidden" name="id" id="classId">
                     
@@ -1715,35 +1724,36 @@ try {
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow" style="border-radius: 1rem;">
             <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
-                <h5 class="modal-title fw-bold">Tambah Foto Galeri</h5>
+                <h5 class="modal-title fw-bold" id="galleryModalTitle">Tambah Foto Galeri</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <form id="galleryForm" action="actions/manage_gallery.php" method="POST" enctype="multipart/form-data">
-                    <input type="hidden" name="action" value="create">
+                <form id="galleryForm" action="<?php echo $adminBase; ?>/actions/manage_gallery.php" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="action" value="create" id="galleryAction">
+                    <input type="hidden" name="id" id="galleryId">
                     <div class="mb-3">
                         <label class="form-label small fw-medium">Judul Foto (Akan digunakan untuk semua foto)</label>
-                        <input type="text" class="form-control" name="title" required>
+                        <input type="text" class="form-control" name="title" id="galleryTitle" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-medium">Filter / Kategori</label>
-                        <select class="form-select" name="category" required>
+                         <select class="form-select" name="category" required id="galleryCategory">
+                            <option value="all">Umum</option>
                             <?php foreach ($categories as $cat): ?>
                                 <option value="<?php echo htmlspecialchars($cat['slug']); ?>"><?php echo htmlspecialchars($cat['name']); ?></option>
                             <?php endforeach; ?>
-                            <option value="all">Umum</option>
                         </select>
                     </div>
                     <div class="mb-4">
                         <label class="form-label small fw-medium">File Gambar (Bisa pilih banyak sekaligus)</label>
-                        <input type="file" class="form-control" name="images[]" accept="image/*" required multiple>
+                        <input type="file" class="form-control" name="images[]" id="galleryImageInput" accept="image/*" required multiple>
                         <small class="text-muted">Gunakan tombol Ctrl (Windows) atau Command (Mac) untuk memilih lebih dari 1 foto.</small>
                     </div>
                 </form>
             </div>
             <div class="modal-footer border-top-0 px-4 pb-4">
                 <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="submitAjaxForm('galleryForm')">Upload Foto</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" id="gallerySubmitBtn" onclick="submitAjaxForm('galleryForm')">Upload Foto</button>
             </div>
         </div>
     </div>
@@ -1757,7 +1767,7 @@ try {
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <form id="categoryForm" action="actions/manage_categories.php" method="POST">
+                <form id="categoryForm" action="<?php echo $adminBase; ?>/actions/manage_categories.php" method="POST">
                     <input type="hidden" name="action" value="create">
                     <div class="mb-2">
                         <label class="form-label small fw-medium">Nama Kategori</label>
@@ -1782,7 +1792,7 @@ try {
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <form id="adminForm" action="actions/manage_admins.php" method="POST">
+                <form id="adminForm" action="<?php echo $adminBase; ?>/actions/manage_admins.php" method="POST">
                     <input type="hidden" name="action" value="create">
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Username Admin</label>
@@ -1811,7 +1821,7 @@ try {
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <form id="changePasswordForm" action="actions/manage_admins.php" method="POST">
+                <form id="changePasswordForm" action="<?php echo $adminBase; ?>/actions/manage_admins.php" method="POST">
                     <input type="hidden" name="action" value="change_password">
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Password Baru</label>
@@ -1836,7 +1846,7 @@ try {
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <form id="instructorForm" action="actions/manage_instructors.php" method="POST" enctype="multipart/form-data">
+                <form id="instructorForm" action="<?php echo $adminBase; ?>/actions/manage_instructors.php" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="action" id="instructorAction" value="create">
                     <input type="hidden" name="id" id="instructorId">
                     <div class="mb-3">
@@ -1871,7 +1881,7 @@ try {
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <form id="certForm" action="actions/manage_certs.php" method="POST" enctype="multipart/form-data">
+                <form id="certForm" action="<?php echo $adminBase; ?>/actions/manage_certs.php" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="action" id="certAction" value="create">
                     <input type="hidden" name="id" id="certId">
                     <div class="mb-3">
@@ -2018,12 +2028,18 @@ function submitAjaxForm(formId) {
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
     }
 
-    fetch(form.action, {
+    fetch(form.getAttribute('action'), {
         method: 'POST',
         body: formData
     })
-    .then(res => res.json())
-    .then(data => {
+    .then(res => res.text())
+    .then(text => {
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch(e) {
+            throw new Error('Respons server tidak valid: ' + (text || '(kosong)').slice(0, 150));
+        }
         if (data.status === 'success') {
             Swal.fire({
                 icon: 'success',
@@ -2047,7 +2063,7 @@ function submitAjaxForm(formId) {
         Swal.fire({
             icon: 'error',
             title: 'Terjadi Kesalahan',
-            text: 'Gagal menghubungi server.'
+            text: err.message || 'Gagal menghubungi server.'
         });
     })
     .finally(() => {
@@ -2056,6 +2072,30 @@ function submitAjaxForm(formId) {
             submitBtn.innerHTML = originalBtnText;
         }
     });
+}
+
+function resetGalleryForm() {
+    const form = document.getElementById('galleryForm');
+    if (form) form.reset();
+    document.getElementById('galleryAction').value = 'create';
+    document.getElementById('galleryId').value = '';
+    document.getElementById('galleryModalTitle').textContent = 'Tambah Foto Galeri';
+    document.getElementById('galleryImageInput').required = true;
+    document.getElementById('galleryImageInput').setAttribute('multiple', 'multiple');
+    document.getElementById('gallerySubmitBtn').textContent = 'Upload Foto';
+}
+
+function editGallery(data) {
+    resetGalleryForm();
+    document.getElementById('galleryAction').value = 'update';
+    document.getElementById('galleryId').value = data.id;
+    document.getElementById('galleryTitle').value = data.title;
+    document.getElementById('galleryCategory').value = data.category;
+    document.getElementById('galleryImageInput').required = false;
+    document.getElementById('galleryImageInput').removeAttribute('multiple');
+    document.getElementById('galleryModalTitle').textContent = 'Edit Foto';
+    document.getElementById('gallerySubmitBtn').textContent = 'Simpan Perubahan';
+    new bootstrap.Modal(document.getElementById('galleryModal')).show();
 }
 
 function deleteItem(type, id) {
@@ -2071,14 +2111,15 @@ function deleteItem(type, id) {
     }).then((result) => {
         if (result.isConfirmed) {
             let endpoint = '';
+            const adminBase = '<?php echo $adminBase; ?>';
             switch(type) {
-                case 'classes': endpoint = 'actions/manage_classes.php'; break;
-                case 'gallery': endpoint = 'actions/manage_gallery.php'; break;
-                case 'instructors': endpoint = 'actions/manage_instructors.php'; break;
-                case 'certs': endpoint = 'actions/manage_certs.php'; break;
-                case 'admins': endpoint = 'actions/manage_admins.php'; break;
-                case 'orders': endpoint = 'actions/manage_orders.php'; break;
-                case 'categories': endpoint = 'actions/manage_categories.php'; break;
+                case 'classes': endpoint = adminBase + '/actions/manage_classes.php'; break;
+                case 'gallery': endpoint = adminBase + '/actions/manage_gallery.php'; break;
+                case 'instructors': endpoint = adminBase + '/actions/manage_instructors.php'; break;
+                case 'certs': endpoint = adminBase + '/actions/manage_certs.php'; break;
+                case 'admins': endpoint = adminBase + '/actions/manage_admins.php'; break;
+                case 'orders': endpoint = adminBase + '/actions/manage_orders.php'; break;
+                case 'categories': endpoint = adminBase + '/actions/manage_categories.php'; break;
             }
             
             const formData = new FormData();
@@ -2107,8 +2148,8 @@ document.querySelectorAll('.ajax-form').forEach(form => {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
 
-        fetch(this.action, {
-            method: this.method,
+        fetch(this.getAttribute('action'), {
+            method: this.getAttribute('method') || 'POST',
             body: new FormData(this)
         })
         .then(res => res.json())
