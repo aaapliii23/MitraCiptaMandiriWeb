@@ -134,6 +134,14 @@ if ($page === 'certs') {
 // Fetch Categories
 $categories = [];
 try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `class_categories` (
+      `id` int(11) NOT NULL AUTO_INCREMENT,
+      `name` varchar(100) NOT NULL,
+      `slug` varchar(100) NOT NULL,
+      `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`),
+      UNIQUE KEY `slug` (`slug`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
     $stmt = $pdo->query("SELECT * FROM class_categories ORDER BY name ASC");
     $categories = $stmt->fetchAll();
 } catch (PDOException $e) {}
@@ -1668,8 +1676,8 @@ try {
                 <h5 class="modal-title fw-bold" id="classModalTitle">Tambah Kelas</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4">
-                <form id="classForm" action="<?php echo $adminBase; ?>/actions/manage_classes.php" method="POST" enctype="multipart/form-data">
+            <form id="classForm" action="<?php echo $adminBase; ?>/actions/manage_classes.php" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault(); submitAjaxForm('classForm');">
+                <div class="modal-body p-4">
                     <input type="hidden" name="action" id="classAction" value="create">
                     <input type="hidden" name="id" id="classId">
                     
@@ -1709,12 +1717,12 @@ try {
                             <small class="text-muted d-block mt-1">Biarkan kosong jika tidak ingin mengubah gambar (saat edit).</small>
                         </div>
                     </div>
-                </form>
-            </div>
-            <div class="modal-footer border-top-0 px-4 pb-4">
-                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="submitAjaxForm('classForm')">Simpan Kelas</button>
-            </div>
+                </div>
+                <div class="modal-footer border-top-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Simpan Kelas</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -1727,8 +1735,8 @@ try {
                 <h5 class="modal-title fw-bold" id="galleryModalTitle">Tambah Foto Galeri</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4">
-                <form id="galleryForm" action="<?php echo $adminBase; ?>/actions/manage_gallery.php" method="POST" enctype="multipart/form-data">
+            <form id="galleryForm" action="<?php echo $adminBase; ?>/actions/manage_gallery.php" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault(); submitAjaxForm('galleryForm');">
+                <div class="modal-body p-4">
                     <input type="hidden" name="action" value="create" id="galleryAction">
                     <input type="hidden" name="id" id="galleryId">
                     <div class="mb-3">
@@ -1746,19 +1754,21 @@ try {
                     </div>
                     <div class="mb-4">
                         <label class="form-label small fw-medium">File Gambar (Bisa pilih banyak sekaligus)</label>
-                        <input type="file" class="form-control" name="images[]" id="galleryImageInput" accept="image/*" required multiple>
-                        <small class="text-muted">Gunakan tombol Ctrl (Windows) atau Command (Mac) untuk memilih lebih dari 1 foto.</small>
+                        <input type="file" class="form-control" name="images[]" id="galleryImageInput" accept="image/*" required multiple onchange="updateGalleryFilePreview(this)">
+                        <div id="galleryFilePreview" class="mt-2"></div>
+                        <small class="text-muted d-block mt-1">Gunakan tombol Ctrl / Shift (Windows) atau Cmd (Mac) saat memilih file untuk memilih lebih dari 1 foto sekaligus.</small>
                     </div>
-                </form>
-            </div>
-            <div class="modal-footer border-top-0 px-4 pb-4">
-                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" id="gallerySubmitBtn" onclick="submitAjaxForm('galleryForm')">Upload Foto</button>
-            </div>
+                </div>
+                <div class="modal-footer border-top-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold" id="gallerySubmitBtn">Upload Foto</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
-<!-- Gallery Modal -->
+
+<!-- Category Modal -->
 <div class="modal fade" id="categoryModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow" style="border-radius: 1rem;">
@@ -1766,19 +1776,19 @@ try {
                 <h5 class="modal-title fw-bold">Tambah Kategori Baru</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4">
-                <form id="categoryForm" action="<?php echo $adminBase; ?>/actions/manage_categories.php" method="POST">
+            <form id="categoryForm" action="<?php echo $adminBase; ?>/actions/manage_categories.php" method="POST" onsubmit="event.preventDefault(); submitAjaxForm('categoryForm');">
+                <div class="modal-body p-4">
                     <input type="hidden" name="action" value="create">
                     <div class="mb-2">
                         <label class="form-label small fw-medium">Nama Kategori</label>
                         <input type="text" class="form-control" name="name" placeholder="Contoh: Digital Marketing" required>
                     </div>
-                </form>
-            </div>
-            <div class="modal-footer border-top-0 px-4 pb-4">
-                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="submitAjaxForm('categoryForm')">Simpan Kategori</button>
-            </div>
+                </div>
+                <div class="modal-footer border-top-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Simpan Kategori</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -1791,8 +1801,8 @@ try {
                 <h5 class="modal-title fw-bold">Tambah Admin Baru</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4">
-                <form id="adminForm" action="<?php echo $adminBase; ?>/actions/manage_admins.php" method="POST">
+            <form id="adminForm" action="<?php echo $adminBase; ?>/actions/manage_admins.php" method="POST" onsubmit="event.preventDefault(); submitAjaxForm('adminForm');">
+                <div class="modal-body p-4">
                     <input type="hidden" name="action" value="create">
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Username Admin</label>
@@ -1802,12 +1812,12 @@ try {
                         <label class="form-label small fw-bold">Password Baru</label>
                         <input type="password" class="form-control" name="password" required placeholder="Minimal 6 karakter">
                     </div>
-                </form>
-            </div>
-            <div class="modal-footer border-top-0 px-4 pb-4">
-                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="submitAjaxForm('adminForm')">Buat Akun</button>
-            </div>
+                </div>
+                <div class="modal-footer border-top-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Buat Akun</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -1820,19 +1830,19 @@ try {
                 <h5 class="modal-title fw-bold">Ganti Password Admin</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4">
-                <form id="changePasswordForm" action="<?php echo $adminBase; ?>/actions/manage_admins.php" method="POST">
+            <form id="changePasswordForm" action="<?php echo $adminBase; ?>/actions/manage_admins.php" method="POST" onsubmit="event.preventDefault(); submitAjaxForm('changePasswordForm');">
+                <div class="modal-body p-4">
                     <input type="hidden" name="action" value="change_password">
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Password Baru</label>
                         <input type="password" class="form-control" name="new_password" required placeholder="Minimal 6 karakter">
                     </div>
-                </form>
-            </div>
-            <div class="modal-footer border-top-0 px-4 pb-4">
-                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="submitAjaxForm('changePasswordForm')">Simpan Password</button>
-            </div>
+                </div>
+                <div class="modal-footer border-top-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Simpan Password</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -1845,8 +1855,8 @@ try {
                 <h5 class="modal-title fw-bold" id="instructorModalTitle">Tambah Instruktur / Penguji</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4">
-                <form id="instructorForm" action="<?php echo $adminBase; ?>/actions/manage_instructors.php" method="POST" enctype="multipart/form-data">
+            <form id="instructorForm" action="<?php echo $adminBase; ?>/actions/manage_instructors.php" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault(); submitAjaxForm('instructorForm');">
+                <div class="modal-body p-4">
                     <input type="hidden" name="action" id="instructorAction" value="create">
                     <input type="hidden" name="id" id="instructorId">
                     <div class="mb-3">
@@ -1862,12 +1872,12 @@ try {
                         <input type="file" class="form-control" name="image" id="instructorImage" accept="image/*">
                         <small class="text-muted">Biarkan kosong jika tidak ingin mengubah foto.</small>
                     </div>
-                </form>
-            </div>
-            <div class="modal-footer border-top-0 px-4 pb-4">
-                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="submitAjaxForm('instructorForm')">Simpan Data</button>
-            </div>
+                </div>
+                <div class="modal-footer border-top-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Simpan Data</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -1880,8 +1890,8 @@ try {
                 <h5 class="modal-title fw-bold" id="certModalTitle">Tambah Dokumen Sertifikasi</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4">
-                <form id="certForm" action="<?php echo $adminBase; ?>/actions/manage_certs.php" method="POST" enctype="multipart/form-data">
+            <form id="certForm" action="<?php echo $adminBase; ?>/actions/manage_certs.php" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault(); submitAjaxForm('certForm');">
+                <div class="modal-body p-4">
                     <input type="hidden" name="action" id="certAction" value="create">
                     <input type="hidden" name="id" id="certId">
                     <div class="mb-3">
@@ -1897,12 +1907,12 @@ try {
                         <input type="file" class="form-control" name="image" id="certImage" accept="image/*">
                         <small class="text-muted">Biarkan kosong jika tidak ingin mengubah dokumen.</small>
                     </div>
-                </form>
-            </div>
-            <div class="modal-footer border-top-0 px-4 pb-4">
-                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="submitAjaxForm('certForm')">Simpan Dokumen</button>
-            </div>
+                </div>
+                <div class="modal-footer border-top-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Simpan Dokumen</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -2012,17 +2022,99 @@ function editCert(data) {
     new bootstrap.Modal(document.getElementById('certModal')).show();
 }
 
-function submitAjaxForm(formId) {
+async function submitAjaxForm(formId) {
     const form = document.getElementById(formId);
+    if (!form) return;
     if (!form.checkValidity()) {
         form.reportValidity();
         return;
     }
 
-    const formData = new FormData(form);
-    const submitBtn = document.querySelector(`button[onclick="submitAjaxForm('${formId}')"]`);
+    const submitBtn = form.querySelector('button[type="submit"]') || document.querySelector(`button[onclick="submitAjaxForm('${formId}')"]`);
     const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
 
+    // Special bulk handling for Gallery multi-file creation
+    if (formId === 'galleryForm') {
+        const actionInput = document.getElementById('galleryAction');
+        const fileInput = document.getElementById('galleryImageInput');
+        
+        if (actionInput && actionInput.value === 'create' && fileInput && fileInput.files && fileInput.files.length > 0) {
+            const files = Array.from(fileInput.files);
+            const totalFiles = files.length;
+            const title = document.getElementById('galleryTitle').value;
+            const category = document.getElementById('galleryCategory').value;
+            const endpoint = form.getAttribute('action');
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+            }
+
+            let successCount = 0;
+            let errorMessages = [];
+
+            for (let i = 0; i < totalFiles; i++) {
+                if (submitBtn) {
+                    submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Mengupload ${i + 1} dari ${totalFiles}...`;
+                }
+
+                const singleFormData = new FormData();
+                singleFormData.append('action', 'create');
+                singleFormData.append('title', title);
+                singleFormData.append('category', category);
+                singleFormData.append('images[]', files[i]);
+
+                try {
+                    const res = await fetch(endpoint, { method: 'POST', body: singleFormData });
+                    const text = await res.text();
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch(e) {
+                        data = { status: 'error', message: 'Respon server tidak valid' };
+                    }
+
+                    if (data.status === 'success') {
+                        successCount++;
+                    } else {
+                        errorMessages.push(`Foto #${i + 1} (${files[i].name}): ${data.message || 'Gagal'}`);
+                    }
+                } catch (err) {
+                    errorMessages.push(`Foto #${i + 1} (${files[i].name}): Gagal koneksi`);
+                }
+            }
+
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            }
+
+            if (successCount > 0) {
+                let successMsg = `${successCount} dari ${totalFiles} foto berhasil diupload!`;
+                if (errorMessages.length > 0) {
+                    successMsg += ' (Beberapa gagal: ' + errorMessages.join('; ') + ')';
+                }
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: successMsg,
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Upload',
+                    text: errorMessages.join('\n') || 'Gagal mengupload foto.'
+                });
+            }
+            return;
+        }
+    }
+
+    // Default single request logic for all other forms
+    const formData = new FormData(form);
     if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
@@ -2074,6 +2166,27 @@ function submitAjaxForm(formId) {
     });
 }
 
+function updateGalleryFilePreview(input) {
+    const previewContainer = document.getElementById('galleryFilePreview');
+    if (!previewContainer) return;
+    if (!input.files || input.files.length === 0) {
+        previewContainer.innerHTML = '';
+        return;
+    }
+    const count = input.files.length;
+    let html = `<div class="alert alert-info py-2 px-3 mb-0 rounded-3 small">`;
+    html += `<div class="fw-bold mb-1"><i class="fas fa-images me-2"></i>Terpilih ${count} foto:</div>`;
+    html += `<ul class="mb-0 ps-3" style="max-height: 120px; overflow-y: auto;">`;
+    for (let i = 0; i < Math.min(count, 10); i++) {
+        html += `<li>${input.files[i].name} (${(input.files[i].size / 1024).toFixed(1)} KB)</li>`;
+    }
+    if (count > 10) {
+        html += `<li><em>...dan ${count - 10} foto lainnya</em></li>`;
+    }
+    html += `</ul></div>`;
+    previewContainer.innerHTML = html;
+}
+
 function resetGalleryForm() {
     const form = document.getElementById('galleryForm');
     if (form) form.reset();
@@ -2083,6 +2196,8 @@ function resetGalleryForm() {
     document.getElementById('galleryImageInput').required = true;
     document.getElementById('galleryImageInput').setAttribute('multiple', 'multiple');
     document.getElementById('gallerySubmitBtn').textContent = 'Upload Foto';
+    const previewContainer = document.getElementById('galleryFilePreview');
+    if (previewContainer) previewContainer.innerHTML = '';
 }
 
 function editGallery(data) {

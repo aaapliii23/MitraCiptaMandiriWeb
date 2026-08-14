@@ -2,7 +2,7 @@
 $host = 'localhost';
 $dbname = 'mcm_db';
 $username = 'root';
-$password = 'password';
+$password = '';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);

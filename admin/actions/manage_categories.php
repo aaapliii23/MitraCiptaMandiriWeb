@@ -1,15 +1,29 @@
 <?php
 session_start();
+header('Content-Type: application/json');
+
 if (!isset($_SESSION['admin_logged_in'])) {
     echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
     exit;
 }
 require_once '../../includes/db_config.php';
 
+// Auto-create table if missing in user DB
+try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `class_categories` (
+      `id` int(11) NOT NULL AUTO_INCREMENT,
+      `name` varchar(100) NOT NULL,
+      `slug` varchar(100) NOT NULL,
+      `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`),
+      UNIQUE KEY `slug` (`slug`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+} catch (PDOException $e) {}
+
 $action = $_POST['action'] ?? '';
 
 if ($action === 'create') {
-    $name = $_POST['name'] ?? '';
+    $name = trim($_POST['name'] ?? '');
     $slug = strtolower(str_replace(' ', '_', $name));
     
     if (empty($name)) {
@@ -24,6 +38,7 @@ if ($action === 'create') {
     } catch (PDOException $e) {
         echo json_encode(['status' => 'error', 'message' => 'Gagal menambahkan kategori: ' . $e->getMessage()]);
     }
+    exit;
 }
 
 if ($action === 'delete') {
@@ -35,5 +50,6 @@ if ($action === 'delete') {
     } catch (PDOException $e) {
         echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus kategori']);
     }
+    exit;
 }
 ?>

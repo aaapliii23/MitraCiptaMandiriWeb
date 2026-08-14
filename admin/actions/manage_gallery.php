@@ -45,6 +45,11 @@ if ($action === 'create') {
     $totalFiles = count($_FILES['images']['name']);
     $errors = [];
 
+    $uploadDir = '../../uploads/gallery';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
+    }
+
     for ($i = 0; $i < $totalFiles; $i++) {
         $filename = $_FILES['images']['name'][$i];
         $errCode = $_FILES['images']['error'][$i];
@@ -72,8 +77,9 @@ if ($action === 'create') {
             $destination = 'uploads/gallery/' . $newFilename;
             
             if (move_uploaded_file($_FILES['images']['tmp_name'][$i], '../../' . $destination)) {
+                $itemTitle = ($totalFiles > 1) ? ($title . ' (' . ($i + 1) . ')') : $title;
                 $stmt = $pdo->prepare("INSERT INTO gallery (category, title, image) VALUES (?, ?, ?)");
-                if ($stmt->execute([$category, $title, $destination])) {
+                if ($stmt->execute([$category, $itemTitle, $destination])) {
                     $successCount++;
                 }
             }
