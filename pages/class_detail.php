@@ -1,5 +1,5 @@
 <?php
-require_once 'includes/db_config.php';
+require_once '../includes/db_config.php';
 
 // Get class ID from URL
 $class_id = $_GET['id'] ?? null;
@@ -25,13 +25,23 @@ try {
 }
 
 $hide_nav_items = true;
-include 'includes/header.php';
+include '../includes/header.php';
+
+$examinerId = (int)($_GET['examiner'] ?? 0);
+$selectedExaminer = null;
+if ($examinerId > 0) {
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM examiners WHERE id = ?");
+        $stmt->execute([$examinerId]);
+        $selectedExaminer = $stmt->fetch() ?: null;
+    } catch (PDOException $e) {}
+}
 ?>
 
 <?php
 // Determine back URL based on origin
 $from = $_GET['from'] ?? 'landing';
-$back_url = ($from === 'programs') ? 'programs.php' : 'index.php#paket';
+$back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
 ?>
 
 <!-- Class Detail Page -->
@@ -47,8 +57,8 @@ $back_url = ($from === 'programs') ? 'programs.php' : 'index.php#paket';
         <div class="text-start mb-5">
             <!-- Logo -->
             <div class="mb-4">
-                <a class="d-flex align-items-center text-decoration-none" href="index.php">
-                    <img src="assets/img/logo.png" alt="MCM Logo" style="height: 45px; width: auto;">
+                <a class="d-flex align-items-center text-decoration-none" href="../index.php">
+                    <img src="../assets/img/logo.png" alt="MCM Logo" style="height: 45px; width: auto;">
                     <div class="ms-2 ps-2 border-start border-2 border-dark d-flex flex-column justify-content-center" style="height: 35px;">
                         <span class="fw-bold text-dark" style="font-size: 0.8rem; letter-spacing: 1px; line-height: 1.1;">MITRA CIPTA</span>
                         <span class="fw-bold text-dark" style="font-size: 0.8rem; letter-spacing: 1px; line-height: 1.1;">MANDIRI</span>
@@ -125,10 +135,20 @@ $back_url = ($from === 'programs') ? 'programs.php' : 'index.php#paket';
                             <h4 class="fw-bold mb-0" style="color: #0c4a6e;">Rp <?php echo number_format($class['price'], 0, ',', '.'); ?></h4>
                         </div>
 
+                        <?php if ($selectedExaminer): ?>
+                            <div class="text-center mb-4 bg-success bg-opacity-10 p-3 rounded-4 border border-success border-opacity-25">
+                                <label class="small text-muted d-block mb-1">Penguji Asesor Terpilih</label>
+                                <div class="fw-bold text-dark"><?php echo htmlspecialchars($selectedExaminer['name']); ?></div>
+                                <small class="text-muted"><?php echo htmlspecialchars($selectedExaminer['specialization']); ?></small>
+                                <a href="examiners.php" class="d-block small text-primary text-decoration-none mt-1">Ganti penguji</a>
+                            </div>
+                        <?php endif; ?>
+
                         <!-- Integrated Registration Form -->
                         <div id="registrationForm" class="text-start">
                             <h5 class="fw-bold mb-3 text-dark">Data Diri Peserta</h5>
-                            <form action="process_checkout.php" method="POST">
+                            <form action="../payment/create_transaction.php" method="POST" onsubmit="return submitPayment(this);">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
                                 <div class="mb-3">
                                     <label class="form-label small fw-bold text-secondary mb-1 d-block">Nama Lengkap *</label>
                                     <input type="text" class="form-control bg-light border-0 py-2 rounded-3" name="customer_name" required placeholder="Budi Santoso">
@@ -147,9 +167,10 @@ $back_url = ($from === 'programs') ? 'programs.php' : 'index.php#paket';
                                 </div>
 
                                 <input type="hidden" name="class_id" value="<?php echo $class['id']; ?>">
+                                <input type="hidden" name="examiner_id" value="<?php echo $selectedExaminer ? (int)$selectedExaminer['id'] : 0; ?>">
                                 <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm" 
                                         style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); border: none; font-size: 1rem;">
-                                    <i class="fas fa-check-circle me-2"></i>Daftar & Hubungi WA
+                                    <i class="fas fa-credit-card me-2"></i>Bayar Sekarang
                                 </button>
                             </form>
                         </div>
@@ -177,4 +198,4 @@ $back_url = ($from === 'programs') ? 'programs.php' : 'index.php#paket';
     </div>
 </section>
 
-<?php include 'includes/footer.php'; ?>
+<?php include '../includes/footer.php'; ?>

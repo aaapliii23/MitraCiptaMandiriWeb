@@ -1,7 +1,7 @@
 <?php
-require_once 'includes/db_config.php';
+require_once '../includes/db_config.php';
 $hide_nav_items = true;
-include 'includes/header.php';
+include '../includes/header.php';
 ?>
 
 <!-- Certification Page -->
@@ -9,7 +9,7 @@ include 'includes/header.php';
     <div class="container">
         <!-- Circular Back Button -->
         <div class="mb-4 text-start" style="margin-left: -5px;">
-            <a href="index.php" class="btn rounded-circle d-inline-flex align-items-center justify-content-center shadow-premium btn-premium" style="width: 50px; height: 50px; background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: white; border: none; transition: all 0.3s ease;">
+            <a href="../index.php" class="btn rounded-circle d-inline-flex align-items-center justify-content-center shadow-premium btn-premium" style="width: 50px; height: 50px; background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: white; border: none; transition: all 0.3s ease;">
                 <i class="fas fa-arrow-left fs-5"></i>
             </a>
         </div>
@@ -17,8 +17,8 @@ include 'includes/header.php';
         <div class="text-start mb-5">
             <!-- Logo -->
             <div class="mb-4">
-                <a class="d-flex align-items-center text-decoration-none" href="index.php">
-                    <img src="assets/img/logo.png" alt="MCM Logo" style="height: 45px; width: auto;">
+                <a class="d-flex align-items-center text-decoration-none" href="../index.php">
+                    <img src="../assets/img/logo.png" alt="MCM Logo" style="height: 45px; width: auto;">
                     <div class="ms-2 ps-2 border-start border-2 border-dark d-flex flex-column justify-content-center" style="height: 35px;">
                         <span class="fw-bold text-dark" style="font-size: 0.8rem; letter-spacing: 1px; line-height: 1.1;">MITRA CIPTA</span>
                         <span class="fw-bold text-dark" style="font-size: 0.8rem; letter-spacing: 1px; line-height: 1.1;">MANDIRI</span>
@@ -36,7 +36,7 @@ include 'includes/header.php';
             <div class="col-lg-6">
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
                     <div class="p-4 bg-light text-center border-bottom">
-                        <img src="assets/img/logo.png" alt="MCM Logo" style="height: 120px; opacity: 0.2; position: absolute; top: 20px; right: 20px;">
+                        <img src="../assets/img/logo.png" alt="MCM Logo" style="height: 120px; opacity: 0.2; position: absolute; top: 20px; right: 20px;">
                         <i class="fas fa-certificate fa-4x text-primary mb-3" style="color: #0ea5e9 !important;"></i>
                         <h4 class="fw-bold text-dark">Sertifikasi Internal MCM</h4>
                         <p class="text-muted small">Diberikan kepada lulusan yang telah menyelesaikan seluruh kurikulum dan uji kompetensi internal.</p>
@@ -105,4 +105,4 @@ include 'includes/header.php';
     </div>
 </section>
 
-<?php include 'includes/footer.php'; ?>
+<?php include '../includes/footer.php'; ?>

@@ -173,12 +173,15 @@ document.addEventListener('DOMContentLoaded', function () {
             setTimeout(() => {
                 if (currentSelectedClass) {
                     const data = currentSelectedClass;
-                    document.getElementById('checkoutClassId').value = data.id;
-                    document.getElementById('checkoutClassName').textContent = data.name;
-                    document.getElementById('checkoutClassPrice').textContent = 'Rp ' + parseInt(data.price).toLocaleString('id-ID');
-                    document.getElementById('checkoutTotalPrice').textContent = 'Rp ' + parseInt(data.price).toLocaleString('id-ID');
-                    
-                    if (checkoutModal) checkoutModal.show();
+                    const bookingModalEl = document.getElementById('bookingModal');
+                    const kelasSelect = document.getElementById('kelas');
+                    const bookingClassId = document.getElementById('bookingClassId');
+                    if (bookingModalEl && kelasSelect) {
+                        kelasSelect.value = data.name;
+                        if (bookingClassId) bookingClassId.value = data.id;
+                        const modal = bootstrap.Modal.getOrCreateInstance(bookingModalEl);
+                        modal.show();
+                    }
                 }
             }, 400);
         });

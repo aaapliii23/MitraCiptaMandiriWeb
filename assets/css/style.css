@@ -499,7 +499,7 @@ h1, h2, h3, h4, h5, h6 {
     background: var(--secondary-color) !important;
 }
 
-/* Custom Swiper Navigation (PC Only) */
+/* Custom Swiper Navigation (PC & Mobile) */
 .swiper-button-next, .swiper-button-prev {
     background-color: var(--white);
     color: var(--secondary-color);
@@ -551,9 +551,20 @@ h1, h2, h3, h4, h5, h6 {
         padding: 20px 40px 60px; /* Make some room for buttons */
     }
 }
+/* Mobile: show smaller buttons inside the slider edges */
 @media (max-width: 991px) {
     .swiper-button-next, .swiper-button-prev {
-        display: none !important;
+        width: 40px;
+        height: 40px;
+        top: 38%;
+    }
+    .swiper-button-next { right: 6px; }
+    .swiper-button-prev { left: 6px; }
+    .swiper-button-next::after, .swiper-button-prev::after {
+        font-size: 1rem;
+    }
+    .paket-slider-container {
+        padding: 20px 0 60px;
     }
 }
 

@@ -2,7 +2,7 @@
 session_start();
 header('Content-Type: application/json');
 
-require_once 'includes/db_config.php';
+require_once '../includes/db_config.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // 1. Verify CSRF Token
@@ -16,6 +16,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $whatsapp = htmlspecialchars(trim($_POST['whatsapp'] ?? ''));
     $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
     $kelas = htmlspecialchars(trim($_POST['kelas'] ?? ''));
+    $bookingDate = trim($_POST['booking_date'] ?? '');
 
     // Map kelas to service for database
     $service = $kelas;
@@ -37,13 +38,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit;
     }
 
+    // Booking date validation (optional, format YYYY-MM-DD)
+    if ($bookingDate !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $bookingDate)) {
+        echo json_encode(['status' => 'error', 'message' => 'Format tanggal tidak valid.']);
+        exit;
+    }
+
     // 4. Insert into Database
     try {
-        $stmt = $pdo->prepare("INSERT INTO bookings (name, whatsapp, email, service) VALUES (:name, :whatsapp, :email, :service)");
+        $stmt = $pdo->prepare("INSERT INTO bookings (name, whatsapp, email, service, booking_date) VALUES (:name, :whatsapp, :email, :service, :booking_date)");
         $stmt->bindParam(':name', $name);
         $stmt->bindParam(':whatsapp', $whatsapp);
         $stmt->bindParam(':email', $email);
         $stmt->bindParam(':service', $service);
+        $stmt->bindValue(':booking_date', $bookingDate !== '' ? $bookingDate : null);
         
         if ($stmt->execute()) {
             echo json_encode(['status' => 'success', 'message' => 'Booking berhasil! Tim kami akan segera menghubungi Anda melalui WhatsApp.']);

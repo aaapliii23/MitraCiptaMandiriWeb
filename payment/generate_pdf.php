@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'includes/db_config.php';
+require_once '../includes/db_config.php';
 
 $order_number = $_GET['order'] ?? null;
 if (!$order_number) die("Order tidak ditemukan.");
@@ -10,6 +10,11 @@ $stmt->execute([$order_number]);
 $order = $stmt->fetch();
 
 if (!$order) die("Data pendaftaran tidak valid.");
+
+if ($order['payment_status'] !== 'paid') {
+    header("Location: payment_status.php?order=" . urlencode($order['order_number']));
+    exit;
+}
 
 // Note: To truly generate a PDF on a server, we usually use libraries like Dompdf or FPDF.
 // However, to provide an IMMEDIATE high-end solution that works without complex setup:
@@ -138,7 +143,7 @@ if (!$order) die("Data pendaftaran tidak valid.");
                     <i class="fab fa-whatsapp me-2"></i> Konfirmasi ke WA
                 </a>
             <?php endif; ?>
-            <a href="index.php" class="btn btn-light rounded-pill px-4 py-2 fw-bold shadow-sm flex-fill flex-md-grow-0 border" style="min-width: 120px;">
+            <a href="../index.php" class="btn btn-light rounded-pill px-4 py-2 fw-bold shadow-sm flex-fill flex-md-grow-0 border" style="min-width: 120px;">
                 Kembali
             </a>
         </div>
@@ -149,7 +154,7 @@ if (!$order) die("Data pendaftaran tidak valid.");
         <div class="invoice-header">
             <div class="d-flex justify-content-between align-items-start">
                 <div class="d-flex align-items-center">
-                    <img src="assets/img/logo.png" alt="MCM Logo" class="brand-logo">
+                    <img src="../assets/img/logo.png" alt="MCM Logo" class="brand-logo">
                     <div class="ms-3 ps-3 border-start border-white border-opacity-25 text-start">
                         <span class="d-block fw-bold fs-5" style="letter-spacing: 1px; line-height: 1.1;">MITRA CIPTA</span>
                         <span class="d-block fw-bold fs-5" style="letter-spacing: 1px; line-height: 1.1;">MANDIRI</span>

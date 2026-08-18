@@ -35,6 +35,13 @@ try {
                              GROUP BY YEAR(created_at)
                              ORDER BY YEAR(created_at) ASC");
         $data = $stmt->fetchAll();
+    } elseif ($type === 'payment') {
+        $stmt = $pdo->query("SELECT payment_status, COUNT(*) as count, SUM(amount) as total 
+                             FROM orders 
+                             GROUP BY payment_status");
+        $data = $stmt->fetchAll();
+        echo json_encode(['status' => 'success', 'payment' => $data]);
+        exit;
     }
 
     echo json_encode([

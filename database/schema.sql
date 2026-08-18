@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS `classes` (
   `name` varchar(100) NOT NULL,
   `start_date` date DEFAULT NULL,
   `category` varchar(50) NOT NULL,
+  `examiner_id` int(11) DEFAULT NULL,
   `description` text NOT NULL,
   `image` varchar(255) NOT NULL,
   `features` text NOT NULL,
@@ -92,14 +93,20 @@ CREATE TABLE IF NOT EXISTS `users` (
 CREATE TABLE IF NOT EXISTS `orders` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `order_number` varchar(50) NOT NULL UNIQUE,
+  `user_id` int(11) DEFAULT NULL,
   `customer_name` varchar(100) NOT NULL,
   `customer_phone` varchar(20) NOT NULL,
   `customer_email` varchar(100) DEFAULT NULL,
   `customer_address` text DEFAULT NULL,
   `customer_institution` varchar(100) DEFAULT NULL,
   `class_id` int(11) NOT NULL,
+  `examiner_id` int(11) DEFAULT NULL,
   `amount` int(11) NOT NULL,
   `status` ENUM('pending', 'confirmed', 'cancelled') DEFAULT 'pending',
+  `payment_status` ENUM('unpaid', 'pending', 'paid', 'failed', 'expired') DEFAULT 'unpaid',
+  `payment_method` varchar(50) DEFAULT NULL,
+  `payment_gateway_ref` varchar(100) DEFAULT NULL,
+  `paid_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   FOREIGN KEY (`class_id`) REFERENCES `classes`(`id`)
@@ -132,3 +139,126 @@ INSERT IGNORE INTO `gallery` (`id`, `category`, `title`, `image`) VALUES
 (3, 'pijat', 'Pelatihan Pijat & Refleksi', 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'),
 (4, 'barber', 'Praktek Barbershop', 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'),
 (5, 'catering', 'Kelas Memasak & Catering', 'https://images.unsplash.com/photo-1555244162-803834f70033?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80');
+
+CREATE TABLE IF NOT EXISTS `testimonials` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `rating` tinyint(1) NOT NULL DEFAULT 5,
+  `review` text NOT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `class_id` int(11) DEFAULT NULL,
+  `status` ENUM('pending','approved','rejected') DEFAULT 'pending',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`class_id`) REFERENCES `classes`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Seed approved testimonials
+INSERT IGNORE INTO `testimonials` (`id`, `name`, `rating`, `review`, `image`, `class_id`, `status`) VALUES
+(1, 'Siti Rahma', 5, 'Pelatihan Make Up Artist di MCM sangat menyenangkan! Instrukturnya sabar dan materinya langsung bisa dipraktikkan.', NULL, 1, 'approved'),
+(2, 'Budi Santoso', 5, 'Setelah ikut kursus Content Creator, saya langsung berani membuat konten profesional. Recommended!', NULL, 5, 'approved'),
+(3, 'Dewi Lestari', 4, 'Kursus Catering Pastry-nya lengkap, dari dasar hingga teknik dekorasi kue. Fasilitasnya memadai.', NULL, 7, 'approved');
+
+CREATE TABLE IF NOT EXISTS `examiners` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `specialization` varchar(150) NOT NULL,
+  `bio` text,
+  `certifications` text,
+  `image` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO `examiners` (`id`, `name`, `specialization`, `bio`, `certifications`, `image`) VALUES
+(1, 'Drs. Ahmad Jaelani', 'Asesor Public Speaking', 'Berpengalaman lebih dari 15 tahun di industri komunikasi dan sertifikasi BNSP.', 'Komunikasi,BNSP', 'assets/img/logo.png'),
+(2, 'Rina Wijaya, S.Pd', 'Ahli Tata Rias & Estetika', 'Praktisi MUA profesional dengan spesialisasi tata rias pengantin dan seni estetika.', 'Beauty,Certified', 'assets/img/logo.png'),
+(3, 'H. Supardi', 'Pakar Pijat Kesehatan', 'Ahli terapi pijat tradisional dan modern dengan lisensi kesehatan resmi.', 'Therapy,Kesehatan', 'assets/img/logo.png');
+
+CREATE TABLE IF NOT EXISTS `enrollments` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `class_id` int(11) NOT NULL,
+  `order_id` int(11) NOT NULL UNIQUE,
+  `enrolled_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_enroll_user_class` (`user_id`, `class_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `materials` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `class_id` int(11) NOT NULL,
+  `title` varchar(150) NOT NULL,
+  `type` ENUM('video','pdf','text') NOT NULL DEFAULT 'text',
+  `content` text NOT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `material_progress` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `material_id` int(11) NOT NULL,
+  `completed` tinyint(1) NOT NULL DEFAULT 0,
+  `completed_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_progress_user_material` (`user_id`, `material_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `certificates` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `class_id` int(11) NOT NULL,
+  `cert_number` varchar(50) NOT NULL UNIQUE,
+  `issued_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_cert_user_class` (`user_id`, `class_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `quiz_questions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `material_id` int(11) NOT NULL,
+  `question` text NOT NULL,
+  `option_a` varchar(255) NOT NULL,
+  `option_b` varchar(255) NOT NULL,
+  `option_c` varchar(255) NOT NULL,
+  `option_d` varchar(255) NOT NULL,
+  `correct_option` ENUM('a','b','c','d') NOT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `material_id` (`material_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `quiz_attempts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `material_id` int(11) NOT NULL,
+  `score` int(11) NOT NULL,
+  `total` int(11) NOT NULL,
+  `passed` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `user_material` (`user_id`, `material_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `chat_messages` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) DEFAULT NULL,
+  `wa_number` varchar(20) NOT NULL,
+  `direction` ENUM('in','out') NOT NULL DEFAULT 'in',
+  `message` text NOT NULL,
+  `matched_intent` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `chatbot_intents` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `intent` varchar(50) NOT NULL UNIQUE,
+  `keywords` text NOT NULL,
+  `reply` text NOT NULL,
+  `enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -1,7 +1,7 @@
 <?php
-require_once 'includes/db_config.php';
+require_once '../includes/db_config.php';
 $hide_nav_items = true; // Hide navbar links, keep only logo
-include 'includes/header.php';
+include '../includes/header.php';
 ?>
 
 <!-- About MCM Full Page -->
@@ -9,7 +9,7 @@ include 'includes/header.php';
     <div class="container">
         <!-- Circular Back Button above Logo -->
         <div class="mb-4 text-start" style="margin-left: -5px;">
-            <a href="index.php" class="btn rounded-circle d-inline-flex align-items-center justify-content-center shadow-premium btn-premium" style="width: 50px; height: 50px; background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: white; border: none; transition: all 0.3s ease;">
+            <a href="../index.php" class="btn rounded-circle d-inline-flex align-items-center justify-content-center shadow-premium btn-premium" style="width: 50px; height: 50px; background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: white; border: none; transition: all 0.3s ease;">
                 <i class="fas fa-arrow-left fs-5"></i>
             </a>
         </div>
@@ -19,8 +19,8 @@ include 'includes/header.php';
             <div class="col-lg-6 mb-4 mb-lg-0">
                 <!-- Logo directly above badge -->
                 <div class="mb-4">
-                    <a class="d-flex align-items-center text-decoration-none" href="index.php">
-                        <img src="assets/img/logo.png" alt="MCM Logo" style="height: 45px; width: auto;">
+                    <a class="d-flex align-items-center text-decoration-none" href="../index.php">
+                        <img src="../assets/img/logo.png" alt="MCM Logo" style="height: 45px; width: auto;">
                         <div class="ms-2 ps-2 border-start border-2 border-dark d-flex flex-column justify-content-center" style="height: 35px;">
                             <span class="fw-bold text-dark" style="font-size: 0.8rem; letter-spacing: 1px; line-height: 1.1;">MITRA CIPTA</span>
                             <span class="fw-bold text-dark" style="font-size: 0.8rem; letter-spacing: 1px; line-height: 1.1;">MANDIRI</span>
@@ -29,7 +29,7 @@ include 'includes/header.php';
                 </div>
                 <div class="badge bg-primary bg-opacity-10 text-primary mb-3 p-2 px-3 rounded-pill fw-bold" style="background-color: rgba(12, 74, 110, 0.1) !important; color: #0c4a6e !important;">PROFIL LEMBAGA</div>
                 <h1 class="display-4 fw-bold mb-4" style="color: #0c4a6e;">Tentang <br><span style="color: #0ea5e9;">Mitra Cipta Mandiri</span></h1>
-                <p class="lead text-secondary mb-4">Mitra Cipta Mandiri (MCM) adalah Lembaga Pelatihan Kerja (LPK) yang berfokus pada pengembangan sumber daya manusia melalui pelatihan vokasi yang praktis dan aplikatif. Kami berdedikasi untuk menciptakan tenaga kerja terampil yang tidak hanya memiliki keahlian teknis, tetapi juga kemandirian dan integritas tinggi untuk bersaing di era industri 4.0.</p>
+                <p class="lead text-secondary mb-4">LPK Mitra Cipta Mandiri adalah lembaga pelatihan di bawahYayasanMITRA CIPTA MANDIRI, berlokasi di Jl. Terusan CiliwungNo. 30KotaBandung, Jawa Barat ,dengan ijin Kemenkumhamdansudahmemiliki legalitas sebagai LPK dari Disnaker Kota Bandung, DisnakerPropinsi Jawa Barat dan Kementrian KetenagakerjaanRI dansudahterakreditasi tahun 2023</p>
                 <div class="row g-4 mb-4">
                     <div class="col-6">
                         <div class="d-flex align-items-center">
@@ -53,7 +53,7 @@ include 'includes/header.php';
             </div>
             <div class="col-lg-6">
                 <div class="position-relative">
-                    <img src="assets/img/hero-bg.jpg" alt="MCM Office" class="img-fluid rounded-5 shadow-lg" onerror="this.src='https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80'">
+                    <img src="../assets/img/hero-bg.jpg" alt="MCM Office" class="img-fluid rounded-5 shadow-lg" onerror="this.src='https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80'">
                     <div class="position-absolute bottom-0 end-0 bg-white p-4 m-4 rounded-4 shadow-lg d-none d-md-block">
                         <h4 class="fw-bold mb-1" style="color: #0c4a6e;">10+ Tahun</h4>
                         <p class="small text-muted mb-0">Mencetak Alumni Sukses</p>
@@ -72,7 +72,7 @@ include 'includes/header.php';
                         <i class="fas fa-eye fs-3"></i>
                     </div>
                     <h3 class="fw-bold mb-4" style="color: #0c4a6e;">Visi Kami</h3>
-                    <p class="text-secondary fs-5 lh-lg">Menjadi pusat pelatihan vokasi terkemuka di Indonesia yang mampu menghasilkan sumber daya manusia mandiri, profesional, dan berakhlak mulia melalui penguasaan keahlian praktis yang relevan dengan kebutuhan pasar global.</p>
+                    <p class="text-secondary fs-5 lh-lg">Menjadi lembaga pelatihan kerja terdepan yang menciptakan individu kompeten, inovatif, dan berdaya saing tinggi dengan semangat kebahagiaan dan kreativitas dalam setiap proses pembelajaran.</p>
                 </div>
             </div>
             <div class="col-md-6">
@@ -84,23 +84,27 @@ include 'includes/header.php';
                     <ul class="list-unstyled">
                         <li class="d-flex align-items-start mb-3">
                             <i class="fas fa-check-circle text-success mt-1 me-3"></i>
-                            <span class="text-secondary">Menyelenggarakan pelatihan berbasis kompetensi dengan kurikulum yang diselaraskan dengan standar industri nasional dan internasional.</span>
+                            <span class="text-secondary">Menyelenggarakan pelatihan kerja berkualitas yang berorientasi pada kebutuhan pasar kerja dan perkembangan teknologi terkini.</span>
                         </li>
                         <li class="d-flex align-items-start mb-3">
                             <i class="fas fa-check-circle text-success mt-1 me-3"></i>
-                            <span class="text-secondary">Menyediakan sarana dan prasarana praktik yang representatif serta teknologi terbaru untuk menunjang proses belajar mengajar.</span>
+                            <span class="text-secondary">Mengembangkan kurikulum dan metode pembelajaran yang interaktif, praktis, dan menyenangkan untuk menumbuhkan minat serta potensi peserta.</span>
                         </li>
                         <li class="d-flex align-items-start mb-3">
                             <i class="fas fa-check-circle text-success mt-1 me-3"></i>
-                            <span class="text-secondary">Membangun jejaring kemitraan strategis dengan perusahaan-perusahaan mitra untuk mempermudah akses penempatan kerja bagi para lulusan.</span>
+                            <span class="text-secondary">Membekali peserta dengan keterampilan teknis dan non-teknis (soft skills) yang relevan, seperti kemampuan berpikir kritis, kolaborasi, dan adaptasi.</span>
                         </li>
                         <li class="d-flex align-items-start mb-3">
                             <i class="fas fa-check-circle text-success mt-1 me-3"></i>
-                            <span class="text-secondary">Mendorong terciptanya wirausaha baru yang mandiri melalui bimbingan manajemen bisnis dan pengembangan kreativitas.</span>
+                            <span class="text-secondary">Menciptakan lingkungan belajar yang mendukung, inklusif, dan inspiratif agar setiap peserta dapat berkreasi dan berkembang dengan optimal.</span>
+                        </li>
+                        <li class="d-flex align-items-start mb-3">
+                            <i class="fas fa-check-circle text-success mt-1 me-3"></i>
+                            <span class="text-secondary">Membangun kemitraan strategis dengan industri dan pemangku kepentingan untuk memperluas peluang kerja dan pengembangan karir bagi lulusan.</span>
                         </li>
                         <li class="d-flex align-items-start">
                             <i class="fas fa-check-circle text-success mt-1 me-3"></i>
-                            <span class="text-secondary">Terus berinovasi dalam metode pelatihan untuk memastikan setiap lulusan memiliki daya saing yang kuat di pasar kerja global.</span>
+                            <span class="text-secondary">Mendorong setiap individu untuk menemukan passion dan kebahagiaan dalam proses belajar dan berkarya, sehingga dapat memberikan kontribusi positif bagi diri sendiri, masyarakat, dan bangsa.</span>
                         </li>
                     </ul>
                 </div>
@@ -268,4 +272,4 @@ include 'includes/header.php';
     </div>
 </section>
 
-<?php include 'includes/footer.php'; ?>
+<?php include '../includes/footer.php'; ?>
