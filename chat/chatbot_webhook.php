@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $mode = $_GET['hub_mode'] ?? '';
     $token = $_GET['hub_verify_token'] ?? '';
     $challenge = $_GET['hub_challenge'] ?? '';
-    if ($mode === 'subscribe' && hash_equals(WA_VERIFY_TOKEN, $token)) {
+    if ($mode === 'subscribe' && defined('WA_VERIFY_TOKEN') && hash_equals(WA_VERIFY_TOKEN, $token)) {
         header('Content-Type: text/plain');
         echo $challenge;
         exit;

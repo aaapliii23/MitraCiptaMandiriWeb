@@ -1,5 +1,7 @@
 <?php
-require_once __DIR__ . '/../includes/config_secrets.php';
+if (file_exists(__DIR__ . '/../includes/config_secrets.php')) {
+    require_once __DIR__ . '/../includes/config_secrets.php';
+}
 
 $from = $_GET['from'] ?? ($argv[1] ?? '6281200000001');
 $text = $_GET['message'] ?? ($argv[2] ?? 'berapa harga kelas?');

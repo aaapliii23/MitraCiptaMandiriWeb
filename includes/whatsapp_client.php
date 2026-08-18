@@ -1,5 +1,7 @@
 <?php
-require_once __DIR__ . '/config_secrets.php';
+if (file_exists(__DIR__ . '/config_secrets.php')) {
+    require_once __DIR__ . '/config_secrets.php';
+}
 
 function wa_log_inbound($pdo, $fromNumber, $message, $matchedIntent = null, $userId = null) {
     $stmt = $pdo->prepare("INSERT INTO chat_messages (user_id, wa_number, direction, message, matched_intent) VALUES (?, ?, 'in', ?, ?)");

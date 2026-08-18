@@ -1,7 +1,15 @@
 <?php
-$script_dir = dirname($_SERVER['SCRIPT_NAME'] ?? '/');
-$base_url = ($script_dir === '/' || $script_dir === '' || $script_dir === '\\') ? '' : str_repeat('../', substr_count(rtrim($script_dir, '/'), '/'));
-if (!isset($csrf_token)) {
+$script_file = str_replace('\\', '/', $_SERVER['SCRIPT_FILENAME'] ?? '');
+$app_root = str_replace('\\', '/', dirname(__DIR__));
+if ($script_file !== '' && strpos($script_file, $app_root) === 0) {
+    $rel = trim(substr(str_replace('\\', '/', dirname($script_file)), strlen($app_root)), '/');
+    $base_url = ($rel === '') ? '' : str_repeat('../', substr_count($rel, '/') + 1);
+    } else {
+        $script_dir = dirname($_SERVER['SCRIPT_NAME'] ?? '/');
+        $base_url = ($script_dir === '/' || $script_dir === '' || $script_dir === '\\') ? '' : str_repeat('../', substr_count(rtrim($script_dir, '/'), '/'));
+    }
+    $is_home = basename($_SERVER['SCRIPT_FILENAME'] ?? '') === 'index.php';
+    if (!isset($csrf_token)) {
     session_start();
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -42,7 +50,7 @@ if (!isset($classItems)) {
 <body>
     <?php if (!isset($hide_nav_items) || !$hide_nav_items): ?>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg fixed-top" style="transition: all 0.4s ease;">
+    <nav class="navbar navbar-expand-lg fixed-top<?php echo $is_home ? '' : ' navbar-solid'; ?>" style="transition: all 0.4s ease;">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="<?php echo $base_url; ?>index.php">
                 <img src="<?php echo $base_url; ?>assets/img/logo.png" alt="MCM Logo" style="height: 40px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
@@ -65,12 +73,11 @@ if (!isset($classItems)) {
                 });
             </script>
             <div class="collapse navbar-collapse" id="navbarNav">
+                <?php $nav_sections = [['beranda', 'Beranda'], ['tentang', 'Tentang'], ['galeri', 'Galeri'], ['paket', 'Paket'], ['testimoni', 'Testimoni']]; ?>
                 <ul class="navbar-nav mx-auto align-items-center gap-2">
-                    <li class="nav-item"><a class="nav-link" href="#beranda">Beranda</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#tentang">Tentang</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#galeri">Galeri</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#paket">Paket</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#testimoni">Testimoni</a></li>
+                    <?php foreach ($nav_sections as $ns): ?>
+                        <li class="nav-item"><a class="nav-link" href="<?php echo $is_home ? '#' . $ns[0] : $base_url . 'index.php#' . $ns[0]; ?>"><?php echo $ns[1]; ?></a></li>
+                    <?php endforeach; ?>
                 </ul>
                 <div class="my-4 d-lg-none" style="border-top: 1px solid #000000 !important; opacity: 0.15;"></div>
                 <div class="mt-3 mt-lg-0 text-center d-flex flex-column flex-lg-row gap-2 align-items-center">

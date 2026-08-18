@@ -109,7 +109,7 @@ $examinerParam = $examinerId > 0 ? '&examiner=' . $examinerId : '';
             <div class="col-lg-4 col-md-6 class-item" data-category="<?php echo htmlspecialchars($c['category']); ?>" data-name="<?php echo strtolower(htmlspecialchars($c['name'])); ?>">
                 <div class="paket-card h-100 shadow-sm border rounded-4 overflow-hidden bg-white">
                     <div class="position-relative" style="height: 200px;">
-                        <img src="<?php echo htmlspecialchars($c['image']); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="w-100 h-100" style="object-fit: cover;">
+                        <img src="<?php echo htmlspecialchars(asset_src($c['image'])); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="w-100 h-100" style="object-fit: cover;" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
                         <div class="position-absolute top-0 end-0 m-3">
                             <span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm">MCM Official</span>
                         </div>

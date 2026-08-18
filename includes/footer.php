@@ -1,6 +1,13 @@
     <?php
-    $script_dir = dirname($_SERVER['SCRIPT_NAME'] ?? '/');
-    $base_url = ($script_dir === '/' || $script_dir === '' || $script_dir === '\\') ? '' : str_repeat('../', substr_count(rtrim($script_dir, '/'), '/'));
+    $script_file = str_replace('\\', '/', $_SERVER['SCRIPT_FILENAME'] ?? '');
+    $app_root = str_replace('\\', '/', dirname(__DIR__));
+    if ($script_file !== '' && strpos($script_file, $app_root) === 0) {
+        $rel = trim(substr(str_replace('\\', '/', dirname($script_file)), strlen($app_root)), '/');
+        $base_url = ($rel === '') ? '' : str_repeat('../', substr_count($rel, '/') + 1);
+    } else {
+        $script_dir = dirname($_SERVER['SCRIPT_NAME'] ?? '/');
+        $base_url = ($script_dir === '/' || $script_dir === '' || $script_dir === '\\') ? '' : str_repeat('../', substr_count(rtrim($script_dir, '/'), '/'));
+    }
     ?>
     <!-- Footer -->
     <footer class="pt-5 pb-4" style="background-color: #0f172a !important; color: white;">

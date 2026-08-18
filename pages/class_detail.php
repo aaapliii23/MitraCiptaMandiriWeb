@@ -75,7 +75,7 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
             <div class="col-lg-8">
                 <!-- Image Header -->
                 <div class="rounded-5 overflow-hidden mb-5 shadow-sm" style="height: 400px;">
-                    <img src="<?php echo htmlspecialchars($class['image']); ?>" alt="<?php echo htmlspecialchars($class['name']); ?>" class="w-100 h-100" style="object-fit: cover;">
+                    <img src="<?php echo htmlspecialchars(asset_src($class['image'])); ?>" alt="<?php echo htmlspecialchars($class['name']); ?>" class="w-100 h-100" style="object-fit: cover;" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
                 </div>
 
                 <!-- Content Sections -->

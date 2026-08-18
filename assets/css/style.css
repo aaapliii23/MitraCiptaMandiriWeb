@@ -58,6 +58,17 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: var(--shadow-sm);
     padding: 5px 0;
 }
+.navbar.navbar-solid {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-sm);
+    padding: 5px 0;
+}
+.navbar.navbar-solid .navbar-brand img { filter: none; }
+.navbar.navbar-solid .navbar-brand .brand-text { color: #1e293b !important; text-shadow: none; }
+.navbar.navbar-solid .navbar-brand .brand-divider { border-color: #1e293b !important; }
+.navbar.navbar-solid .nav-link { color: var(--text-main) !important; }
 .navbar-brand {
     font-weight: 700;
     font-size: 1.5rem;

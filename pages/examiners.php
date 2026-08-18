@@ -7,6 +7,7 @@ $examiners = [];
 try {
     $examiners = $pdo->query("SELECT * FROM examiners ORDER BY name ASC")->fetchAll();
 } catch (PDOException $e) {}
+$examiners_json = array_map(function($e) { $e['image'] = asset_src($e['image'] ?? ''); return $e; }, $examiners);
 ?>
 
 <!-- Examiners Profile Page -->
@@ -89,7 +90,7 @@ try {
 </section>
 
 <script>
-const examiners = <?php echo json_encode($examiners, JSON_HEX_TAG | JSON_HEX_QUOT | JSON_HEX_APOS | JSON_UNESCAPED_SLASHES); ?>;
+const examiners = <?php echo json_encode($examiners_json, JSON_HEX_TAG | JSON_HEX_QUOT | JSON_HEX_APOS | JSON_UNESCAPED_SLASHES); ?>;
 
 function showExaminer(id) {
     const ex = examiners.find(e => String(e.id) === String(id));

@@ -13,4 +13,12 @@ try {
 } catch (PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }
+
+function asset_src($path, $prefix = '../') {
+    if (empty($path)) return $prefix . 'assets/img/logo.png';
+    if (strpos($path, 'http://') === 0 || strpos($path, 'https://') === 0 || strpos($path, $prefix) === 0 || strpos($path, '/') === 0) {
+        return $path;
+    }
+    return $prefix . ltrim($path, '/');
+}
 ?>
