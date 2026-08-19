@@ -1,8 +1,8 @@
 <!-- INSTRUCTORS PAGE -->
         <div class="row align-items-center mb-4 g-3">
             <div class="col-md-6">
-                <h2 class="fw-bold mb-1 text-dark">Tim Pengajar</h2>
-                <p class="text-muted mb-0">Data instruktur dan penguji profesional MCM.</p>
+                <h2 class="fw-bold mb-1 text-dark">Tim Instruktur</h2>
+                <p class="text-muted mb-0">Data instruktur dan asesor profesional MCM.</p>
             </div>
             <div class="col-md-6 text-md-end">
                 <button class="btn btn-primary px-4 shadow-sm rounded-pill" onclick="showModal('instructorModal')">

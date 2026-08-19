@@ -56,47 +56,43 @@
                     </div>
                 </div>
 
-                <!-- Right Side Feature Card -->
+                <!-- Right Side Clean Photo Slider -->
                 <div class="col-lg-5 d-none d-lg-block" data-aos="fade-left" data-aos-delay="200">
-                    <div class="p-5 rounded-4 ms-lg-4" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(20px); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);">
-                        <div class="d-flex align-items-center mb-5">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 56px; height: 56px; background: #f59e0b; border: 3px solid rgba(255,255,255,0.3); color: white; box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);">
-                                <i class="fas fa-award fs-4"></i>
+                    <div class="position-relative ms-lg-4">
+                        <!-- Clean Photo Frame -->
+                        <div class="swiper activitySwiper rounded-5 overflow-hidden position-relative" style="height: 440px; border: 3px solid rgba(255, 255, 255, 0.25); box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6);">
+                            <div class="swiper-wrapper">
+                                <?php foreach ($galleryItems as $gi): ?>
+                                <div class="swiper-slide">
+                                    <img src="<?php echo htmlspecialchars(asset_src($gi['image'])); ?>" alt="<?php echo htmlspecialchars($gi['title']); ?>" class="w-100 h-100" style="object-fit: cover;">
+                                </div>
+                                <?php endforeach; ?>
                             </div>
-                            <h4 class="text-white mb-0 fw-bold" style="letter-spacing: 0.5px;">Keunggulan MCM</h4>
+                            <!-- Minimalist Pagination Dots -->
+                            <div class="swiper-pagination activity-pagination pb-2"></div>
                         </div>
-                        
-                        <ul class="list-unstyled text-white mb-0">
-                            <li class="mb-4 d-flex align-items-start">
-                                <div class="bg-white bg-opacity-10 p-2 rounded-3 me-3" style="border: 1px solid rgba(245, 158, 11, 0.4); width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-user-tie" style="color: #f59e0b; font-size: 1.2rem;"></i>
-                                </div>
-                                <div>
-                                    <strong class="d-block mb-1 text-white" style="font-size: 1.1rem;">Instruktur Praktisi</strong>
-                                    <small class="text-white-50" style="font-size: 0.85rem;">Belajar langsung dari tenaga ahli profesional industri.</small>
-                                </div>
-                            </li>
-                            <li class="mb-4 d-flex align-items-start">
-                                <div class="bg-white bg-opacity-10 p-2 rounded-3 me-3" style="border: 1px solid rgba(245, 158, 11, 0.4); width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-microchip" style="color: #f59e0b; font-size: 1.2rem;"></i>
-                                </div>
-                                <div>
-                                    <strong class="d-block mb-1 text-white" style="font-size: 1.1rem;">Fasilitas Modern</strong>
-                                    <small class="text-white-50" style="font-size: 0.85rem;">Peralatan standar industri terbaru dan memadai.</small>
-                                </div>
-                            </li>
-                            <li class="d-flex align-items-start">
-                                <div class="bg-white bg-opacity-10 p-2 rounded-3 me-3" style="border: 1px solid rgba(245, 158, 11, 0.4); width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-chart-line" style="color: #f59e0b; font-size: 1.2rem;"></i>
-                                </div>
-                                <div>
-                                    <strong class="d-block mb-1 text-white" style="font-size: 1.1rem;">Jalur Karir Strategis</strong>
-                                    <small class="text-white-50" style="font-size: 0.85rem;">Pendampingan penempatan kerja dan rintisan usaha.</small>
-                                </div>
-                            </li>
-                        </ul>
                     </div>
                 </div>
             </div>
         </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                new Swiper('.activitySwiper', {
+                    effect: 'fade',
+                    fadeEffect: { crossFade: true },
+                    loop: true,
+                    autoplay: {
+                        delay: 2000,
+                        disableOnInteraction: false,
+                    },
+                    speed: 1000,
+                    pagination: {
+                        el: '.activity-pagination',
+                        clickable: true,
+                        dynamicBullets: true,
+                    }
+                });
+            });
+        </script>
     </section>

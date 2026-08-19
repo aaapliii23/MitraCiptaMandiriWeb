@@ -134,7 +134,7 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        @media (max-width: 991px) {
+        @media screen and (max-width: 991px) {
             .sidebar { display: none !important; }
             .main-content { margin-left: 0 !important; padding: 20px 20px 100px 20px !important; }
             .card { border-radius: 1rem; }

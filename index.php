@@ -26,6 +26,7 @@ foreach($classItems as $c) {
     $jsClassData[$c['id']] = [
         'id' => $c['id'],
         'name' => $c['name'],
+        'category' => $c['category'],
         'description' => $c['description'],
         'price' => $c['price'],
         'image' => $c['image'],
@@ -33,32 +34,8 @@ foreach($classItems as $c) {
     ];
 }
 ?>
+<?php include 'includes/header.php'; ?>
 <script>window.mcmClassDetails = <?php echo json_encode($jsClassData); ?>;</script>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MCM - Mitra Cipta Mandiri | Solusi Kemandirian Ekonomi</title>
-    
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- AOS Animation CSS -->
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Swiper CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css"/>
-    
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="assets/css/style.css?v=<?php echo time(); ?>">
-</head>
-<body>
-
-    <?php include 'includes/header.php'; ?>
 
     <?php include 'pages/partials/section_beranda.php'; ?>
     <?php include 'pages/partials/section_tentang.php'; ?>

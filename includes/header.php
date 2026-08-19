@@ -4,13 +4,13 @@ $app_root = str_replace('\\', '/', dirname(__DIR__));
 if ($script_file !== '' && strpos($script_file, $app_root) === 0) {
     $rel = trim(substr(str_replace('\\', '/', dirname($script_file)), strlen($app_root)), '/');
     $base_url = ($rel === '') ? '' : str_repeat('../', substr_count($rel, '/') + 1);
-    } else {
-        $script_dir = dirname($_SERVER['SCRIPT_NAME'] ?? '/');
-        $base_url = ($script_dir === '/' || $script_dir === '' || $script_dir === '\\') ? '' : str_repeat('../', substr_count(rtrim($script_dir, '/'), '/'));
-    }
-    $is_home = basename($_SERVER['SCRIPT_FILENAME'] ?? '') === 'index.php';
-    if (!isset($csrf_token)) {
-    session_start();
+} else {
+    $script_dir = dirname($_SERVER['SCRIPT_NAME'] ?? '/');
+    $base_url = ($script_dir === '/' || $script_dir === '' || $script_dir === '\\') ? '' : str_repeat('../', substr_count(rtrim($script_dir, '/'), '/'));
+}
+$is_home = basename($_SERVER['SCRIPT_FILENAME'] ?? '') === 'index.php';
+if (!isset($csrf_token)) {
+    if (session_status() === PHP_SESSION_NONE) session_start();
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }

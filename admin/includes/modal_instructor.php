@@ -3,7 +3,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow" style="border-radius: 1rem;">
             <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
-                <h5 class="modal-title fw-bold" id="instructorModalTitle">Tambah Instruktur / Penguji</h5>
+                <h5 class="modal-title fw-bold" id="instructorModalTitle">Tambah Instruktur / Asesor</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="instructorForm" action="<?php echo $adminBase; ?>/actions/manage_instructors.php" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault(); submitAjaxForm('instructorForm');">
@@ -22,7 +22,7 @@
                                 <option value="<?php echo htmlspecialchars($cat['name']); ?>"><?php echo htmlspecialchars($cat['name']); ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <small class="text-muted">Kategori Instruktur & Penguji (wajib), mengikuti kategori pelatihan.</small>
+                        <small class="text-muted">Kategori Instruktur & Asesor (wajib), mengikuti kategori pelatihan.</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Spesialisasi / Gelar</label>

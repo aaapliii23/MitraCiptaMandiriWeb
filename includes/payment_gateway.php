@@ -11,7 +11,20 @@ function pg_mode() {
 
 function pg_base_url() {
     $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
-    return ($https ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    
+    $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/'));
+    if (basename($scriptDir) === 'payment') {
+        $baseFolder = dirname($scriptDir);
+    } else {
+        $baseFolder = $scriptDir;
+    }
+    $baseFolder = rtrim($baseFolder, '/');
+    if ($baseFolder === '/' || $baseFolder === '\\' || $baseFolder === '.') {
+        $baseFolder = '';
+    }
+
+    return ($https ? 'https' : 'http') . '://' . $host . $baseFolder;
 }
 
 function pg_create_transaction($pdo, $order, $class) {

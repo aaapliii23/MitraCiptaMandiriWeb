@@ -15,7 +15,7 @@
                     }
                     ?>
                 </select>
-                <button class="btn btn-soft-primary px-4 rounded-pill" onclick="window.print()" style="height: 42px;">
+                <button class="btn btn-soft-primary px-4 rounded-pill" onclick="window.open('reports_print.php?year=' + document.getElementById('reportYear').value, '_blank')" style="height: 42px;">
                     <i class="fas fa-print me-2"></i>Cetak
                 </button>
             </div>
@@ -261,13 +261,9 @@
         </div>
 
         <style>
-            @media print {
-                .no-print, .sidebar, .mcm-bottom-nav, .d-md-none, .btn-group, #reportYear, .btn-action { display: none !important; }
-                .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
-                .card { border: 1px solid #eee !important; box-shadow: none !important; }
-                body { background: white !important; }
+            @media screen {
+                .main-content { overflow-y: auto !important; height: 100vh; }
             }
-            .main-content { overflow-y: auto !important; height: 100vh; }
         </style>
 
         <script>

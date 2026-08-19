@@ -178,6 +178,17 @@ if ($page === 'testimonials') {
     } catch (PDOException $e) {}
 }
 
+// Fetch Users (Peserta Terdaftar)
+$users = [];
+if ($page === 'users') {
+    try {
+        $users = $pdo->query("SELECT u.*, 
+            (SELECT COUNT(*) FROM enrollments e WHERE e.user_id = u.id) AS total_kelas,
+            (SELECT GROUP_CONCAT(c.name SEPARATOR ', ') FROM enrollments e JOIN classes c ON e.class_id = c.id WHERE e.user_id = u.id) AS enrolled_classes
+            FROM users u ORDER BY u.created_at DESC")->fetchAll();
+    } catch (PDOException $e) {}
+}
+
 // Fetch Materials
 $materials = [];
 if ($page === 'materials') {
@@ -251,6 +262,7 @@ if ($page === 'finance') {
 <?php if ($page === 'materials') include __DIR__ . '/pages/materials.php'; ?>
 <?php if ($page === 'chat') include __DIR__ . '/pages/chat.php'; ?>
 <?php if ($page === 'chatbot') include __DIR__ . '/pages/chatbot.php'; ?>
+<?php if ($page === 'users') include __DIR__ . '/pages/users.php'; ?>
 
 <?php require __DIR__ . '/includes/modals.php'; ?>
 

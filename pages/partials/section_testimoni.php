@@ -55,21 +55,9 @@
             <?php else: ?>
             <div class="text-center py-5" data-aos="fade-up">
                 <i class="fas fa-comment-dots fs-1 text-muted opacity-50 mb-3"></i>
-                <p class="text-muted fs-5 mb-0">Belum ada testimoni. Jadilah yang pertama memberikan ulasan!</p>
+                <p class="text-muted fs-5 mb-0">Belum ada testimoni alumni yang ditampilkan.</p>
             </div>
             <?php endif; ?>
-
-            <div class="text-center mt-5" data-aos="fade-up">
-                <?php if (!empty($_SESSION['user_id'])): ?>
-                    <a href="lms/profile.php" class="btn btn-primary btn-premium px-5 py-3 rounded-pill fw-bold shadow-sm" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); border: none;">
-                        <i class="fas fa-pen me-2"></i>Tulis Testimoni
-                    </a>
-                <?php else: ?>
-                    <a href="pages/testimoni.php" class="btn btn-primary btn-premium px-5 py-3 rounded-pill fw-bold shadow-sm" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); border: none;">
-                        <i class="fas fa-pen me-2"></i>Tulis Testimoni
-                    </a>
-                <?php endif; ?>
-            </div>
         </div>
     </section>
 

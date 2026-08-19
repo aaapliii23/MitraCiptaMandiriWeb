@@ -6,6 +6,11 @@ if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) 
 }
 require_once '../config/database.php';
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrf_token = $_SESSION['csrf_token'];
+
 $errorMessage = '';
 $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest');
 
@@ -35,10 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $phone = trim($_POST['phone'] ?? '');
     $password = $_POST['password'] ?? '';
     $password2 = $_POST['password2'] ?? '';
-    $token = $_POST['csrf_token'] ?? '';
-    $csrf_token = $_SESSION['csrf_token'] ?? '';
+    $postedToken = $_POST['csrf_token'] ?? '';
 
-    if (empty($csrf_token) || !hash_equals($csrf_token, $token)) {
+    if (empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $postedToken)) {
         $errorMessage = 'Sesi tidak valid. Silakan muat ulang halaman.';
     } elseif (empty($name) || empty($email) || empty($phone) || empty($password)) {
         $errorMessage = 'Semua kolom wajib diisi.';

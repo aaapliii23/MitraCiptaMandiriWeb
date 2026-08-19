@@ -31,11 +31,11 @@ $instructorId = (int)($_GET['instructor'] ?? 0);
 $selectedInstructor = null;
 $instructorOptions = [];
 try {
-    $cat = $class['category'] ?? '';
-    $instructorOptions = $pdo->query("SELECT * FROM instructors ORDER BY name ASC")->fetchAll();
+    $cat = trim($class['category'] ?? '');
     if (!empty($cat)) {
-        $filtered = array_values(array_filter($instructorOptions, function($ins) use ($cat) { return ($ins['category'] ?? '') === $cat; }));
-        if (!empty($filtered)) $instructorOptions = $filtered;
+        $stmt = $pdo->prepare("SELECT * FROM instructors WHERE LOWER(TRIM(category)) = LOWER(TRIM(?)) ORDER BY name ASC");
+        $stmt->execute([$cat]);
+        $instructorOptions = $stmt->fetchAll();
     }
     foreach ($instructorOptions as $ins) {
         if ((int)$ins['id'] === $instructorId) $selectedInstructor = $ins;
@@ -150,45 +150,115 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
 
                         <!-- Integrated Registration Form -->
                         <div id="registrationForm" class="text-start">
-                            <h5 class="fw-bold mb-3 text-dark">Data Diri Peserta</h5>
-                            <form action="../payment/create_transaction.php" method="POST" onsubmit="return submitPayment(this);">
-                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
-                                <div class="mb-3">
-                                    <label class="form-label small fw-bold text-secondary mb-1 d-block">Nama Lengkap *</label>
-                                    <input type="text" class="form-control bg-light border-0 py-2 rounded-3" name="customer_name" required placeholder="Budi Santoso">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label small fw-bold text-secondary mb-1 d-block">No. WhatsApp *</label>
-                                    <input type="text" class="form-control bg-light border-0 py-2 rounded-3" name="customer_phone" required placeholder="0812...">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label small fw-bold text-secondary mb-1 d-block">Alamat Email *</label>
-                                    <input type="email" class="form-control bg-light border-0 py-2 rounded-3" name="customer_email" required placeholder="email@contoh.com">
-                                </div>
-                                <div class="mb-4">
-                                    <label class="form-label small fw-bold text-secondary mb-1 d-block">Alamat Lengkap *</label>
-                                    <textarea class="form-control bg-light border-0 py-2 rounded-3" name="customer_address" rows="2" required placeholder="Jl. Sudirman No. 123..."></textarea>
+
+                            <?php if (!empty($_SESSION['user_logged_in']) && !empty($_SESSION['user_id'])): ?>
+                                <!-- ===== LOGGED IN: Simplified Form ===== -->
+                                <?php
+                                $loggedUser = [];
+                                try {
+                                    $stmt = $pdo->prepare("SELECT name, email, phone FROM users WHERE id = ? LIMIT 1");
+                                    $stmt->execute([(int)$_SESSION['user_id']]);
+                                    $loggedUser = $stmt->fetch() ?: [];
+                                } catch (PDOException $e) {}
+                                ?>
+                                <!-- User Info Card -->
+                                <div class="bg-primary bg-opacity-5 border border-primary border-opacity-10 rounded-4 p-3 mb-4">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 38px; height: 38px; min-width: 38px;">
+                                            <i class="fas fa-user-check"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark small"><?php echo htmlspecialchars($loggedUser['name'] ?? $_SESSION['user_name'] ?? ''); ?></div>
+                                            <div class="text-muted" style="font-size: 0.72rem;"><?php echo htmlspecialchars($loggedUser['email'] ?? $_SESSION['user_email'] ?? ''); ?></div>
+                                        </div>
+                                    </div>
+                                    <div class="text-muted small d-flex align-items-center">
+                                        <i class="fas fa-shield-alt text-success me-1"></i>
+                                        <span style="font-size: 0.72rem;">Data diri terisi otomatis dari akun Anda.</span>
+                                    </div>
                                 </div>
 
-                                <input type="hidden" name="class_id" value="<?php echo $class['id']; ?>">
-                                <?php if (!empty($instructorOptions)): ?>
-                                <div class="mb-4">
-                                    <label class="form-label small fw-bold text-secondary mb-1 d-block">Pilih Instruktur / Penguji <span class="text-muted fw-normal">(opsional)</span></label>
-                                    <select name="instructor_id" id="instructorSelect" class="form-select bg-light border-0 py-2 rounded-3">
-                                        <option value="0">-- Tidak dipilih --</option>
-                                        <?php foreach ($instructorOptions as $ins): ?>
-                                            <option value="<?php echo $ins['id']; ?>" <?php echo $selectedInstructor && (int)$selectedInstructor['id'] === (int)$ins['id'] ? 'selected' : ''; ?>>
-                                                <?php echo htmlspecialchars($ins['name'] . ' — ' . $ins['specialization']); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <?php endif; ?>
-                                <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm" 
-                                        style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); border: none; font-size: 1rem;">
-                                    <i class="fas fa-credit-card me-2"></i>Bayar Sekarang
-                                </button>
-                            </form>
+                                <form action="../payment/create_transaction.php" method="POST" onsubmit="return submitPayment(this);">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+                                    <input type="hidden" name="class_id" value="<?php echo $class['id']; ?>">
+                                    <input type="hidden" name="customer_name" value="<?php echo htmlspecialchars($loggedUser['name'] ?? ''); ?>">
+                                    <input type="hidden" name="customer_email" value="<?php echo htmlspecialchars($loggedUser['email'] ?? ''); ?>">
+                                    <input type="hidden" name="customer_phone" value="<?php echo htmlspecialchars($loggedUser['phone'] ?? ''); ?>">
+                                    <input type="hidden" name="customer_address" value="-">
+
+                                    <?php if (!empty($instructorOptions)): ?>
+                                    <div class="mb-4">
+                                        <label class="form-label small fw-bold text-secondary mb-1 d-block">Pilih Asesor / Instruktur <span class="text-muted fw-normal">(opsional)</span></label>
+                                        <select name="instructor_id" id="instructorSelect" class="form-select bg-light border-0 py-2 rounded-3">
+                                            <option value="0">-- Tidak dipilih --</option>
+                                            <?php foreach ($instructorOptions as $ins): ?>
+                                                <option value="<?php echo $ins['id']; ?>" <?php echo $selectedInstructor && (int)$selectedInstructor['id'] === (int)$ins['id'] ? 'selected' : ''; ?>>
+                                                    <?php echo htmlspecialchars($ins['name'] . ' — ' . $ins['specialization']); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <?php endif; ?>
+
+                                    <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm"
+                                            style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); border: none; font-size: 1rem;">
+                                        <i class="fas fa-credit-card me-2"></i>Bayar Sekarang
+                                    </button>
+                                </form>
+
+                            <?php else: ?>
+                                <!-- ===== GUEST: Full Form ===== -->
+                                <h5 class="fw-bold mb-3 text-dark">Data Diri Peserta</h5>
+                                <form action="../payment/create_transaction.php" method="POST" onsubmit="return submitPayment(this);">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-secondary mb-1 d-block">Nama Lengkap *</label>
+                                        <input type="text" class="form-control bg-light border-0 py-2 rounded-3" name="customer_name" required placeholder="Budi Santoso">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-secondary mb-1 d-block">No. WhatsApp *</label>
+                                        <input type="text" class="form-control bg-light border-0 py-2 rounded-3" name="customer_phone" required placeholder="0812...">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-secondary mb-1 d-block">Alamat Email *</label>
+                                        <input type="email" class="form-control bg-light border-0 py-2 rounded-3" name="customer_email" required placeholder="email@contoh.com">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-secondary mb-1 d-block">Alamat Lengkap *</label>
+                                        <textarea class="form-control bg-light border-0 py-2 rounded-3" name="customer_address" rows="2" required placeholder="Jl. Sudirman No. 123..."></textarea>
+                                    </div>
+
+                                    <input type="hidden" name="class_id" value="<?php echo $class['id']; ?>">
+                                    <?php if (!empty($instructorOptions)): ?>
+                                    <div class="mb-4">
+                                        <label class="form-label small fw-bold text-secondary mb-1 d-block">Pilih Asesor / Instruktur <span class="text-muted fw-normal">(opsional)</span></label>
+                                        <select name="instructor_id" id="instructorSelect" class="form-select bg-light border-0 py-2 rounded-3">
+                                            <option value="0">-- Tidak dipilih --</option>
+                                            <?php foreach ($instructorOptions as $ins): ?>
+                                                <option value="<?php echo $ins['id']; ?>" <?php echo $selectedInstructor && (int)$selectedInstructor['id'] === (int)$ins['id'] ? 'selected' : ''; ?>>
+                                                    <?php echo htmlspecialchars($ins['name'] . ' — ' . $ins['specialization']); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <?php endif; ?>
+
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-secondary mb-1 d-block">Password Akun LMS</label>
+                                        <input type="password" class="form-control bg-light border-0 py-2 rounded-3" name="customer_password" placeholder="Min. 6 karakter — kosongkan jika email sudah terdaftar" minlength="6" autocomplete="new-password">
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="form-label small fw-bold text-secondary mb-1 d-block">Konfirmasi Password</label>
+                                        <input type="password" class="form-control bg-light border-0 py-2 rounded-3" name="customer_password2" placeholder="Ulangi password" minlength="6" autocomplete="new-password">
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm"
+                                            style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); border: none; font-size: 1rem;">
+                                        <i class="fas fa-credit-card me-2"></i>Bayar Sekarang
+                                    </button>
+                                </form>
+                            <?php endif; ?>
+
                         </div>
                         
                         <hr class="my-4 opacity-10">

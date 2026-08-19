@@ -139,12 +139,12 @@ try {
     exit;
 }
 
-$enrolledClasses = [];
+$certifiedClasses = [];
 try {
-    $stmt = $pdo->prepare("SELECT c.id, c.name FROM enrollments e JOIN classes c ON e.class_id = c.id WHERE e.user_id = ? ORDER BY c.name ASC");
+    $stmt = $pdo->prepare("SELECT c.id, c.name, cert.cert_number, cert.issued_at FROM certificates cert JOIN classes c ON cert.class_id = c.id WHERE cert.user_id = ? ORDER BY c.name ASC");
     $stmt->execute([$userId]);
-    $enrolledClasses = $stmt->fetchAll();
-} catch (PDOException $e) { $enrolledClasses = []; }
+    $certifiedClasses = $stmt->fetchAll();
+} catch (PDOException $e) { $certifiedClasses = []; }
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -175,7 +175,7 @@ try {
     <section class="pt-5" style="margin-top: 56px; min-height: 80vh; background: #f8fafc;">
         <div class="container py-4">
             <div class="row justify-content-center">
-                <div class="col-md-8 col-lg-6">
+                <div class="col-md-9 col-lg-7">
                     <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
                         <div class="text-center mb-4">
                             <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
@@ -224,9 +224,6 @@ try {
                             <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold py-2"><i class="fas fa-save me-2"></i>Simpan Perubahan</button>
                         </form>
                     </div>
-                </div>
-                <div class="col-md-8 col-lg-6 mt-4">
-                    <?php include __DIR__ . '/partials/profile_testimoni_form.php'; ?>
                 </div>
             </div>
         </div>

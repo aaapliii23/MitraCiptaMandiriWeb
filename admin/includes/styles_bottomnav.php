@@ -5,7 +5,7 @@
         display: none; /* Default hidden for desktop */
     }
 
-    @media (max-width: 991px) {
+    @media screen and (max-width: 991px) {
         .mcm-bottom-nav {
             display: flex !important;
             position: fixed !important;

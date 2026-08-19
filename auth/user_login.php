@@ -6,16 +6,21 @@ if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) 
 }
 require_once '../config/database.php';
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrf_token = $_SESSION['csrf_token'];
+
 $errorMessage = '';
 $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
-    $token = $_POST['csrf_token'] ?? '';
-    $csrf_token = $_SESSION['csrf_token'] ?? '';
+    $postedToken = $_POST['csrf_token'] ?? '';
 
-    if (empty($csrf_token) || !hash_equals($csrf_token, $token)) {        $errorMessage = 'Sesi tidak valid. Silakan muat ulang halaman.';
+    if (empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $postedToken)) {
+        $errorMessage = 'Sesi tidak valid. Silakan muat ulang halaman.';
     } elseif (empty($email) || empty($password)) {
         $errorMessage = 'Email dan password wajib diisi.';
     } else {

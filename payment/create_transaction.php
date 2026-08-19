@@ -24,13 +24,33 @@ if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', 
 
 $classId = (int)($_POST['class_id'] ?? 0);
 $instructorId = (int)($_POST['instructor_id'] ?? 0);
-$customerName = trim($_POST['customer_name'] ?? '');
-$customerPhone = trim($_POST['customer_phone'] ?? '');
-$customerEmail = trim($_POST['customer_email'] ?? '');
-$customerInstitution = trim($_POST['customer_institution'] ?? '');
-$customerAddress = trim($_POST['customer_address'] ?? '');
+$userId = isset($_SESSION['user_logged_in']) ? (int)($_SESSION['user_id'] ?? 0) : null;
+if ($userId < 1) $userId = null;
 
-if (!$classId || $customerName === '' || $customerPhone === '' || $customerEmail === '' || $customerAddress === '') {
+if ($userId) {
+    $stmt = $pdo->prepare("SELECT name, email, phone, password FROM users WHERE id = ? LIMIT 1");
+    $stmt->execute([$userId]);
+    $dbUser = $stmt->fetch();
+    $customerName    = $dbUser['name']    ?? trim($_POST['customer_name']    ?? '');
+    $customerEmail   = $dbUser['email']   ?? trim($_POST['customer_email']   ?? '');
+    $customerPhone   = $dbUser['phone']   ?? trim($_POST['customer_phone']   ?? '');
+    $customerAddress = trim($_POST['customer_address'] ?? '-');
+    if ($customerAddress === '') $customerAddress = '-';
+    $customerInstitution = trim($_POST['customer_institution'] ?? '');
+} else {
+    $customerName        = trim($_POST['customer_name']        ?? '');
+    $customerPhone       = trim($_POST['customer_phone']       ?? '');
+    $customerEmail       = trim($_POST['customer_email']       ?? '');
+    $customerInstitution = trim($_POST['customer_institution'] ?? '');
+    $customerAddress     = trim($_POST['customer_address']     ?? '');
+}
+
+if (!$classId || $customerName === '' || $customerEmail === '') {
+    echo json_encode(['status' => 'error', 'message' => 'Data tidak lengkap.']);
+    exit;
+}
+
+if (!$userId && ($customerPhone === '' || $customerAddress === '')) {
     echo json_encode(['status' => 'error', 'message' => 'Data tidak lengkap.']);
     exit;
 }
@@ -50,7 +70,7 @@ if (!filter_var($customerEmail, FILTER_VALIDATE_EMAIL)) {
 
 $digits = preg_replace('/\D+/', '', $customerPhone);
 if (strpos($digits, '0') === 0) $digits = '62' . substr($digits, 1);
-if (!preg_match('/^62[0-9]{9,13}$/', $digits)) {
+if (!empty($customerPhone) && !preg_match('/^62[0-9]{9,13}$/', $digits)) {
     echo json_encode(['status' => 'error', 'message' => 'Nomor WhatsApp tidak valid (gunakan format +62...).']);
     exit;
 }
@@ -65,8 +85,6 @@ if (!$class) {
 
 $amount = (int)$class['price'];
 $orderNumber = 'ORD-' . strtoupper(uniqid()) . '-' . time();
-$userId = isset($_SESSION['user_logged_in']) ? (int)($_SESSION['user_id'] ?? 0) : null;
-if ($userId < 1) $userId = null;
 
 if (!$userId) {
     $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? LIMIT 1");

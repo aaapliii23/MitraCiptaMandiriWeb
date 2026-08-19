@@ -199,4 +199,45 @@
             transform: rotate(180deg);
         }
         
+        @media print {
+            .no-print, 
+            .sidebar, 
+            .mcm-bottom-nav, 
+            .d-md-none, 
+            .btn-group, 
+            #reportYear, 
+            .btn-action,
+            .btn, 
+            select,
+            button,
+            .modal,
+            .modal-backdrop,
+            header,
+            footer { 
+                display: none !important; 
+            }
+            
+            body, html {
+                background: white !important;
+                color: black !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+            
+            .main-content { 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                width: 100% !important; 
+                position: static !important;
+                overflow: visible !important;
+                height: auto !important;
+                min-height: auto !important;
+            }
+            
+            .card { 
+                border: 1px solid #ddd !important; 
+                box-shadow: none !important; 
+                page-break-inside: avoid;
+            }
+        }
 </style>
