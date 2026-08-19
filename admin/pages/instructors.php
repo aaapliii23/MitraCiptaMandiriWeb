@@ -1,5 +1,5 @@
 <!-- INSTRUCTORS PAGE -->
-        <div class="row align-items-center mb-5 g-3">
+        <div class="row align-items-center mb-4 g-3">
             <div class="col-md-6">
                 <h2 class="fw-bold mb-1 text-dark">Tim Pengajar</h2>
                 <p class="text-muted mb-0">Data instruktur dan penguji profesional MCM.</p>
@@ -22,7 +22,8 @@
                             </div>
                         </div>
                         <h6 class="fw-bold text-dark mb-1"><?php echo htmlspecialchars($ins['name']); ?></h6>
-                        <div class="text-primary small fw-bold mb-4"><?php echo htmlspecialchars($ins['specialization']); ?></div>
+                        <div class="text-primary small fw-bold mb-1"><?php echo htmlspecialchars($ins['specialization']); ?></div>
+                        <div class="mb-4"><span class="badge bg-primary bg-opacity-10 text-primary rounded-pill"><?php echo htmlspecialchars($ins['category'] ?: 'Umum'); ?></span></div>
                         <div class="d-flex justify-content-center gap-2">
                             <button class="btn btn-action btn-soft-primary" onclick="editInstructor(<?php echo htmlspecialchars(json_encode($ins)); ?>)">
                                 <i class="fas fa-edit"></i>

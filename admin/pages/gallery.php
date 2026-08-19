@@ -1,5 +1,5 @@
 <!-- GALLERY PAGE -->
-        <div class="row align-items-center mb-5 g-3">
+        <div class="row align-items-center mb-4 g-3">
             <div class="col-md-6">
                 <h2 class="fw-bold mb-1 text-dark">Galeri Foto</h2>
                 <p class="text-muted mb-0">Dokumentasi visual kegiatan dan fasilitas.</p>
@@ -17,7 +17,10 @@
                     <div class="card h-100 border-0 shadow-sm overflow-hidden">
                         <div class="position-relative" style="height: 220px;">
                             <img src="<?php echo htmlspecialchars(getImgSrc($g['image'])); ?>" class="w-100 h-100" style="object-fit: cover;" alt="<?php echo htmlspecialchars($g['title']); ?>">
-                            <div class="position-absolute top-0 end-0 p-3">
+                            <div class="position-absolute top-0 end-0 p-3 d-flex gap-2">
+                                <?php if ((int)($g['show_on_home'] ?? 0) === 1): ?>
+                                    <span class="badge bg-primary text-white rounded-pill"><i class="fas fa-home me-1"></i>Beranda</span>
+                                <?php endif; ?>
                                 <span class="badge bg-dark bg-opacity-50 text-white rounded-pill backdrop-blur"><?php echo htmlspecialchars($g['category']); ?></span>
                             </div>
                         </div>

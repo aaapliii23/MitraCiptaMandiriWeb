@@ -1,9 +1,18 @@
 <style>
         /* Main Content */
         .main-content { 
-            margin-left: 280px; 
+            margin-left: 306px; 
             padding: 40px; 
             transition: all 0.3s; 
+        }
+        
+        /* Compact page headings (matches greeting + all page titles) */
+        .main-content h2:not(.stat-number) {
+            font-size: 1.5rem;
+        }
+        
+        .stat-card .card-body {
+            padding: 20px;
         }
         
         /* Modern Design System Overhaul */
@@ -15,25 +24,53 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px -10px rgba(37, 99, 235, 0.1);
-            border-color: rgba(37, 99, 235, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px -10px rgba(37, 99, 235, 0.12);
+            border-color: rgba(37, 99, 235, 0.12);
         }
         
+        /* Stat Cards — Content > Decoration */
         .stat-card {
             border: none;
             overflow: hidden;
             position: relative;
         }
-        .stat-card::after {
-            content: '';
+        .stat-icon {
+            width: 42px;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.16);
+            border-radius: 0.8rem;
+            font-size: 1rem;
+        }
+        .stat-number {
+            font-size: 1.6rem;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.02em;
+        }
+        .stat-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            opacity: 0.78;
+            margin-top: 2px;
+        }
+        .stat-float {
             position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 150px;
-            height: 150px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 50%;
+            right: -10px;
+            bottom: -12px;
+            font-size: 4.75rem;
+            opacity: 0.1;
+            transform: rotate(-8deg);
+            pointer-events: none;
+        }
+        .stat-card:hover .stat-float {
+            opacity: 0.18;
+            transform: rotate(-8deg) scale(1.08);
         }
 
         /* Modern Table */

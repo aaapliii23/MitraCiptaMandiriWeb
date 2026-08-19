@@ -3,7 +3,7 @@ session_start();
 header('Content-Type: application/json');
 if (!isset($_SESSION['admin_logged_in'])) exit;
 
-require_once '../../includes/db_config.php';
+require_once '../../config/database.php';
 
 try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS `materials` (

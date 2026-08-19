@@ -1,14 +1,3 @@
-CREATE TABLE IF NOT EXISTS `bookings` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) NOT NULL,
-  `whatsapp` varchar(20) NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `service` varchar(100) NOT NULL,
-  `booking_date` date DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 CREATE TABLE IF NOT EXISTS `admins` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(50) NOT NULL,
@@ -26,7 +15,6 @@ CREATE TABLE IF NOT EXISTS `classes` (
   `name` varchar(100) NOT NULL,
   `start_date` date DEFAULT NULL,
   `category` varchar(50) NOT NULL,
-  `examiner_id` int(11) DEFAULT NULL,
   `description` text NOT NULL,
   `image` varchar(255) NOT NULL,
   `features` text NOT NULL,
@@ -55,7 +43,10 @@ INSERT IGNORE INTO `class_categories` (`name`, `slug`) VALUES
 CREATE TABLE IF NOT EXISTS `instructors` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
+  `category` varchar(100) NOT NULL,
   `specialization` varchar(150) NOT NULL,
+  `bio` text,
+  `certifications` text,
   `image` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
@@ -70,10 +61,10 @@ CREATE TABLE IF NOT EXISTS `certifications` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT IGNORE INTO `instructors` (`name`, `specialization`, `image`) VALUES
-('Bunga Lestari', 'Make Up Artist & Tata Rias', 'uploads/instructors/bunga.jpg'),
-('Agus Wijaya', 'Instruktur Kuliner & Pastry', 'uploads/instructors/agus.jpg'),
-('Dewi Anggraini', 'Digital Marketing & Content', 'uploads/instructors/dewi.jpg');
+INSERT IGNORE INTO `instructors` (`name`, `category`, `specialization`, `image`) VALUES
+('Bunga Lestari', 'Kecantikan', 'Make Up Artist & Tata Rias', 'uploads/instructors/bunga.jpg'),
+('Agus Wijaya', 'Kuliner', 'Instruktur Kuliner & Pastry', 'uploads/instructors/agus.jpg'),
+('Dewi Anggraini', 'Digital', 'Digital Marketing & Content', 'uploads/instructors/dewi.jpg');
 
 INSERT IGNORE INTO `certifications` (`title`, `description`, `image`) VALUES
 ('Surat Keterangan Kemenkumham', 'Legalitas badan hukum Lembaga MCM terdaftar resmi di Kementerian Hukum dan HAM.', 'uploads/certs/sk_kemenkumham.jpg'),
@@ -100,7 +91,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `customer_address` text DEFAULT NULL,
   `customer_institution` varchar(100) DEFAULT NULL,
   `class_id` int(11) NOT NULL,
-  `examiner_id` int(11) DEFAULT NULL,
+  `instructor_id` int(11) DEFAULT NULL,
   `amount` int(11) NOT NULL,
   `status` ENUM('pending', 'confirmed', 'cancelled') DEFAULT 'pending',
   `payment_status` ENUM('unpaid', 'pending', 'paid', 'failed', 'expired') DEFAULT 'unpaid',
@@ -117,6 +108,7 @@ CREATE TABLE IF NOT EXISTS `gallery` (
   `category` varchar(50) NOT NULL,
   `title` varchar(100) NOT NULL,
   `image` varchar(255) NOT NULL,
+  `show_on_home` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -133,20 +125,23 @@ INSERT IGNORE INTO `classes` (`id`, `name`, `start_date`, `category`, `descripti
 (8, 'Dasar-Dasar Pariwisata', '2026-10-24', 'Pariwisata', 'Kenali seluk-beluk industri pariwisata dari pemandu wisata, hospitality, hingga pengelolaan usaha wisata lokal. Pintu masuk menuju karir di sektor pariwisata.', 'uploads/classes/pariwisata.jpg', '["Pengenalan Industri Pariwisata", "Pemandu Wisata & Hospitality", "Komunikasi & Bahasa Asing Dasar", "Manajemen Perjalanan Wisata", "Homestay & Usaha Wisata Lokal", "Praktek Lapangan"]', 900000);
 
 -- Insert initial gallery
-INSERT IGNORE INTO `gallery` (`id`, `category`, `title`, `image`) VALUES
-(1, 'public_speaking', 'Praktek Public Speaking', 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'),
-(2, 'tata_rias', 'Kelas Tata Rias', 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'),
-(3, 'pijat', 'Pelatihan Pijat & Refleksi', 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'),
-(4, 'barber', 'Praktek Barbershop', 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'),
-(5, 'catering', 'Kelas Memasak & Catering', 'https://images.unsplash.com/photo-1555244162-803834f70033?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80');
+INSERT IGNORE INTO `gallery` (`id`, `category`, `title`, `image`, `show_on_home`) VALUES
+(1, 'public_speaking', 'Praktek Public Speaking', 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80', 1),
+(2, 'tata_rias', 'Kelas Tata Rias', 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80', 1),
+(3, 'pijat', 'Pelatihan Pijat & Refleksi', 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80', 1),
+(4, 'barber', 'Praktek Barbershop', 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80', 0),
+(5, 'catering', 'Kelas Memasak & Catering', 'https://images.unsplash.com/photo-1555244162-803834f70033?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80', 0);
 
 CREATE TABLE IF NOT EXISTS `testimonials` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) DEFAULT NULL,
   `name` varchar(100) NOT NULL,
   `rating` tinyint(1) NOT NULL DEFAULT 5,
   `review` text NOT NULL,
   `image` varchar(255) DEFAULT NULL,
   `class_id` int(11) DEFAULT NULL,
+  `graduation_year` varchar(10) DEFAULT NULL,
+  `job` varchar(150) DEFAULT NULL,
   `status` ENUM('pending','approved','rejected') DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -154,26 +149,10 @@ CREATE TABLE IF NOT EXISTS `testimonials` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Seed approved testimonials
-INSERT IGNORE INTO `testimonials` (`id`, `name`, `rating`, `review`, `image`, `class_id`, `status`) VALUES
-(1, 'Siti Rahma', 5, 'Pelatihan Make Up Artist di MCM sangat menyenangkan! Instrukturnya sabar dan materinya langsung bisa dipraktikkan.', NULL, 1, 'approved'),
-(2, 'Budi Santoso', 5, 'Setelah ikut kursus Content Creator, saya langsung berani membuat konten profesional. Recommended!', NULL, 5, 'approved'),
-(3, 'Dewi Lestari', 4, 'Kursus Catering Pastry-nya lengkap, dari dasar hingga teknik dekorasi kue. Fasilitasnya memadai.', NULL, 7, 'approved');
-
-CREATE TABLE IF NOT EXISTS `examiners` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL,
-  `specialization` varchar(150) NOT NULL,
-  `bio` text,
-  `certifications` text,
-  `image` varchar(255) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-INSERT IGNORE INTO `examiners` (`id`, `name`, `specialization`, `bio`, `certifications`, `image`) VALUES
-(1, 'Drs. Ahmad Jaelani', 'Asesor Public Speaking', 'Berpengalaman lebih dari 15 tahun di industri komunikasi dan sertifikasi BNSP.', 'Komunikasi,BNSP', 'assets/img/logo.png'),
-(2, 'Rina Wijaya, S.Pd', 'Ahli Tata Rias & Estetika', 'Praktisi MUA profesional dengan spesialisasi tata rias pengantin dan seni estetika.', 'Beauty,Certified', 'assets/img/logo.png'),
-(3, 'H. Supardi', 'Pakar Pijat Kesehatan', 'Ahli terapi pijat tradisional dan modern dengan lisensi kesehatan resmi.', 'Therapy,Kesehatan', 'assets/img/logo.png');
+INSERT IGNORE INTO `testimonials` (`id`, `name`, `rating`, `review`, `image`, `class_id`, `graduation_year`, `job`, `status`) VALUES
+(1, 'Siti Rahma', 5, 'Pelatihan Make Up Artist di MCM sangat menyenangkan! Instrukturnya sabar dan materinya langsung bisa dipraktikkan.', NULL, 1, '2025', 'MUA Profesional', 'approved'),
+(2, 'Budi Santoso', 5, 'Setelah ikut kursus Content Creator, saya langsung berani membuat konten profesional. Recommended!', NULL, 5, '2025', 'Content Creator', 'approved'),
+(3, 'Dewi Lestari', 4, 'Kursus Catering Pastry-nya lengkap, dari dasar hingga teknik dekorasi kue. Fasilitasnya memadai.', NULL, 7, '2024', 'Pemilik Usaha Kue', 'approved');
 
 CREATE TABLE IF NOT EXISTS `enrollments` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -216,15 +195,35 @@ CREATE TABLE IF NOT EXISTS `certificates` (
   UNIQUE KEY `uq_cert_user_class` (`user_id`, `class_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `certificate_templates` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(150) NOT NULL,
+  `class_id` int(11) DEFAULT NULL,
+  `layout` varchar(50) NOT NULL DEFAULT 'default',
+  `bg_image` varchar(255) DEFAULT NULL,
+  `accent_color` varchar(20) DEFAULT NULL,
+  `is_default` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO `certificate_templates` (`id`, `name`, `class_id`, `layout`, `bg_image`, `accent_color`, `is_default`) VALUES
+(1, 'Sertifikat Standar', NULL, 'default', NULL, '#1e40af', 1),
+(2, 'Sertifikat Elegant', NULL, 'elegant', NULL, '#7c3aed', 0),
+(3, 'Sertifikat Modern', NULL, 'modern', NULL, '#0ea5e9', 0),
+(4, 'Sertifikat Premium', NULL, 'premium', NULL, '#b45309', 0);
+
 CREATE TABLE IF NOT EXISTS `quiz_questions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `material_id` int(11) NOT NULL,
+  `question_type` ENUM('mcq','essay') NOT NULL DEFAULT 'mcq',
   `question` text NOT NULL,
   `option_a` varchar(255) NOT NULL,
   `option_b` varchar(255) NOT NULL,
   `option_c` varchar(255) NOT NULL,
   `option_d` varchar(255) NOT NULL,
-  `correct_option` ENUM('a','b','c','d') NOT NULL,
+  `correct_option` ENUM('a','b','c','d') DEFAULT NULL,
+  `essay_answer` text DEFAULT NULL,
   `sort_order` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `material_id` (`material_id`)
@@ -259,6 +258,17 @@ CREATE TABLE IF NOT EXISTS `chatbot_intents` (
   `keywords` text NOT NULL,
   `reply` text NOT NULL,
   `enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `finance_transactions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `type` ENUM('in','out') NOT NULL,
+  `category` varchar(50) NOT NULL,
+  `description` text DEFAULT NULL,
+  `amount` int(11) NOT NULL,
+  `transaction_date` date NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -1,5 +1,5 @@
 <!-- ORDERS PAGE -->
-        <div class="row align-items-center mb-5 g-3">
+        <div class="row align-items-center mb-4 g-3">
             <div class="col-md-6">
                 <h2 class="fw-bold mb-1 text-dark">Data Transaksi</h2>
                 <p class="text-muted mb-0">Kelola pesanan dan status pembayaran pelanggan.</p>
@@ -25,7 +25,7 @@
                                 <th>Order ID</th>
                                 <th>Pelanggan</th>
                                 <th>Kategori & Kelas</th>
-                                <th>Penguji</th>
+                                <th>Instruktur</th>
                                 <th>Total</th>
                                 <th class="text-center">Pembayaran</th>
                                 <th class="text-center">Status</th>
@@ -49,7 +49,7 @@
                                             <div class="small text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;"><?php echo htmlspecialchars($o['class_category']); ?></div>
                                             <div class="fw-bold text-primary"><?php echo htmlspecialchars($o['class_name']); ?></div>
                                         </td>
-                                        <td class="small text-muted"><?php echo $o['examiner_name'] ? htmlspecialchars($o['examiner_name']) : '<span class="text-muted">-</span>'; ?></td>
+                                        <td class="small text-muted"><?php echo $o['instructor_name'] ? htmlspecialchars($o['instructor_name']) : '<span class="text-muted">-</span>'; ?></td>
                                         <td class="fw-bold text-dark">Rp <?php echo number_format($o['amount'], 0, ',', '.'); ?></td>
                                         <td class="text-center">
                                             <?php

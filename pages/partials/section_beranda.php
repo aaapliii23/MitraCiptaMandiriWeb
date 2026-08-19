@@ -1,6 +1,31 @@
     <!-- Hero Section -->
-    <section id="beranda" class="hero-section">
-        <div class="container">
+    <?php
+    $heroSlides = array_values(array_filter($galleryItems, function($g) { return (int)($g['show_on_home'] ?? 0) === 1; }));
+    ?>
+    <section id="beranda" class="hero-section<?php echo !empty($heroSlides) ? ' has-slider' : ''; ?>">
+        <?php if (!empty($heroSlides)): ?>
+        <!-- Background Photo Slider -->
+        <div class="hero-swiper swiper" id="heroSwiper">
+            <div class="swiper-wrapper">
+                <?php foreach ($heroSlides as $gs): ?>
+                <div class="swiper-slide">
+                    <img src="<?php echo htmlspecialchars(asset_src($gs['image'])); ?>" alt="<?php echo htmlspecialchars($gs['title']); ?>">
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <div class="hero-overlay"></div>
+        <script>
+            new Swiper('#heroSwiper', {
+                effect: 'fade',
+                fadeEffect: { crossFade: true },
+                loop: true,
+                autoplay: { delay: 4500, disableOnInteraction: false },
+                speed: 1200
+            });
+        </script>
+        <?php endif; ?>
+        <div class="container hero-container">
             <div class="row align-items-center">
                 <div class="col-lg-7 hero-content" data-aos="fade-right">
                     <h1 class="display-3 fw-bold text-white mb-4">Raih Kemandirian<br>Bersama MCM</h1>

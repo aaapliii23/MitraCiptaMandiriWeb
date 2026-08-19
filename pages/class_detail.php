@@ -1,5 +1,5 @@
 <?php
-require_once '../includes/db_config.php';
+require_once '../config/database.php';
 
 // Get class ID from URL
 $class_id = $_GET['id'] ?? null;
@@ -27,15 +27,20 @@ try {
 $hide_nav_items = true;
 include '../includes/header.php';
 
-$examinerId = (int)($_GET['examiner'] ?? 0);
-$selectedExaminer = null;
-if ($examinerId > 0) {
-    try {
-        $stmt = $pdo->prepare("SELECT * FROM examiners WHERE id = ?");
-        $stmt->execute([$examinerId]);
-        $selectedExaminer = $stmt->fetch() ?: null;
-    } catch (PDOException $e) {}
-}
+$instructorId = (int)($_GET['instructor'] ?? 0);
+$selectedInstructor = null;
+$instructorOptions = [];
+try {
+    $cat = $class['category'] ?? '';
+    $instructorOptions = $pdo->query("SELECT * FROM instructors ORDER BY name ASC")->fetchAll();
+    if (!empty($cat)) {
+        $filtered = array_values(array_filter($instructorOptions, function($ins) use ($cat) { return ($ins['category'] ?? '') === $cat; }));
+        if (!empty($filtered)) $instructorOptions = $filtered;
+    }
+    foreach ($instructorOptions as $ins) {
+        if ((int)$ins['id'] === $instructorId) $selectedInstructor = $ins;
+    }
+} catch (PDOException $e) {}
 ?>
 
 <?php
@@ -135,12 +140,11 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
                             <h4 class="fw-bold mb-0" style="color: #0c4a6e;">Rp <?php echo number_format($class['price'], 0, ',', '.'); ?></h4>
                         </div>
 
-                        <?php if ($selectedExaminer): ?>
+                        <?php if ($selectedInstructor): ?>
                             <div class="text-center mb-4 bg-success bg-opacity-10 p-3 rounded-4 border border-success border-opacity-25">
-                                <label class="small text-muted d-block mb-1">Penguji Asesor Terpilih</label>
-                                <div class="fw-bold text-dark"><?php echo htmlspecialchars($selectedExaminer['name']); ?></div>
-                                <small class="text-muted"><?php echo htmlspecialchars($selectedExaminer['specialization']); ?></small>
-                                <a href="examiners.php" class="d-block small text-primary text-decoration-none mt-1">Ganti penguji</a>
+                                <label class="small text-muted d-block mb-1">Instruktur Terpilih</label>
+                                <div class="fw-bold text-dark"><?php echo htmlspecialchars($selectedInstructor['name']); ?></div>
+                                <small class="text-muted"><?php echo htmlspecialchars($selectedInstructor['specialization']); ?></small>
                             </div>
                         <?php endif; ?>
 
@@ -167,7 +171,19 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
                                 </div>
 
                                 <input type="hidden" name="class_id" value="<?php echo $class['id']; ?>">
-                                <input type="hidden" name="examiner_id" value="<?php echo $selectedExaminer ? (int)$selectedExaminer['id'] : 0; ?>">
+                                <?php if (!empty($instructorOptions)): ?>
+                                <div class="mb-4">
+                                    <label class="form-label small fw-bold text-secondary mb-1 d-block">Pilih Instruktur / Penguji <span class="text-muted fw-normal">(opsional)</span></label>
+                                    <select name="instructor_id" id="instructorSelect" class="form-select bg-light border-0 py-2 rounded-3">
+                                        <option value="0">-- Tidak dipilih --</option>
+                                        <?php foreach ($instructorOptions as $ins): ?>
+                                            <option value="<?php echo $ins['id']; ?>" <?php echo $selectedInstructor && (int)$selectedInstructor['id'] === (int)$ins['id'] ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($ins['name'] . ' — ' . $ins['specialization']); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <?php endif; ?>
                                 <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm" 
                                         style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); border: none; font-size: 1rem;">
                                     <i class="fas fa-credit-card me-2"></i>Bayar Sekarang

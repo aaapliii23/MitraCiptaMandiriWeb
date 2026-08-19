@@ -1,6 +1,6 @@
 <?php
-if (file_exists(__DIR__ . '/../includes/config_secrets.php')) {
-    require_once __DIR__ . '/../includes/config_secrets.php';
+if (file_exists(__DIR__ . '/../config/secrets.php')) {
+    require_once __DIR__ . '/../config/secrets.php';
 }
 
 $from = $_GET['from'] ?? ($argv[1] ?? '6281200000001');

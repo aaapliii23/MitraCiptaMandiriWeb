@@ -163,30 +163,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Handle "Isi Pendaftaran" inside Detail Modal
-    const btnLanjut = document.getElementById('btnLanjutBooking');
-    if (btnLanjut) {
-        btnLanjut.addEventListener('click', function() {
-            if (detailModal) detailModal.hide();
-            
-            // Add slight delay for smooth transition
-            setTimeout(() => {
-                if (currentSelectedClass) {
-                    const data = currentSelectedClass;
-                    const bookingModalEl = document.getElementById('bookingModal');
-                    const kelasSelect = document.getElementById('kelas');
-                    const bookingClassId = document.getElementById('bookingClassId');
-                    if (bookingModalEl && kelasSelect) {
-                        kelasSelect.value = data.name;
-                        if (bookingClassId) bookingClassId.value = data.id;
-                        const modal = bootstrap.Modal.getOrCreateInstance(bookingModalEl);
-                        modal.show();
-                    }
-                }
-            }, 400);
-        });
-    }
-
     // Smooth scrolling
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {

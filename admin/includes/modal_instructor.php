@@ -15,6 +15,16 @@
                         <input type="text" class="form-control" name="name" id="instructorName" required placeholder="Gunakan gelar jika ada">
                     </div>
                     <div class="mb-3">
+                        <label class="form-label small fw-bold">Kategori <span class="text-danger">*</span></label>
+                        <select class="form-select" name="category" id="instructorCategory" required>
+                            <option value="">-- Pilih Kategori --</option>
+                            <?php foreach ($categories as $cat): ?>
+                                <option value="<?php echo htmlspecialchars($cat['name']); ?>"><?php echo htmlspecialchars($cat['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small class="text-muted">Kategori Instruktur & Penguji (wajib), mengikuti kategori pelatihan.</small>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label small fw-bold">Spesialisasi / Gelar</label>
                         <input type="text" class="form-control" name="specialization" id="instructorSpec" required placeholder="Contoh: Ahli Tata Rias">
                     </div>

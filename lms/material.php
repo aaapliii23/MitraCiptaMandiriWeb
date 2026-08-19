@@ -1,6 +1,6 @@
 <?php
 require_once '../includes/auth_user.php';
-require_once '../includes/db_config.php';
+require_once '../config/database.php';
 
 $userId = (int)$_SESSION['user_id'];
 $materialId = (int)($_GET['material_id'] ?? 0);
@@ -104,7 +104,7 @@ $csrf = $_SESSION['csrf_token'] ?? '';
                 <?php endif; ?>
                 <a href="dashboard.php" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a>
                 <a href="profile.php" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-user-cog me-1"></i>Profil</a>
-                <a href="../user/user_logout.php" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="fas fa-sign-out-alt me-1"></i>Keluar</a>
+                <a href="../auth/user_logout.php" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="fas fa-sign-out-alt me-1"></i>Keluar</a>
             </div>
         </div>
     </nav>
@@ -184,7 +184,11 @@ $csrf = $_SESSION['csrf_token'] ?? '';
                                 <?php foreach ($quizQuestions as $q): ?>
                                     <div class="mb-3">
                                         <p class="fw-semibold text-dark mb-1"><?php echo htmlspecialchars($q['question']); ?></p>
-                                        <p class="text-success small mb-0"><i class="fas fa-check me-1"></i>Kunci jawaban: <?php echo strtoupper($q['correct_option']); ?>.</p>
+                                        <?php if ($q['question_type'] === 'essay'): ?>
+                                            <p class="text-info small mb-0"><i class="fas fa-align-left me-1"></i>Soal Essay — Referensi jawaban: <?php echo htmlspecialchars($q['essay_answer'] ?? '-'); ?></p>
+                                        <?php else: ?>
+                                            <p class="text-success small mb-0"><i class="fas fa-check me-1"></i>Kunci jawaban: <?php echo strtoupper($q['correct_option']); ?>.</p>
+                                        <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
                             <?php else: ?>
@@ -199,15 +203,24 @@ $csrf = $_SESSION['csrf_token'] ?? '';
                                     <input type="hidden" name="material_id" value="<?php echo (int)$materialId; ?>">
                                     <?php foreach ($quizQuestions as $q): ?>
                                         <div class="mb-4">
-                                            <p class="fw-semibold text-dark mb-2"><?php echo htmlspecialchars($q['question']); ?></p>
-                                            <?php foreach (['a' => $q['option_a'], 'b' => $q['option_b'], 'c' => $q['option_c'], 'd' => $q['option_d']] as $key => $opt): ?>
-                                                <div class="form-check ps-0 mb-1">
-                                                    <label class="d-block rounded-3 border px-3 py-2 quiz-option">
-                                                        <input class="form-check-input me-2" type="radio" name="answer[<?php echo (int)$q['id']; ?>]" value="<?php echo $key; ?>" required>
-                                                        <span class="fw-semibold"><?php echo strtoupper($key); ?>.</span> <?php echo htmlspecialchars($opt); ?>
-                                                    </label>
-                                                </div>
-                                            <?php endforeach; ?>
+                                            <p class="fw-semibold text-dark mb-2">
+                                                <?php echo htmlspecialchars($q['question']); ?>
+                                                <?php if ($q['question_type'] === 'essay'): ?>
+                                                    <span class="badge bg-info bg-opacity-10 text-info ms-1">Essay</span>
+                                                <?php endif; ?>
+                                            </p>
+                                            <?php if ($q['question_type'] === 'essay'): ?>
+                                                <textarea class="form-control" name="answer[<?php echo (int)$q['id']; ?>]" rows="4" required placeholder="Tulis jawaban Anda..."></textarea>
+                                            <?php else: ?>
+                                                <?php foreach (['a' => $q['option_a'], 'b' => $q['option_b'], 'c' => $q['option_c'], 'd' => $q['option_d']] as $key => $opt): ?>
+                                                    <div class="form-check ps-0 mb-1">
+                                                        <label class="d-block rounded-3 border px-3 py-2 quiz-option">
+                                                            <input class="form-check-input me-2" type="radio" name="answer[<?php echo (int)$q['id']; ?>]" value="<?php echo $key; ?>" required>
+                                                            <span class="fw-semibold"><?php echo strtoupper($key); ?>.</span> <?php echo htmlspecialchars($opt); ?>
+                                                        </label>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
                                         </div>
                                     <?php endforeach; ?>
                                     <button type="submit" class="btn btn-primary rounded-pill fw-bold px-4"><i class="fas fa-paper-plane me-2"></i>Kumpulkan Jawaban</button>

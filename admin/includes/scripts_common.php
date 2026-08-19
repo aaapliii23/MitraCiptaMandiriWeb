@@ -82,6 +82,7 @@ function editInstructor(data) {
     document.getElementById('instructorAction').value = 'update';
     document.getElementById('instructorId').value = data.id;
     document.getElementById('instructorName').value = data.name;
+    document.getElementById('instructorCategory').value = data.category;
     document.getElementById('instructorSpec').value = data.specialization;
     document.getElementById('instructorImage').required = false;
     document.getElementById('instructorModalTitle').textContent = 'Edit Data Instruktur';
@@ -138,6 +139,7 @@ async function submitAjaxForm(formId) {
                 singleFormData.append('action', 'create');
                 singleFormData.append('title', title);
                 singleFormData.append('category', category);
+                singleFormData.append('show_on_home', document.getElementById('galleryShowHome').checked ? '1' : '0');
                 singleFormData.append('images[]', files[i]);
 
                 try {

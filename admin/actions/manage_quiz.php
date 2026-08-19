@@ -3,22 +3,31 @@ session_start();
 header('Content-Type: application/json');
 if (!isset($_SESSION['admin_logged_in'])) exit;
 
-require_once '../../includes/db_config.php';
+require_once '../../config/database.php';
 
 try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS `quiz_questions` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `material_id` int(11) NOT NULL,
+      `question_type` ENUM('mcq','essay') NOT NULL DEFAULT 'mcq',
       `question` text NOT NULL,
       `option_a` varchar(255) NOT NULL,
       `option_b` varchar(255) NOT NULL,
       `option_c` varchar(255) NOT NULL,
       `option_d` varchar(255) NOT NULL,
-      `correct_option` ENUM('a','b','c','d') NOT NULL,
+      `correct_option` ENUM('a','b','c','d') DEFAULT NULL,
+      `essay_answer` text DEFAULT NULL,
       `sort_order` int(11) NOT NULL DEFAULT 0,
       PRIMARY KEY (`id`),
       KEY `material_id` (`material_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    try {
+        $pdo->query("SELECT question_type FROM quiz_questions LIMIT 1");
+    } catch (PDOException $e) {
+        $pdo->exec("ALTER TABLE quiz_questions ADD COLUMN question_type ENUM('mcq','essay') NOT NULL DEFAULT 'mcq' AFTER material_id");
+        $pdo->exec("ALTER TABLE quiz_questions MODIFY correct_option ENUM('a','b','c','d') DEFAULT NULL");
+        $pdo->exec("ALTER TABLE quiz_questions ADD COLUMN essay_answer text DEFAULT NULL AFTER correct_option");
+    }
     $pdo->exec("CREATE TABLE IF NOT EXISTS `quiz_attempts` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `user_id` int(11) NOT NULL,
@@ -45,15 +54,21 @@ if ($action === 'list') {
     echo json_encode(['status' => 'success', 'questions' => $stmt->fetchAll()]);
 } elseif ($action === 'create') {
     $materialId = (int)($_POST['material_id'] ?? 0);
+    $questionType = ($_POST['question_type'] ?? 'mcq') === 'essay' ? 'essay' : 'mcq';
     $question = trim($_POST['question'] ?? '');
     $optionA = trim($_POST['option_a'] ?? '');
     $optionB = trim($_POST['option_b'] ?? '');
     $optionC = trim($_POST['option_c'] ?? '');
     $optionD = trim($_POST['option_d'] ?? '');
     $correct = $_POST['correct_option'] ?? '';
+    $essayAnswer = trim($_POST['essay_answer'] ?? '');
     $sortOrder = (int)($_POST['sort_order'] ?? 0);
 
-    if (!$materialId || empty($question) || empty($optionA) || empty($optionB) || empty($optionC) || empty($optionD) || !in_array($correct, ['a', 'b', 'c', 'd'])) {
+    if (!$materialId || empty($question)) {
+        echo json_encode(['status' => 'error', 'message' => 'Data soal tidak lengkap.']);
+        exit;
+    }
+    if ($questionType === 'mcq' && (empty($optionA) || empty($optionB) || empty($optionC) || empty($optionD) || !in_array($correct, ['a', 'b', 'c', 'd']))) {
         echo json_encode(['status' => 'error', 'message' => 'Data soal tidak lengkap.']);
         exit;
     }
@@ -65,26 +80,32 @@ if ($action === 'list') {
         exit;
     }
 
-    $stmt = $pdo->prepare("INSERT INTO quiz_questions (material_id, question, option_a, option_b, option_c, option_d, correct_option, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$materialId, $question, $optionA, $optionB, $optionC, $optionD, $correct, $sortOrder]);
+    $stmt = $pdo->prepare("INSERT INTO quiz_questions (material_id, question_type, question, option_a, option_b, option_c, option_d, correct_option, essay_answer, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$materialId, $questionType, $question, $optionA, $optionB, $optionC, $optionD, $questionType === 'mcq' ? $correct : null, $questionType === 'essay' ? $essayAnswer : null, $sortOrder]);
     echo json_encode(['status' => 'success', 'message' => 'Soal quiz berhasil ditambahkan.']);
 } elseif ($action === 'update') {
     $id = (int)($_POST['id'] ?? 0);
+    $questionType = ($_POST['question_type'] ?? 'mcq') === 'essay' ? 'essay' : 'mcq';
     $question = trim($_POST['question'] ?? '');
     $optionA = trim($_POST['option_a'] ?? '');
     $optionB = trim($_POST['option_b'] ?? '');
     $optionC = trim($_POST['option_c'] ?? '');
     $optionD = trim($_POST['option_d'] ?? '');
     $correct = $_POST['correct_option'] ?? '';
+    $essayAnswer = trim($_POST['essay_answer'] ?? '');
     $sortOrder = (int)($_POST['sort_order'] ?? 0);
 
-    if (!$id || empty($question) || empty($optionA) || empty($optionB) || empty($optionC) || empty($optionD) || !in_array($correct, ['a', 'b', 'c', 'd'])) {
+    if (!$id || empty($question)) {
+        echo json_encode(['status' => 'error', 'message' => 'Data soal tidak lengkap.']);
+        exit;
+    }
+    if ($questionType === 'mcq' && (empty($optionA) || empty($optionB) || empty($optionC) || empty($optionD) || !in_array($correct, ['a', 'b', 'c', 'd']))) {
         echo json_encode(['status' => 'error', 'message' => 'Data soal tidak lengkap.']);
         exit;
     }
 
-    $stmt = $pdo->prepare("UPDATE quiz_questions SET question = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_option = ?, sort_order = ? WHERE id = ?");
-    $stmt->execute([$question, $optionA, $optionB, $optionC, $optionD, $correct, $sortOrder, $id]);
+    $stmt = $pdo->prepare("UPDATE quiz_questions SET question_type = ?, question = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_option = ?, essay_answer = ?, sort_order = ? WHERE id = ?");
+    $stmt->execute([$questionType, $question, $optionA, $optionB, $optionC, $optionD, $questionType === 'mcq' ? $correct : null, $questionType === 'essay' ? $essayAnswer : null, $sortOrder, $id]);
     echo json_encode(['status' => 'success', 'message' => 'Soal quiz diperbarui.']);
 } elseif ($action === 'delete') {
     $id = (int)($_POST['id'] ?? 0);

@@ -6,7 +6,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     exit;
 }
 
-require_once '../../includes/db_config.php';
+require_once '../../config/database.php';
 require_once '../../includes/whatsapp_client.php';
 
 try {

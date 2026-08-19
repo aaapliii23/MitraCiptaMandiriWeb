@@ -5,11 +5,11 @@ header('Pragma: no-cache');
 
 // Redirect if already logged in
 if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
-    header("Location: admin/dashboard.php");
+    header("Location: ../admin/dashboard.php");
     exit;
 }
 
-require_once 'includes/db_config.php';
+require_once '../config/database.php';
 
 $errorMessage = '';
 $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') || 
@@ -39,7 +39,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     echo json_encode(['status' => 'success']);
                     exit;
                 } else {
-                    header("Location: admin/dashboard.php");
+                    header("Location: ../admin/dashboard.php");
                     exit;
                 }
             } else {
@@ -59,10 +59,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 ?>
 <!DOCTYPE html>
 <html lang="id">
-<?php include 'partials/admin_login_head.php'; ?>
+<?php include '../admin/includes/admin_login_head.php'; ?>
 <body>
-    <?php include 'partials/admin_login_body.php'; ?>
+    <?php include '../admin/includes/admin_login_body.php'; ?>
 
-    <?php include 'partials/admin_login_scripts.php'; ?>
+    <?php include '../admin/includes/admin_login_scripts.php'; ?>
 </body>
 </html>

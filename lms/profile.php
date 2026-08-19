@@ -1,6 +1,6 @@
 <?php
 require_once '../includes/auth_user.php';
-require_once '../includes/db_config.php';
+require_once '../config/database.php';
 
 $userId = (int)$_SESSION['user_id'];
 
@@ -23,8 +23,56 @@ function normalizePhone($phone)
 
 $successMessage = '';
 $errorMessage = '';
+$testimonialMessage = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+$testimonialType = $_POST['form_type'] ?? '';
+if ($testimonialType === 'testimonial') {
+    $token = $_POST['csrf_token'] ?? '';
+    $rating = (int)($_POST['rating'] ?? 5);
+    $review = trim($_POST['review'] ?? '');
+    $classId = !empty($_POST['class_id']) ? (int)$_POST['class_id'] : null;
+    $graduationYear = trim($_POST['graduation_year'] ?? '');
+    $job = trim($_POST['job'] ?? '');
+
+    if ($rating < 1 || $rating > 5) $rating = 5;
+
+    if (!hash_equals($csrf_token, $token)) {
+        $testimonialMessage = 'Sesi tidak valid. Silakan muat ulang halaman.';
+    } elseif (empty($review)) {
+        $testimonialMessage = 'Ulasan wajib diisi.';
+    } else {
+        $image = null;
+        if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+            $allowed = ['jpg', 'jpeg', 'png', 'webp'];
+            $ext = strtolower(pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION));
+            if (in_array($ext, $allowed)) {
+                $dir = dirname(__DIR__) . '/uploads/testimonials/';
+                if (!is_dir($dir)) mkdir($dir, 0775, true);
+                $dest = $dir . uniqid() . '.' . $ext;
+                if (move_uploaded_file($_FILES['photo']['tmp_name'], $dest)) {
+                    $image = 'uploads/testimonials/' . basename($dest);
+                }
+            }
+        }
+
+        try {
+            $stmtName = $pdo->prepare("SELECT name FROM users WHERE id = ? LIMIT 1");
+            $stmtName->execute([$userId]);
+            $nameRow = $stmtName->fetch();
+            $name = $nameRow['name'] ?? $_SESSION['user_name'] ?? '';
+            $stmt = $pdo->prepare("INSERT INTO testimonials (user_id, name, rating, review, image, class_id, graduation_year, job, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
+            if ($stmt->execute([$userId, $name, $rating, $review, $image, $classId, $graduationYear ?: null, $job ?: null])) {
+                $testimonialMessage = 'Testimoni berhasil dikirim dan menunggu persetujuan admin.';
+            } else {
+                $testimonialMessage = 'Gagal menyimpan testimoni. Silakan coba lagi.';
+            }
+        } catch (PDOException $e) {
+            $testimonialMessage = 'Terjadi kesalahan sistem.';
+        }
+    }
+}
+
+if ($testimonialType !== 'testimonial' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $phone = trim($_POST['phone'] ?? '');
@@ -83,13 +131,20 @@ try {
     $stmt->execute([$userId]);
     $user = $stmt->fetch();
     if (!$user) {
-        header('Location: ../user/user_logout.php');
+        header('Location: ../auth/user_logout.php');
         exit;
     }
 } catch (PDOException $e) {
     header('Location: dashboard.php');
     exit;
 }
+
+$enrolledClasses = [];
+try {
+    $stmt = $pdo->prepare("SELECT c.id, c.name FROM enrollments e JOIN classes c ON e.class_id = c.id WHERE e.user_id = ? ORDER BY c.name ASC");
+    $stmt->execute([$userId]);
+    $enrolledClasses = $stmt->fetchAll();
+} catch (PDOException $e) { $enrolledClasses = []; }
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -112,7 +167,7 @@ try {
                 <span class="text-muted small d-none d-md-inline"><i class="fas fa-user me-1"></i><?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
                 <a href="dashboard.php" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a>
                 <a href="../index.php" class="btn btn-outline-primary btn-sm rounded-pill px-3">Beranda</a>
-                <a href="../user/user_logout.php" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="fas fa-sign-out-alt me-1"></i>Keluar</a>
+                <a href="../auth/user_logout.php" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="fas fa-sign-out-alt me-1"></i>Keluar</a>
             </div>
         </div>
     </nav>
@@ -169,6 +224,9 @@ try {
                             <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold py-2"><i class="fas fa-save me-2"></i>Simpan Perubahan</button>
                         </form>
                     </div>
+                </div>
+                <div class="col-md-8 col-lg-6 mt-4">
+                    <?php include __DIR__ . '/partials/profile_testimoni_form.php'; ?>
                 </div>
             </div>
         </div>

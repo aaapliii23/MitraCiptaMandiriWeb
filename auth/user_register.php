@@ -4,7 +4,7 @@ if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) 
     header('Location: ../lms/dashboard.php');
     exit;
 }
-require_once '../includes/db_config.php';
+require_once '../config/database.php';
 
 $errorMessage = '';
 $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest');
@@ -21,6 +21,14 @@ function normalizePhone($phone)
     return $digits;
 }
 
+function validateFullName($name)
+{
+    if (strlen($name) < 3 || strlen($name) > 100) return false;
+    $words = preg_split('/\s+/', trim($name));
+    if (count($words) < 2) return false;
+    return preg_match('/^[\p{L}]+(?:[ -][\p{L}]+)*$/u', $name) === 1;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
     $email = trim($_POST['email'] ?? '');
@@ -34,6 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errorMessage = 'Sesi tidak valid. Silakan muat ulang halaman.';
     } elseif (empty($name) || empty($email) || empty($phone) || empty($password)) {
         $errorMessage = 'Semua kolom wajib diisi.';
+    } elseif (!validateFullName($name)) {
+        $errorMessage = 'Nama harus Nama Asli: minimal 2 kata, hanya huruf, spasi, dan tanda hubung (tanpa angka atau simbol).';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errorMessage = 'Format email tidak valid.';
     } elseif (strlen($password) < 6) {
@@ -97,8 +107,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <form method="POST" action="user_register.php">
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                         <div class="mb-3">
-                            <label class="form-label small fw-bold">Nama Lengkap</label>
-                            <input type="text" class="form-control" name="name" required autocomplete="name">
+                            <label class="form-label small fw-bold">Nama Asli Lengkap</label>
+                            <input type="text" class="form-control" name="name" required autocomplete="name" placeholder="Contoh: Budi Santoso" minlength="3" maxlength="100" pattern="[A-Za-z\u00C0-\u017F\s-]+">
+                            <small class="text-muted">Minimal 2 kata, hanya huruf, spasi, dan tanda hubung (tanpa angka atau simbol).</small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Email</label>

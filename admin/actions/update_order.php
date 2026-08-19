@@ -6,7 +6,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     exit;
 }
 
-require_once '../../includes/db_config.php';
+require_once '../../config/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $orderId = $_POST['order_id'] ?? '';

@@ -84,11 +84,19 @@
                                         <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.7rem;">Alamat Lengkap *</label>
                                         <textarea class="form-control form-control-sm bg-light" name="customer_address" rows="2" required placeholder="Jl. Sudirman No. 123..."></textarea>
                                     </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.7rem;">Password Akun LMS *</label>
+                                        <input type="password" class="form-control form-control-sm bg-light" name="customer_password" placeholder="Minimal 6 karakter" minlength="6" autocomplete="new-password">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.7rem;">Konfirmasi Password *</label>
+                                        <input type="password" class="form-control form-control-sm bg-light" name="customer_password2" placeholder="Ulangi password" minlength="6" autocomplete="new-password">
+                                    </div>
                                 </div>
                                 
                                 <div class="alert alert-info border-0 d-flex align-items-center mt-3 mb-3 p-2" style="border-radius: 0.75rem;">
                                     <i class="fas fa-info-circle fs-5 me-2"></i>
-                                    <small style="font-size: 0.7rem; line-height: 1.2;">Setelah klik Bayar Sekarang, Anda akan diarahkan ke halaman pembayaran.</small>
+                                    <small style="font-size: 0.7rem; line-height: 1.2;">Akun LMS dibuat otomatis dari data ini (password di atas). Kosongkan password bila email Anda sudah terdaftar.</small>
                                 </div>
                             
                                 <input type="hidden" name="class_id" id="checkoutClassId">

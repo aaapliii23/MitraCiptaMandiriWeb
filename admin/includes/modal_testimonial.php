@@ -26,7 +26,17 @@
                     </div>
                     <div class="mb-2">
                         <label class="form-label small fw-medium">Ulasan</label>
-                        <textarea class="form-control" name="review" id="testimonialReview" rows="4" required></textarea>
+                        <textarea class="form-control" name="review" id="testimonialReview" rows="3" required></textarea>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-medium">Angkatan (Tahun)</label>
+                            <input type="text" class="form-control" name="graduation_year" id="testimonialGraduationYear" placeholder="2025">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-medium">Pekerjaan</label>
+                            <input type="text" class="form-control" name="job" id="testimonialJob" placeholder="MUA Profesional">
+                        </div>
                     </div>
                     <div class="mb-2">
                         <label class="form-label small fw-medium">Status</label>

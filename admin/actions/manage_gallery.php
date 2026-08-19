@@ -7,7 +7,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     exit;
 }
 
-require_once '../../includes/db_config.php';
+require_once '../../config/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['action'])) {
     $maxPost = (int)ini_get('post_max_size');
@@ -22,6 +22,7 @@ $action = $_POST['action'] ?? '';
 if ($action === 'create') {
     $title = trim($_POST['title'] ?? '');
     $category = trim($_POST['category'] ?? '');
+    $showOnHome = isset($_POST['show_on_home']) ? 1 : 0;
 
     $maxPost = (int)ini_get('post_max_size');
     if (isset($_SERVER['CONTENT_LENGTH']) && (int)$_SERVER['CONTENT_LENGTH'] > $maxPost * 1024 * 1024) {
@@ -78,8 +79,8 @@ if ($action === 'create') {
             
             if (move_uploaded_file($_FILES['images']['tmp_name'][$i], '../../' . $destination)) {
                 $itemTitle = ($totalFiles > 1) ? ($title . ' (' . ($i + 1) . ')') : $title;
-                $stmt = $pdo->prepare("INSERT INTO gallery (category, title, image) VALUES (?, ?, ?)");
-                if ($stmt->execute([$category, $itemTitle, $destination])) {
+                $stmt = $pdo->prepare("INSERT INTO gallery (category, title, image, show_on_home) VALUES (?, ?, ?, ?)");
+                if ($stmt->execute([$category, $itemTitle, $destination, $showOnHome])) {
                     $successCount++;
                 }
             }
@@ -102,6 +103,7 @@ if ($action === 'create') {
     $id = trim($_POST['id'] ?? '');
     $title = trim($_POST['title'] ?? '');
     $category = trim($_POST['category'] ?? '');
+    $showOnHome = isset($_POST['show_on_home']) ? 1 : 0;
 
     if (empty($id) || empty($title) || empty($category)) {
         echo json_encode(['status' => 'error', 'message' => 'Semua kolom wajib diisi.']);
@@ -153,8 +155,8 @@ if ($action === 'create') {
         }
     }
 
-    $upd = $pdo->prepare("UPDATE gallery SET title = ?, category = ?, image = ? WHERE id = ?");
-    if ($upd->execute([$title, $category, $image, $id])) {
+    $upd = $pdo->prepare("UPDATE gallery SET title = ?, category = ?, image = ?, show_on_home = ? WHERE id = ?");
+    if ($upd->execute([$title, $category, $image, $showOnHome, $id])) {
         echo json_encode(['status' => 'success', 'message' => 'Foto berhasil diperbarui.']);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Gagal memperbarui foto.']);

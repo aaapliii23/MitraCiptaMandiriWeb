@@ -1,5 +1,5 @@
 <!-- DASHBOARD HOME -->
-        <div class="mb-5 d-flex justify-content-between align-items-end" data-aos="fade-down">
+        <div class="mb-4 d-flex justify-content-between align-items-end" data-aos="fade-down">
             <div>
                 <div class="d-flex align-items-center mb-1">
                     <div class="p-2 rounded-3 me-3 bg-white shadow-sm border" style="color: <?php echo $greetColor; ?>;">
@@ -17,53 +17,45 @@
             </div>
         </div>
 
-        <div class="row g-4 mb-5">
-            <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
-                <div class="card stat-card border-0 h-100 shadow-sm position-relative overflow-hidden" style="background: linear-gradient(135deg, #1e40af, #3b82f6, #60a5fa); color: white;">
-                    <div class="card-body p-4 position-relative z-1">
-                        <div class="bg-white bg-opacity-25 rounded-3 p-2 d-inline-block mb-3">
-                            <i class="fas fa-shopping-bag fs-4"></i>
-                        </div>
-                        <h2 class="fw-bold mb-1 counter-value" data-target="<?php echo $stats['orders']; ?>">0</h2>
-                        <div class="small fw-bold text-white-50 text-uppercase">Total Pesanan</div>
+        <div class="row g-4 mb-4">
+            <div class="col-md-6 col-xl-3" data-aos="fade-up" data-aos-delay="100">
+                <div class="card stat-card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #1e40af, #3b82f6, #60a5fa); color: white;">
+                    <div class="card-body p-4">
+                        <span class="stat-icon mb-3"><i class="fas fa-shopping-bag"></i></span>
+                        <h2 class="stat-number mb-1 counter-value" data-target="<?php echo $stats['orders']; ?>">0</h2>
+                        <div class="stat-label">Total Pesanan</div>
                     </div>
-                    <i class="fas fa-shopping-bag position-absolute opacity-10 float-icon" style="font-size: 8rem; right: -20px; bottom: -20px;"></i>
+                    <i class="fas fa-shopping-bag stat-float"></i>
                 </div>
             </div>
-            <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
-                <div class="card stat-card border-0 h-100 shadow-sm position-relative overflow-hidden" style="background: linear-gradient(135deg, #065f46, #10b981, #34d399); color: white;">
-                    <div class="card-body p-4 position-relative z-1">
-                        <div class="bg-white bg-opacity-25 rounded-3 p-2 d-inline-block mb-3">
-                            <i class="fas fa-book-open fs-4"></i>
-                        </div>
-                        <h2 class="fw-bold mb-1 counter-value" data-target="<?php echo $stats['classes']; ?>">0</h2>
-                        <div class="small fw-bold text-white-50 text-uppercase">Paket Aktif</div>
+            <div class="col-md-6 col-xl-3" data-aos="fade-up" data-aos-delay="200">
+                <div class="card stat-card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #065f46, #10b981, #34d399); color: white;">
+                    <div class="card-body p-4">
+                        <span class="stat-icon mb-3"><i class="fas fa-book-open"></i></span>
+                        <h2 class="stat-number mb-1 counter-value" data-target="<?php echo $stats['classes']; ?>">0</h2>
+                        <div class="stat-label">Paket Aktif</div>
                     </div>
-                    <i class="fas fa-book-open position-absolute opacity-10 float-icon" style="font-size: 8rem; right: -20px; bottom: -20px; animation-delay: 1s;"></i>
+                    <i class="fas fa-book-open stat-float"></i>
                 </div>
             </div>
-            <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
-                <div class="card stat-card border-0 h-100 shadow-sm position-relative overflow-hidden" style="background: linear-gradient(135deg, #5b21b6, #8b5cf6, #a78bfa); color: white;">
-                    <div class="card-body p-4 position-relative z-1">
-                        <div class="bg-white bg-opacity-25 rounded-3 p-2 d-inline-block mb-3">
-                            <i class="fas fa-images fs-4"></i>
-                        </div>
-                        <h2 class="fw-bold mb-1 counter-value" data-target="<?php echo $stats['gallery']; ?>">0</h2>
-                        <div class="small fw-bold text-white-50 text-uppercase">Foto Galeri</div>
+            <div class="col-md-6 col-xl-3" data-aos="fade-up" data-aos-delay="300">
+                <div class="card stat-card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #5b21b6, #8b5cf6, #a78bfa); color: white;">
+                    <div class="card-body p-4">
+                        <span class="stat-icon mb-3"><i class="fas fa-images"></i></span>
+                        <h2 class="stat-number mb-1 counter-value" data-target="<?php echo $stats['gallery']; ?>">0</h2>
+                        <div class="stat-label">Foto Galeri</div>
                     </div>
-                    <i class="fas fa-images position-absolute opacity-10 float-icon" style="font-size: 8rem; right: -20px; bottom: -20px; animation-delay: 2s;"></i>
+                    <i class="fas fa-images stat-float"></i>
                 </div>
             </div>
-            <div class="col-md-3" data-aos="fade-up" data-aos-delay="400">
-                <div class="card stat-card border-0 h-100 shadow-sm position-relative overflow-hidden" style="background: linear-gradient(135deg, #334155, #64748b, #94a3b8); color: white;">
-                    <div class="card-body p-4 position-relative z-1">
-                        <div class="bg-white bg-opacity-25 rounded-3 p-2 d-inline-block mb-3">
-                            <i class="fas fa-user-shield fs-4"></i>
-                        </div>
-                        <h2 class="fw-bold mb-1 counter-value" data-target="<?php echo $stats['admins']; ?>">0</h2>
-                        <div class="small fw-bold text-white-50 text-uppercase">Tim Admin</div>
+            <div class="col-md-6 col-xl-3" data-aos="fade-up" data-aos-delay="400">
+                <div class="card stat-card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #334155, #64748b, #94a3b8); color: white;">
+                    <div class="card-body p-4">
+                        <span class="stat-icon mb-3"><i class="fas fa-user-shield"></i></span>
+                        <h2 class="stat-number mb-1 counter-value" data-target="<?php echo $stats['admins']; ?>">0</h2>
+                        <div class="stat-label">Tim Admin</div>
                     </div>
-                    <i class="fas fa-user-shield position-absolute opacity-10 float-icon" style="font-size: 8rem; right: -20px; bottom: -20px; animation-delay: 3s;"></i>
+                    <i class="fas fa-user-shield stat-float"></i>
                 </div>
             </div>
         </div>
@@ -72,58 +64,50 @@
             <h5 class="fw-bold text-dark mb-0"><i class="fas fa-wallet me-2 text-primary"></i>Rekap Pembayaran</h5>
             <a href="?page=orders" class="btn btn-sm btn-soft-primary px-3 rounded-pill fw-bold">Detail Pesanan</a>
         </div>
-        <div class="row g-4 mb-5">
-            <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
-                <div class="card border-0 shadow-sm h-100 position-relative overflow-hidden" style="background: linear-gradient(135deg, #064e3b, #059669); color: white;">
-                    <div class="card-body p-4 position-relative z-1">
-                        <div class="bg-white bg-opacity-25 rounded-3 p-2 d-inline-block mb-3">
-                            <i class="fas fa-coins fs-4"></i>
-                        </div>
-                        <h4 class="fw-bold mb-1">Rp <?php echo number_format($stats['revenue'], 0, ',', '.'); ?></h4>
-                        <div class="small fw-bold text-white-50 text-uppercase">Omzet Lunas</div>
+        <div class="row g-4 mb-4">
+            <div class="col-md-6 col-xl-3" data-aos="fade-up" data-aos-delay="100">
+                <div class="card stat-card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #064e3b, #059669); color: white;">
+                    <div class="card-body p-4">
+                        <span class="stat-icon mb-3"><i class="fas fa-coins"></i></span>
+                        <h2 class="stat-number mb-1">Rp <?php echo number_format($stats['revenue'], 0, ',', '.'); ?></h2>
+                        <div class="stat-label">Omzet Lunas</div>
                     </div>
-                    <i class="fas fa-coins position-absolute opacity-10 float-icon" style="font-size: 7rem; right: -20px; bottom: -20px;"></i>
+                    <i class="fas fa-coins stat-float"></i>
                 </div>
             </div>
-            <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
-                <div class="card border-0 shadow-sm h-100 position-relative overflow-hidden" style="background: linear-gradient(135deg, #0e7490, #06b6d4); color: white;">
-                    <div class="card-body p-4 position-relative z-1">
-                        <div class="bg-white bg-opacity-25 rounded-3 p-2 d-inline-block mb-3">
-                            <i class="fas fa-check-circle fs-4"></i>
-                        </div>
-                        <h2 class="fw-bold mb-1 counter-value" data-target="<?php echo $stats['paid_orders']; ?>">0</h2>
-                        <div class="small fw-bold text-white-50 text-uppercase">Pesanan Lunas</div>
+            <div class="col-md-6 col-xl-3" data-aos="fade-up" data-aos-delay="200">
+                <div class="card stat-card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #0e7490, #06b6d4); color: white;">
+                    <div class="card-body p-4">
+                        <span class="stat-icon mb-3"><i class="fas fa-check-circle"></i></span>
+                        <h2 class="stat-number mb-1 counter-value" data-target="<?php echo $stats['paid_orders']; ?>">0</h2>
+                        <div class="stat-label">Pesanan Lunas</div>
                     </div>
-                    <i class="fas fa-check-circle position-absolute opacity-10 float-icon" style="font-size: 7rem; right: -20px; bottom: -20px; animation-delay: 1s;"></i>
+                    <i class="fas fa-check-circle stat-float"></i>
                 </div>
             </div>
-            <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
-                <div class="card border-0 shadow-sm h-100 position-relative overflow-hidden" style="background: linear-gradient(135deg, #92400e, #f59e0b); color: white;">
-                    <div class="card-body p-4 position-relative z-1">
-                        <div class="bg-white bg-opacity-25 rounded-3 p-2 d-inline-block mb-3">
-                            <i class="fas fa-hourglass-half fs-4"></i>
-                        </div>
-                        <h2 class="fw-bold mb-1 counter-value" data-target="<?php echo $stats['waiting_payment']; ?>">0</h2>
-                        <div class="small fw-bold text-white-50 text-uppercase">Menunggu Bayar</div>
+            <div class="col-md-6 col-xl-3" data-aos="fade-up" data-aos-delay="300">
+                <div class="card stat-card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #92400e, #f59e0b); color: white;">
+                    <div class="card-body p-4">
+                        <span class="stat-icon mb-3"><i class="fas fa-hourglass-half"></i></span>
+                        <h2 class="stat-number mb-1 counter-value" data-target="<?php echo $stats['waiting_payment']; ?>">0</h2>
+                        <div class="stat-label">Menunggu Bayar</div>
                     </div>
-                    <i class="fas fa-hourglass-half position-absolute opacity-10 float-icon" style="font-size: 7rem; right: -20px; bottom: -20px; animation-delay: 2s;"></i>
+                    <i class="fas fa-hourglass-half stat-float"></i>
                 </div>
             </div>
-            <div class="col-md-3" data-aos="fade-up" data-aos-delay="400">
-                <div class="card border-0 shadow-sm h-100 position-relative overflow-hidden" style="background: linear-gradient(135deg, #991b1b, #ef4444); color: white;">
-                    <div class="card-body p-4 position-relative z-1">
-                        <div class="bg-white bg-opacity-25 rounded-3 p-2 d-inline-block mb-3">
-                            <i class="fas fa-ban fs-4"></i>
-                        </div>
-                        <h2 class="fw-bold mb-1 counter-value" data-target="<?php echo $stats['failed_orders']; ?>">0</h2>
-                        <div class="small fw-bold text-white-50 text-uppercase">Gagal / Kadaluarsa</div>
+            <div class="col-md-6 col-xl-3" data-aos="fade-up" data-aos-delay="400">
+                <div class="card stat-card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #991b1b, #ef4444); color: white;">
+                    <div class="card-body p-4">
+                        <span class="stat-icon mb-3"><i class="fas fa-ban"></i></span>
+                        <h2 class="stat-number mb-1 counter-value" data-target="<?php echo $stats['failed_orders']; ?>">0</h2>
+                        <div class="stat-label">Gagal / Kadaluarsa</div>
                     </div>
-                    <i class="fas fa-ban position-absolute opacity-10 float-icon" style="font-size: 7rem; right: -20px; bottom: -20px; animation-delay: 3s;"></i>
+                    <i class="fas fa-ban stat-float"></i>
                 </div>
             </div>
         </div>
 
-        <div class="row g-4 mb-5">
+        <div class="row g-4 mb-4">
             <div class="col-lg-8">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-header bg-white py-4 px-4 border-bottom-0 d-flex justify-content-between align-items-center">

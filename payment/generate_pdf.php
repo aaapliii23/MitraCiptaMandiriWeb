@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../includes/db_config.php';
+require_once '../config/database.php';
 
 $order_number = $_GET['order'] ?? null;
 if (!$order_number) die("Order tidak ditemukan.");

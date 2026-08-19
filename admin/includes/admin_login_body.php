@@ -5,7 +5,7 @@
     <div class="login-card">
         <div class="text-center mb-4">
             <div class="d-inline-flex align-items-center justify-content-center mb-3">
-                <img src="assets/img/logo.png" alt="MCM Logo" class="brand-logo">
+                <img src="../assets/img/logo.png" alt="MCM Logo" class="brand-logo">
                 <div class="ms-2 ps-2 border-start border-2 brand-divider text-start">
                     <span class="fw-bold d-block text-dark brand-text-sm" style="font-size: 0.78rem; letter-spacing: 1px; line-height: 1.1;">MITRA CIPTA</span>
                     <span class="fw-bold d-block text-dark brand-text-sm" style="font-size: 0.78rem; letter-spacing: 1px; line-height: 1.1;">MANDIRI</span>
@@ -49,7 +49,7 @@
         </form>
 
         <div class="text-center mt-3 pt-3 border-top d-flex flex-column gap-1">
-            <a href="index.php" class="back-to-home"><i class="fas fa-arrow-left me-1"></i> Kembali ke Beranda</a>
+            <a href="../index.php" class="back-to-home"><i class="fas fa-arrow-left me-1"></i> Kembali ke Beranda</a>
             <small class="text-muted mt-1" style="font-size: 0.75rem;">&copy; <?php echo date('Y'); ?> MCM - Mitra Cipta Mandiri</small>
         </div>
     </div>

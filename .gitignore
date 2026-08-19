@@ -1,1 +1,1 @@
-includes/config_secrets.php
+config/secrets.php

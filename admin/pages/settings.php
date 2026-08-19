@@ -1,5 +1,5 @@
 <!-- SETTINGS PAGE -->
-        <div class="mb-5">
+        <div class="mb-4">
             <h2 class="fw-bold mb-1 text-dark">Konfigurasi Platform</h2>
             <p class="text-muted">Kelola identitas, kontak, dan informasi publik MCM.</p>
         </div>

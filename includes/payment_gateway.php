@@ -1,6 +1,6 @@
 <?php
-if (file_exists(__DIR__ . '/config_secrets.php')) {
-    require_once __DIR__ . '/config_secrets.php';
+if (file_exists(__DIR__ . '/../config/secrets.php')) {
+    require_once __DIR__ . '/../config/secrets.php';
 }
 
 define('MCM_MOCK_SIGNATURE_SECRET', 'mcm-mock-signature-secret');

@@ -1,6 +1,6 @@
 <?php
 require_once '../includes/auth_user.php';
-require_once '../includes/db_config.php';
+require_once '../config/database.php';
 
 $userId = (int)$_SESSION['user_id'];
 $classId = (int)($_GET['class_id'] ?? 0);
@@ -59,7 +59,7 @@ try {
             <div class="d-flex align-items-center gap-2">
                 <a href="dashboard.php" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a>
                 <a href="profile.php" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-user-cog me-1"></i>Profil</a>
-                <a href="../user/user_logout.php" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="fas fa-sign-out-alt me-1"></i>Keluar</a>
+                <a href="../auth/user_logout.php" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="fas fa-sign-out-alt me-1"></i>Keluar</a>
             </div>
         </div>
     </nav>

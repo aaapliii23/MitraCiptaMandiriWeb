@@ -4,7 +4,7 @@ if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) 
     header('Location: ../lms/dashboard.php');
     exit;
 }
-require_once '../includes/db_config.php';
+require_once '../config/database.php';
 
 $errorMessage = '';
 $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest');

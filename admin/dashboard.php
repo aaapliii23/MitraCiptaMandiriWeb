@@ -3,11 +3,11 @@ session_start();
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
-    header("Location: ../admin_login.php");
+    header("Location: ../auth/admin_login.php");
     exit;
 }
 
-require_once '../includes/db_config.php';
+require_once '../config/database.php';
 
 function getImgSrc($path) {
     if (empty($path)) return '../assets/img/logo.png';
@@ -71,10 +71,10 @@ $orders = [];
 if ($page === 'orders') {
     $search = $_GET['search'] ?? '';
     try {
-        $sql = "SELECT o.*, c.name as class_name, c.category as class_category, ex.name as examiner_name 
+        $sql = "SELECT o.*, c.name as class_name, c.category as class_category, ins.name as instructor_name 
                 FROM orders o 
                 JOIN classes c ON o.class_id = c.id
-                LEFT JOIN examiners ex ON o.examiner_id = ex.id";
+                LEFT JOIN instructors ins ON o.instructor_id = ins.id";
         
         if (!empty($search)) {
             $sql .= " WHERE o.customer_name LIKE :search 
@@ -93,7 +93,7 @@ if ($page === 'orders') {
 
 // Fetch Classes
 $classes = [];
-if ($page === 'classes' || $page === 'materials') {
+if ($page === 'classes' || $page === 'materials' || $page === 'certs') {
     try {
         $stmt = $pdo->query("SELECT * FROM classes ORDER BY created_at DESC");
         $classes = $stmt->fetchAll();
@@ -129,10 +129,26 @@ if ($page === 'instructors') {
 
 // Fetch Certifications
 $certs = [];
+$certTemplates = [];
 if ($page === 'certs') {
     try {
         $stmt = $pdo->query("SELECT * FROM certifications ORDER BY created_at DESC");
         $certs = $stmt->fetchAll();
+    } catch (PDOException $e) {}
+
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `certificate_templates` (
+          `id` int(11) NOT NULL AUTO_INCREMENT,
+          `name` varchar(150) NOT NULL,
+          `class_id` int(11) DEFAULT NULL,
+          `layout` varchar(50) NOT NULL DEFAULT 'default',
+          `bg_image` varchar(255) DEFAULT NULL,
+          `accent_color` varchar(20) DEFAULT NULL,
+          `is_default` tinyint(1) NOT NULL DEFAULT 0,
+          `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+        $certTemplates = $pdo->query("SELECT ct.*, c.name AS class_name FROM certificate_templates ct LEFT JOIN classes c ON ct.class_id = c.id ORDER BY ct.created_at DESC")->fetchAll();
     } catch (PDOException $e) {}
 }
 
@@ -162,14 +178,6 @@ if ($page === 'testimonials') {
     } catch (PDOException $e) {}
 }
 
-// Fetch Examiners
-$examiners = [];
-if ($page === 'examiners') {
-    try {
-        $examiners = $pdo->query("SELECT * FROM examiners ORDER BY created_at DESC")->fetchAll();
-    } catch (PDOException $e) {}
-}
-
 // Fetch Materials
 $materials = [];
 if ($page === 'materials') {
@@ -185,14 +193,6 @@ if ($page === 'chat') {
     $threadNumber = preg_replace('/\D+/', '', $_GET['thread'] ?? '');
     try {
         $chats = $pdo->query("SELECT * FROM chat_messages ORDER BY created_at DESC, id DESC LIMIT 500")->fetchAll();
-    } catch (PDOException $e) {}
-}
-
-// Fetch Bookings
-$bookings = [];
-if ($page === 'bookings') {
-    try {
-        $bookings = $pdo->query("SELECT * FROM bookings ORDER BY created_at DESC")->fetchAll();
     } catch (PDOException $e) {}
 }
 
@@ -215,6 +215,22 @@ if ($page === 'chatbot') {
     } catch (PDOException $e) {}
 }
 
+// Auto-create finance_transactions (rekap keuangan)
+if ($page === 'finance') {
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `finance_transactions` (
+          `id` int(11) NOT NULL AUTO_INCREMENT,
+          `type` ENUM('in','out') NOT NULL,
+          `category` varchar(50) NOT NULL,
+          `description` text DEFAULT NULL,
+          `amount` int(11) NOT NULL,
+          `transaction_date` date NOT NULL,
+          `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    } catch (PDOException $e) {}
+}
+
 
 ?>
 
@@ -227,14 +243,13 @@ if ($page === 'chatbot') {
 <?php if ($page === 'instructors') include __DIR__ . '/pages/instructors.php'; ?>
 <?php if ($page === 'certs') include __DIR__ . '/pages/certs.php'; ?>
 <?php if ($page === 'reports') include __DIR__ . '/pages/reports.php'; ?>
+<?php if ($page === 'finance') include __DIR__ . '/pages/finance.php'; ?>
 <?php if ($page === 'admins') include __DIR__ . '/pages/admins.php'; ?>
 <?php if ($page === 'settings') include __DIR__ . '/pages/settings.php'; ?>
 <?php if ($page === 'categories') include __DIR__ . '/pages/categories.php'; ?>
 <?php if ($page === 'testimonials') include __DIR__ . '/pages/testimonials.php'; ?>
-<?php if ($page === 'examiners') include __DIR__ . '/pages/examiners.php'; ?>
 <?php if ($page === 'materials') include __DIR__ . '/pages/materials.php'; ?>
 <?php if ($page === 'chat') include __DIR__ . '/pages/chat.php'; ?>
-<?php if ($page === 'bookings') include __DIR__ . '/pages/bookings.php'; ?>
 <?php if ($page === 'chatbot') include __DIR__ . '/pages/chatbot.php'; ?>
 
 <?php require __DIR__ . '/includes/modals.php'; ?>

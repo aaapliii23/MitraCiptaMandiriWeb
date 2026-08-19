@@ -7,9 +7,9 @@
 <?php include __DIR__ . '/modal_change_password.php'; ?>
 <?php include __DIR__ . '/modal_instructor.php'; ?>
 <?php include __DIR__ . '/modal_cert.php'; ?>
+<?php include __DIR__ . '/modal_cert_template.php'; ?>
 <?php include __DIR__ . '/modal_testimonial.php'; ?>
-<?php include __DIR__ . '/modal_examiner.php'; ?>
 <?php include __DIR__ . '/modal_material.php'; ?>
 <?php include __DIR__ . '/modal_quiz.php'; ?>
-<?php include __DIR__ . '/modal_booking_date.php'; ?>
 <?php include __DIR__ . '/modal_chatbot.php'; ?>
+<?php include __DIR__ . '/modal_finance.php'; ?>

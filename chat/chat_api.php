@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../includes/db_config.php';
+require_once '../config/database.php';
 require_once '../includes/whatsapp_client.php';
 
 header('Content-Type: application/json');

@@ -1,5 +1,5 @@
 <!-- TESTIMONIALS PAGE -->
-        <div class="row align-items-center mb-5 g-3" data-aos="fade-down">
+        <div class="row align-items-center mb-4 g-3" data-aos="fade-down">
             <div class="col-md-6">
                 <h2 class="fw-bold mb-1 text-dark">Testimoni</h2>
                 <p class="text-muted mb-0">Kelola ulasan peserta. Setujui sebelum ditampilkan di website.</p>
@@ -67,7 +67,7 @@
                                             <?php if ($t['status'] !== 'rejected'): ?>
                                                 <button class="btn btn-action btn-soft-warning" title="Tolak" onclick="setTestimonialStatus(<?php echo $t['id']; ?>, 'reject')"><i class="fas fa-times"></i></button>
                                             <?php endif; ?>
-                                            <button class="btn btn-action btn-soft-primary" title="Edit" onclick="editTestimonial(<?php echo htmlspecialchars(json_encode($t)); ?>)"><i class="fas fa-edit"></i></button>
+                                            <!-- <button class="btn btn-action btn-soft-primary" title="Edit" onclick="editTestimonial(<?php echo htmlspecialchars(json_encode($t)); ?>)"><i class="fas fa-edit"></i></button> -->
                                             <button class="btn btn-action btn-soft-danger" title="Hapus" onclick="deleteItem('testimonials', <?php echo $t['id']; ?>)"><i class="fas fa-trash"></i></button>
                                         </div>
                                     </td>

@@ -3,7 +3,7 @@ session_start();
 header('Content-Type: application/json');
 if (!isset($_SESSION['admin_logged_in'])) exit;
 
-require_once '../../includes/db_config.php';
+require_once '../../config/database.php';
 require_once '../../includes/whatsapp_client.php';
 
 $action = $_POST['action'] ?? '';

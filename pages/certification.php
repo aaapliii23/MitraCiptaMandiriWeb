@@ -1,5 +1,5 @@
 <?php
-require_once '../includes/db_config.php';
+require_once '../config/database.php';
 $hide_nav_items = true;
 include '../includes/header.php';
 ?>

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../includes/db_config.php';
+require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/payment_gateway.php';
 
 $orderNumber = $_GET['order'] ?? ($argv[1] ?? '');

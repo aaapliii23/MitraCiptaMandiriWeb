@@ -1,6 +1,6 @@
 <?php
-// Salin file ini menjadi includes/config_secrets.php dan isi kredensial nyata.
-// includes/config_secrets.php TIDAK di-commit ke VCS (ada di .gitignore).
+// Salin file ini menjadi config/secrets.php dan isi kredensial nyata.
+// config/secrets.php TIDAK di-commit ke VCS (ada di .gitignore).
 
 // --- Payment Gateway ---
 define('PAYMENT_MODE', 'sandbox'); // 'mock' | 'sandbox' | 'production'

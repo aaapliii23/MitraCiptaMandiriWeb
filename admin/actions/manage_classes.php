@@ -7,7 +7,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     exit;
 }
 
-require_once '../../includes/db_config.php';
+require_once '../../config/database.php';
 
 $action = $_POST['action'] ?? '';
 

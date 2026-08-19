@@ -27,7 +27,7 @@ if ($script_file !== '' && strpos($script_file, $app_root) === 0) {
 </style>
 <?php
 if (!isset($classItems)) {
-    require_once __DIR__ . '/db_config.php';
+    require_once __DIR__ . '/../config/database.php';
     try {
         $stmt = $pdo->query("SELECT * FROM classes ORDER BY id ASC");
         $classItems = $stmt->fetchAll();
@@ -86,9 +86,9 @@ if (!isset($classItems)) {
                             <a href="<?php echo $base_url; ?>lms/dashboard.php" class="btn rounded-pill fw-bold btn-premium" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: white; border: none; padding: 10px 24px; box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.4); display: inline-flex; align-items: center; justify-content: center;"><i class="fas fa-graduation-cap me-2"></i>LMS Saya</a>
                             <span class="small text-muted d-none d-lg-inline-flex align-items-center"><?php echo htmlspecialchars($_SESSION['user_name'] ?? ''); ?></span>
                         </div>
-                        <a href="<?php echo $base_url; ?>user/user_logout.php" class="btn btn-outline-secondary rounded-pill fw-bold" style="padding: 8px 20px;">Keluar</a>
+                        <a href="<?php echo $base_url; ?>auth/user_logout.php" class="btn btn-outline-secondary rounded-pill fw-bold" style="padding: 8px 20px;">Keluar</a>
                     <?php else: ?>
-                        <a href="<?php echo $base_url; ?>user/user_login.php" class="btn btn-outline-primary rounded-pill fw-bold" style="padding: 8px 22px;">Masuk</a>
+                        <a href="<?php echo $base_url; ?>auth/user_login.php" class="btn btn-outline-primary rounded-pill fw-bold" style="padding: 8px 22px;">Masuk</a>
                         <a href="<?php echo $base_url; ?>pages/programs.php" class="btn rounded-pill fw-bold btn-premium" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: white; border: none; padding: 10px 28px; box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.4); display: inline-block;">Daftar Sekarang</a>
                     <?php endif; ?>
                 </div>

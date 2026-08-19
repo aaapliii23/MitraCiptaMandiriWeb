@@ -29,6 +29,13 @@
                         <div id="galleryFilePreview" class="mt-2"></div>
                         <small class="text-muted d-block mt-1">Gunakan tombol Ctrl / Shift (Windows) atau Cmd (Mac) saat memilih file untuk memilih lebih dari 1 foto sekaligus.</small>
                     </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" name="show_on_home" id="galleryShowHome" value="1">
+                        <label class="form-check-label small fw-medium" for="galleryShowHome">
+                            <i class="fas fa-home me-1 text-primary"></i>Tampil di Slide Foto Beranda
+                        </label>
+                        <small class="text-muted d-block ms-0 mt-1">Centang agar foto kegiatan ini muncul pada slide foto halaman depan.</small>
+                    </div>
                 </div>
                 <div class="modal-footer border-top-0 px-4 pb-4">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>

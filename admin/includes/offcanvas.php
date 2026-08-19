@@ -17,10 +17,6 @@
                     <i class="fas fa-comment-dots me-3 text-primary fs-5"></i>
                     <div class="fw-bold text-dark">Testimoni</div>
                 </a>
-                <a href="?page=examiners" class="list-group-item list-group-item-action border-0 rounded-3 py-3 px-4 d-flex align-items-center bg-light mb-2">
-                    <i class="fas fa-user-check me-3 text-primary fs-5"></i>
-                    <div class="fw-bold text-dark">Penguji</div>
-                </a>
                 <a href="?page=materials" class="list-group-item list-group-item-action border-0 rounded-3 py-3 px-4 d-flex align-items-center bg-light mb-2">
                     <i class="fas fa-graduation-cap me-3 text-primary fs-5"></i>
                     <div class="fw-bold text-dark">Materi LMS</div>

@@ -1,5 +1,5 @@
 <?php
-require_once '../includes/db_config.php';
+require_once '../config/database.php';
 require_once '../includes/payment_gateway.php';
 
 $orderNumber = $_GET['order'] ?? '';

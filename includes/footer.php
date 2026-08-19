@@ -33,12 +33,17 @@
                 </div>
                 <div class="col-md-4 text-start text-md-end">
                     <h5 class="fw-bold mb-4">Hubungi Kami</h5>
-                    <p class="text-white-50 mb-1"><i class="fas fa-map-marker-alt me-2"></i>Jl. Khp Hasan Mustopa No.57, Neglasari, Kec. Cibeunying Kaler, Kota Bandung, Jawa Barat 40124</p>
+                    <p class="text-white-50 mb-1">
+                        <a href="https://www.google.com/maps/search/?api=1&query=Jl.+Khp+Hasan+Mustopa+No.57+Neglasari+Cibeunying+Kaler+Bandung" target="_blank" rel="noopener" class="text-white-50 text-decoration-none" style="line-height: 1.6;">
+                            <i class="fas fa-map-marker-alt me-2"></i>Jl. Khp Hasan Mustopa No.57, Neglasari, Kec. Cibeunying Kaler, Kota Bandung, Jawa Barat 40124
+                        </a>
+                    </p>
                     <p class="text-white-50 mb-3"><i class="fas fa-phone-alt me-2"></i> +62 857-9393-5707</p>
                     <div class="d-flex justify-content-md-end gap-3">
-                        <a href="https://www.instagram.com/lpkmitraciptamandiri?utm_source=qr&igsh=MWpjaTY3dHh0NnY3Yg==" class="text-white fs-4"><i class="fab fa-instagram"></i></a>
-                        <a href="https://www.facebook.com/p/LPK-Mitra-Cipta-Mandiri-100083627607564/" class="text-white fs-4"><i class="fab fa-facebook"></i></a>
-                        <a href="#" class="text-white fs-4"><i class="fab fa-whatsapp"></i></a>
+                        <a href="https://www.instagram.com/lpkmitraciptamandiri?utm_source=qr&igsh=MWpjaTY3dHh0NnY3Yg==" target="_blank" rel="noopener" class="text-white fs-4" title="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.facebook.com/p/LPK-Mitra-Cipta-Mandiri-100083627607564/" target="_blank" rel="noopener" class="text-white fs-4" title="Facebook"><i class="fab fa-facebook"></i></a>
+                        <a href="https://www.tiktok.com/" target="_blank" rel="noopener" class="text-white fs-4" title="TikTok"><i class="fab fa-tiktok"></i></a>
+                        <a href="#" class="text-white fs-4" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                     </div>
                 </div>
             </div>

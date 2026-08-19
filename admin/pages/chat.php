@@ -21,7 +21,7 @@ if (empty($threadNumber)) {
 }
 ?>
 <!-- CHAT PAGE -->
-        <div class="row align-items-center mb-5 g-3" data-aos="fade-down">
+        <div class="row align-items-center mb-4 g-3" data-aos="fade-down">
             <div class="col-md-6">
                 <h2 class="fw-bold mb-1 text-dark">Chat WhatsApp</h2>
                 <p class="text-muted mb-0">Pantau percakapan chatbot dan balas pertanyaan peserta.</p>

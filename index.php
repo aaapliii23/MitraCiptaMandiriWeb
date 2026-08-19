@@ -6,7 +6,7 @@ if (empty($_SESSION['csrf_token'])) {
 }
 $csrf_token = $_SESSION['csrf_token'];
 
-require_once 'includes/db_config.php';
+require_once 'config/database.php';
 
 // Fetch Gallery
 try {
@@ -60,17 +60,16 @@ foreach($classItems as $c) {
 
     <?php include 'includes/header.php'; ?>
 
-    <?php include 'partials/section_beranda.php'; ?>
-    <?php include 'partials/section_tentang.php'; ?>
-    <?php include 'partials/section_galeri.php'; ?>
-    <?php include 'partials/section_paket.php'; ?>
-    <?php include 'partials/section_testimoni.php'; ?>
-    <?php include 'partials/modal_detail.php'; ?>
-    <?php include 'partials/modal_booking.php'; ?>
-    <?php include 'partials/modal_checkout.php'; ?>
+    <?php include 'pages/partials/section_beranda.php'; ?>
+    <?php include 'pages/partials/section_tentang.php'; ?>
+    <?php include 'pages/partials/section_galeri.php'; ?>
+    <?php include 'pages/partials/section_paket.php'; ?>
+    <?php include 'pages/partials/section_testimoni.php'; ?>
+    <?php include 'pages/partials/modal_detail.php'; ?>
+    <?php include 'pages/partials/modal_checkout.php'; ?>
 
     <?php include 'includes/footer.php'; ?>
 
-    <?php include 'partials/index_scripts.php'; ?>
+    <?php include 'pages/partials/index_scripts.php'; ?>
 </body>
 </html>

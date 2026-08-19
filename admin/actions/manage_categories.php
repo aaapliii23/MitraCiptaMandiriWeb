@@ -6,7 +6,7 @@ if (!isset($_SESSION['admin_logged_in'])) {
     echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
     exit;
 }
-require_once '../../includes/db_config.php';
+require_once '../../config/database.php';
 
 // Auto-create table if missing in user DB
 try {

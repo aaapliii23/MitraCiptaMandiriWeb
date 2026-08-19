@@ -1,8 +1,16 @@
 <?php
 session_start();
 header('Content-Type: application/json');
-require_once '../includes/db_config.php';
+require_once '../config/database.php';
 require_once '../includes/payment_gateway.php';
+
+function validateFullName($name)
+{
+    if (strlen($name) < 3 || strlen($name) > 100) return false;
+    $words = preg_split('/\s+/', trim($name));
+    if (count($words) < 2) return false;
+    return preg_match('/^[\p{L}]+(?:[ -][\p{L}]+)*$/u', $name) === 1;
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
@@ -15,7 +23,7 @@ if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', 
 }
 
 $classId = (int)($_POST['class_id'] ?? 0);
-$examinerId = (int)($_POST['examiner_id'] ?? 0);
+$instructorId = (int)($_POST['instructor_id'] ?? 0);
 $customerName = trim($_POST['customer_name'] ?? '');
 $customerPhone = trim($_POST['customer_phone'] ?? '');
 $customerEmail = trim($_POST['customer_email'] ?? '');
@@ -27,11 +35,11 @@ if (!$classId || $customerName === '' || $customerPhone === '' || $customerEmail
     exit;
 }
 
-if ($examinerId > 0) {
-    $stmt = $pdo->prepare("SELECT id FROM examiners WHERE id = ?");
-    $stmt->execute([$examinerId]);
+if ($instructorId > 0) {
+    $stmt = $pdo->prepare("SELECT id FROM instructors WHERE id = ?");
+    $stmt->execute([$instructorId]);
     if (!$stmt->fetch()) {
-        $examinerId = 0;
+        $instructorId = 0;
     }
 }
 
@@ -60,8 +68,41 @@ $orderNumber = 'ORD-' . strtoupper(uniqid()) . '-' . time();
 $userId = isset($_SESSION['user_logged_in']) ? (int)($_SESSION['user_id'] ?? 0) : null;
 if ($userId < 1) $userId = null;
 
-$stmt = $pdo->prepare("INSERT INTO orders (order_number, user_id, customer_name, customer_phone, customer_email, customer_address, customer_institution, class_id, examiner_id, amount, status, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid')");
-$stmt->execute([$orderNumber, $userId, $customerName, $digits, $customerEmail, $customerAddress, $customerInstitution ?: '-', $classId, $examinerId ?: null, $amount]);
+if (!$userId) {
+    $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? LIMIT 1");
+    $stmt->execute([$customerEmail]);
+    $existingUserId = (int)$stmt->fetchColumn();
+    if ($existingUserId) {
+        $userId = $existingUserId;
+    } else {
+        $password = $_POST['customer_password'] ?? '';
+        $password2 = $_POST['customer_password2'] ?? '';
+        if (!validateFullName($customerName)) {
+            echo json_encode(['status' => 'error', 'message' => 'Nama harus Nama Asli: minimal 2 kata, hanya huruf, spasi, dan tanda hubung.']);
+            exit;
+        }
+        if (strlen($password) < 6) {
+            echo json_encode(['status' => 'error', 'message' => 'Password akun LMS minimal 6 karakter.']);
+            exit;
+        }
+        if ($password !== $password2) {
+            echo json_encode(['status' => 'error', 'message' => 'Konfirmasi password tidak cocok.']);
+            exit;
+        }
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare("INSERT INTO users (name, email, phone, password) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$customerName, $customerEmail, $digits, $hash]);
+        $userId = (int)$pdo->lastInsertId();
+        session_regenerate_id(true);
+        $_SESSION['user_logged_in'] = true;
+        $_SESSION['user_id'] = $userId;
+        $_SESSION['user_name'] = $customerName;
+        $_SESSION['user_email'] = $customerEmail;
+    }
+}
+
+$stmt = $pdo->prepare("INSERT INTO orders (order_number, user_id, customer_name, customer_phone, customer_email, customer_address, customer_institution, class_id, instructor_id, amount, status, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid')");
+$stmt->execute([$orderNumber, $userId, $customerName, $digits, $customerEmail, $customerAddress, $customerInstitution ?: '-', $classId, $instructorId ?: null, $amount]);
 $orderId = (int)$pdo->lastInsertId();
 
 $res = pg_create_transaction($pdo, ['id' => $orderId, 'order_number' => $orderNumber, 'amount' => $amount], $class);

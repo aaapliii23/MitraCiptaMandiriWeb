@@ -1,5 +1,5 @@
 <?php
-require_once '../includes/db_config.php';
+require_once '../config/database.php';
 $hide_nav_items = true;
 include '../includes/header.php';
 
@@ -11,17 +11,6 @@ try {
     // Extract unique categories
     $categories = array_unique(array_column($classes, 'category'));
 } catch(PDOException $e) { $classes = []; $categories = []; }
-
-$examinerId = (int)($_GET['examiner'] ?? 0);
-$selectedExaminer = null;
-if ($examinerId > 0) {
-    try {
-        $stmt = $pdo->prepare("SELECT * FROM examiners WHERE id = ?");
-        $stmt->execute([$examinerId]);
-        $selectedExaminer = $stmt->fetch() ?: null;
-    } catch (PDOException $e) {}
-}
-$examinerParam = $examinerId > 0 ? '&examiner=' . $examinerId : '';
 ?>
 
 <!-- All Programs Full Page -->
@@ -51,15 +40,6 @@ $examinerParam = $examinerId > 0 ? '&examiner=' . $examinerId : '';
         </div>
 
         <!-- Search & Filter Section -->
-        <?php if ($selectedExaminer): ?>
-            <div class="mb-4 p-3 rounded-4 bg-success bg-opacity-10 border border-success border-opacity-25 d-flex flex-wrap align-items-center justify-content-between gap-2">
-                <div>
-                    <small class="text-muted d-block">Penguji asesor terpilih</small>
-                    <span class="fw-bold text-dark"><i class="fas fa-user-check text-success me-2"></i><?php echo htmlspecialchars($selectedExaminer['name']); ?></span>
-                </div>
-                <a href="examiners.php" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">Ganti Penguji</a>
-            </div>
-        <?php endif; ?>
         <div class="row g-3 mb-5 align-items-center">
             <div class="col-lg-5">
                 <div class="position-relative">
@@ -128,7 +108,7 @@ $examinerParam = $examinerId > 0 ? '&examiner=' . $examinerId : '';
                             <?php endforeach; ?>
                         </div>
 
-                        <a href="class_detail.php?id=<?php echo $c['id']; ?>&from=programs<?php echo $examinerParam; ?>" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm" 
+                        <a href="class_detail.php?id=<?php echo $c['id']; ?>&from=programs" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm" 
                                 style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); border: none;">
                             Daftar Sekarang
                         </a>

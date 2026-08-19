@@ -1,5 +1,6 @@
 <!-- REPORTS PAGE -->
-        <div class="row align-items-center mb-5 g-3 no-print" data-aos="fade-down">
+<?php $reportYear = (int)($_GET['year'] ?? date('Y')); ?>
+        <div class="row align-items-center mb-4 g-3 no-print" data-aos="fade-down">
             <div class="col-md-6">
                 <h2 class="fw-bold mb-1 text-dark">Laporan & Analitik</h2>
                 <p class="text-muted mb-0">Visualisasi data pendaftaran dan pertumbuhan MCM.</p>
@@ -8,7 +9,10 @@
                 <select id="reportYear" class="form-select rounded-pill border-primary text-primary fw-bold" style="width: auto; height: 42px;" onchange="updateReportYear(this.value)">
                     <?php 
                     $currentYear = date('Y');
-                    for($i = $currentYear; $i >= $currentYear - 5; $i--) echo "<option value='$i'>Tahun $i</option>";
+                    for($i = $currentYear; $i >= $currentYear - 5; $i--) {
+                        $sel = ($i == $reportYear) ? 'selected' : '';
+                        echo "<option value='$i' $sel>Tahun $i</option>";
+                    }
                     ?>
                 </select>
                 <button class="btn btn-soft-primary px-4 rounded-pill" onclick="window.print()" style="height: 42px;">
@@ -147,7 +151,61 @@
             </div>
         </div>
 
-        <div class="row g-4 mb-5">
+        <div class="row g-4 mb-4">
+            <?php
+            $finIn = 0; $finOut = 0;
+            try {
+                $stmt = $pdo->prepare("SELECT type, SUM(amount) AS total FROM finance_transactions WHERE YEAR(transaction_date) = ? GROUP BY type");
+                $stmt->execute([$reportYear]);
+                foreach ($stmt->fetchAll() as $fr) {
+                    if ($fr['type'] === 'in') $finIn = (int)$fr['total'];
+                    else $finOut = (int)$fr['total'];
+                }
+            } catch (PDOException $e) {}
+            ?>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-success bg-opacity-10 p-2 rounded-3 me-3"><i class="fas fa-arrow-down text-success"></i></div>
+                        <h6 class="text-muted small text-uppercase fw-bold mb-0">Uang Masuk</h6>
+                    </div>
+                    <h3 class="fw-bold text-success mb-1">Rp <?php echo number_format($finIn, 0, ',', '.'); ?></h3>
+                    <p class="small text-muted mb-0">Rekap keuangan tahun <?php echo $reportYear; ?></p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-danger bg-opacity-10 p-2 rounded-3 me-3"><i class="fas fa-arrow-up text-danger"></i></div>
+                        <h6 class="text-muted small text-uppercase fw-bold mb-0">Uang Keluar</h6>
+                    </div>
+                    <h3 class="fw-bold text-danger mb-1">Rp <?php echo number_format($finOut, 0, ',', '.'); ?></h3>
+                    <p class="small text-muted mb-0">Termasuk sewa & operasional</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary bg-opacity-10 p-2 rounded-3 me-3"><i class="fas fa-wallet text-primary"></i></div>
+                        <h6 class="text-muted small text-uppercase fw-bold mb-0">Saldo Keuangan</h6>
+                    </div>
+                    <h3 class="fw-bold text-primary mb-1">Rp <?php echo number_format($finIn - $finOut, 0, ',', '.'); ?></h3>
+                    <p class="small text-muted mb-0">Uang masuk &minus; uang keluar</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-warning bg-opacity-10 p-2 rounded-3 me-3"><i class="fas fa-chart-pie text-warning"></i></div>
+                        <h6 class="text-muted small text-uppercase fw-bold mb-0">Rasio Keluar / Masuk</h6>
+                    </div>
+                    <h3 class="fw-bold text-warning mb-1"><?php echo $finIn > 0 ? round(($finOut / $finIn) * 100) . '%' : '0%'; ?></h3>
+                    <p class="small text-muted mb-0">Proporsi pengeluaran</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
             <div class="col-lg-8">
                 <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
                     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -272,11 +330,8 @@
             }
 
             function updateReportYear(year) {
-                initReportsChart('monthly', year);
-                // Switch button active state to Monthly if changing year
-                const monthlyBtn = document.querySelector('.chart-toggle:nth-child(2)');
-                if (monthlyBtn) updateChart('monthly', monthlyBtn);
+                location.href = '?page=reports&year=' + year;
             }
 
-            document.addEventListener('DOMContentLoaded', () => initReportsChart('weekly'));
+            document.addEventListener('DOMContentLoaded', () => initReportsChart('weekly', <?php echo $reportYear; ?>));
         </script>

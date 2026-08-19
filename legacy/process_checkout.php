@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'includes/db_config.php';
+require_once '../config/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $classId = $_POST['class_id'] ?? '';
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message .= "- Alamat: *" . $customerAddress . "*\n\n";
         
         $message .= "*BUKTI DIGITAL*\n";
-        $message .= "Lihat Bukti Pendaftaran: " . (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]" . dirname($_SERVER['PHP_SELF']) . "/generate_pdf.php?order=" . $orderNumber . "\n\n";
+        $message .= "Lihat Bukti Pendaftaran: " . (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]" . dirname(dirname($_SERVER['PHP_SELF'])) . "/payment/generate_pdf.php?order=" . $orderNumber . "\n\n";
         
         $message .= "Terima kasih. Mohon segera diproses pendaftaran saya.";
         
@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['last_wa_link'] = $waLink;
         
         // Redirect to PDF Generation Page with auto-print
-        header("Location: generate_pdf.php?order=" . $orderNumber . "&print=true");
+        header("Location: ../payment/generate_pdf.php?order=" . $orderNumber . "&print=true");
         exit;
     } else {
         die("Failed to create order. Please try again.");

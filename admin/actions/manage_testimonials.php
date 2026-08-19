@@ -6,17 +6,20 @@ if (!isset($_SESSION['admin_logged_in'])) {
     echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
     exit;
 }
-require_once '../../includes/db_config.php';
+require_once '../../config/database.php';
 
 // Auto-create table if missing in user DB
 try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS `testimonials` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
+      `user_id` int(11) DEFAULT NULL,
       `name` varchar(100) NOT NULL,
       `rating` tinyint(1) NOT NULL DEFAULT 5,
       `review` text NOT NULL,
       `image` varchar(255) DEFAULT NULL,
       `class_id` int(11) DEFAULT NULL,
+      `graduation_year` varchar(10) DEFAULT NULL,
+      `job` varchar(150) DEFAULT NULL,
       `status` ENUM('pending','approved','rejected') DEFAULT 'pending',
       `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`id`)
@@ -31,6 +34,8 @@ if ($action === 'update') {
     $rating = (int)($_POST['rating'] ?? 5);
     $review = trim($_POST['review'] ?? '');
     $status = $_POST['status'] ?? 'pending';
+    $graduationYear = trim($_POST['graduation_year'] ?? '');
+    $job = trim($_POST['job'] ?? '');
 
     if ($rating < 1 || $rating > 5) $rating = 5;
     if (!in_array($status, ['pending', 'approved', 'rejected'])) $status = 'pending';
@@ -41,8 +46,8 @@ if ($action === 'update') {
     }
 
     try {
-        $stmt = $pdo->prepare("UPDATE testimonials SET name = ?, rating = ?, review = ?, status = ? WHERE id = ?");
-        $stmt->execute([$name, $rating, $review, $status, $id]);
+        $stmt = $pdo->prepare("UPDATE testimonials SET name = ?, rating = ?, review = ?, status = ?, graduation_year = ?, job = ? WHERE id = ?");
+        $stmt->execute([$name, $rating, $review, $status, $graduationYear ?: null, $job ?: null, $id]);
         echo json_encode(['status' => 'success', 'message' => 'Testimoni berhasil diperbarui']);
     } catch (PDOException $e) {
         echo json_encode(['status' => 'error', 'message' => 'Gagal memperbarui testimoni']);

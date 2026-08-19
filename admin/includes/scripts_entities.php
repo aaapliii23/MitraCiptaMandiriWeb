@@ -29,6 +29,7 @@ function resetGalleryForm() {
     document.getElementById('galleryImageInput').required = true;
     document.getElementById('galleryImageInput').setAttribute('multiple', 'multiple');
     document.getElementById('gallerySubmitBtn').textContent = 'Upload Foto';
+    document.getElementById('galleryShowHome').checked = false;
     const previewContainer = document.getElementById('galleryFilePreview');
     if (previewContainer) previewContainer.innerHTML = '';
 }
@@ -43,6 +44,7 @@ function editGallery(data) {
     document.getElementById('galleryImageInput').removeAttribute('multiple');
     document.getElementById('galleryModalTitle').textContent = 'Edit Foto';
     document.getElementById('gallerySubmitBtn').textContent = 'Simpan Perubahan';
+    document.getElementById('galleryShowHome').checked = parseInt(data.show_on_home || 0) === 1;
     new bootstrap.Modal(document.getElementById('galleryModal')).show();
 }
 
@@ -63,6 +65,28 @@ function editCategory(data) {
     document.getElementById('categoryModalTitle').textContent = 'Edit Kategori';
     document.getElementById('categorySubmitBtn').textContent = 'Simpan Perubahan';
     new bootstrap.Modal(document.getElementById('categoryModal')).show();
+}
+
+function resetCertTemplateForm() {
+    const form = document.getElementById('certTemplateForm');
+    if (form) form.reset();
+    document.getElementById('certTemplateAction').value = 'create';
+    document.getElementById('certTemplateId').value = '';
+    document.getElementById('certTemplateColor').value = '#1e40af';
+    document.getElementById('certTemplateModalTitle').textContent = 'Tambah Template Sertifikat';
+}
+
+function editCertTemplate(data) {
+    resetCertTemplateForm();
+    document.getElementById('certTemplateAction').value = 'update';
+    document.getElementById('certTemplateId').value = data.id;
+    document.getElementById('certTemplateName').value = data.name;
+    document.getElementById('certTemplateClass').value = data.class_id || '';
+    document.getElementById('certTemplateLayout').value = data.layout || 'default';
+    if (data.accent_color) document.getElementById('certTemplateColor').value = data.accent_color;
+    document.getElementById('certTemplateDefault').checked = parseInt(data.is_default) === 1;
+    document.getElementById('certTemplateModalTitle').textContent = 'Edit Template Sertifikat';
+    new bootstrap.Modal(document.getElementById('certTemplateModal')).show();
 }
 
 function resetAdminForm() {
@@ -105,6 +129,8 @@ function editTestimonial(data) {
     document.getElementById('testimonialName').value = data.name;
     document.getElementById('testimonialRating').value = data.rating;
     document.getElementById('testimonialReview').value = data.review;
+    document.getElementById('testimonialGraduationYear').value = data.graduation_year || '';
+    document.getElementById('testimonialJob').value = data.job || '';
     document.getElementById('testimonialStatus').value = data.status;
     document.getElementById('testimonialModalTitle').textContent = 'Edit Testimoni';
     new bootstrap.Modal(document.getElementById('testimonialModal')).show();
@@ -122,26 +148,6 @@ function setTestimonialStatus(id, action) {
             if (data.status === 'success') window.location.reload();
         });
     });
-}
-
-function resetExaminerForm() {
-    const form = document.getElementById('examinerForm');
-    if (form) form.reset();
-    document.getElementById('examinerAction').value = 'create';
-    document.getElementById('examinerId').value = '';
-    document.getElementById('examinerModalTitle').textContent = 'Tambah Penguji';
-}
-
-function editExaminer(data) {
-    resetExaminerForm();
-    document.getElementById('examinerAction').value = 'update';
-    document.getElementById('examinerId').value = data.id;
-    document.getElementById('examinerName').value = data.name;
-    document.getElementById('examinerSpec').value = data.specialization;
-    document.getElementById('examinerBio').value = data.bio || '';
-    document.getElementById('examinerCerts').value = data.certifications || '';
-    document.getElementById('examinerModalTitle').textContent = 'Edit Penguji';
-    new bootstrap.Modal(document.getElementById('examinerModal')).show();
 }
 
 function materialTypeChanged() {
@@ -219,12 +225,58 @@ function editChatbotIntent(data) {
     new bootstrap.Modal(document.getElementById('chatbotIntentModal')).show();
 }
 
+function resetFinanceForm() {
+    const form = document.getElementById('financeForm');
+    if (form) form.reset();
+    document.getElementById('financeAction').value = 'create';
+    document.getElementById('financeId').value = '';
+    document.getElementById('financeModalTitle').textContent = 'Tambah Transaksi';
+    document.getElementById('financeSubmitBtn').textContent = 'Simpan Transaksi';
+    financeTypeChanged('in');
+    document.getElementById('financeDate').value = new Date().toISOString().slice(0, 10);
+}
+
+function financeTypeChanged(type) {
+    const cat = document.getElementById('financeCategory');
+    const keep = cat.value;
+    const options = type === 'in'
+        ? { 'pemasukan_kursus': 'Pemasukan Kursus', 'sewa': 'Sewa / Rental', 'lainnya': 'Lainnya' }
+        : { 'sewa': 'Sewa / Rental', 'gaji': 'Gaji', 'operasional': 'Operasional', 'lainnya': 'Lainnya' };
+    cat.innerHTML = Object.entries(options).map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+    if (options[keep]) cat.value = keep;
+}
+
+function editFinance(data) {
+    resetFinanceForm();
+    document.getElementById('financeAction').value = 'update';
+    document.getElementById('financeId').value = data.id;
+    document.getElementById('financeTypeIn').checked = data.type === 'in';
+    document.getElementById('financeTypeOut').checked = data.type === 'out';
+    financeTypeChanged(data.type);
+    document.getElementById('financeCategory').value = data.category;
+    document.getElementById('financeAmount').value = data.amount;
+    document.getElementById('financeDate').value = data.transaction_date;
+    document.getElementById('financeDescription').value = data.description || '';
+    document.getElementById('financeModalTitle').textContent = 'Edit Transaksi';
+    document.getElementById('financeSubmitBtn').textContent = 'Simpan Perubahan';
+    new bootstrap.Modal(document.getElementById('financeModal')).show();
+}
+
+function quizTypeChanged(type) {
+    const mcq = document.getElementById('quizMcqFields');
+    const essay = document.getElementById('quizEssayFields');
+    if (mcq) mcq.style.display = type === 'essay' ? 'none' : '';
+    if (essay) essay.style.display = type === 'essay' ? '' : 'none';
+}
+
 function resetQuizQuestionForm() {
     const form = document.getElementById('quizForm');
     if (form) form.reset();
     document.getElementById('quizAction').value = 'create';
     document.getElementById('quizId').value = '';
     document.getElementById('quizQuestion').value = '';
+    document.getElementById('quizType').value = 'mcq';
+    quizTypeChanged('mcq');
     document.getElementById('quizFormTitle').textContent = 'Tambah Soal';
     document.getElementById('quizSubmitBtn').textContent = 'Simpan Soal';
 }
@@ -233,12 +285,16 @@ function editQuizQuestion(data) {
     resetQuizQuestionForm();
     document.getElementById('quizAction').value = 'update';
     document.getElementById('quizId').value = data.id;
+    const type = data.question_type === 'essay' ? 'essay' : 'mcq';
+    document.getElementById('quizType').value = type;
+    quizTypeChanged(type);
     document.getElementById('quizQuestion').value = data.question;
-    document.getElementById('quizOptionA').value = data.option_a;
-    document.getElementById('quizOptionB').value = data.option_b;
-    document.getElementById('quizOptionC').value = data.option_c;
-    document.getElementById('quizOptionD').value = data.option_d;
-    document.getElementById('quizCorrect').value = data.correct_option;
+    document.getElementById('quizOptionA').value = data.option_a || '';
+    document.getElementById('quizOptionB').value = data.option_b || '';
+    document.getElementById('quizOptionC').value = data.option_c || '';
+    document.getElementById('quizOptionD').value = data.option_d || '';
+    document.getElementById('quizCorrect').value = data.correct_option || 'a';
+    document.getElementById('quizEssayAnswer').value = data.essay_answer || '';
     document.getElementById('quizSort').value = data.sort_order;
     document.getElementById('quizFormTitle').textContent = 'Edit Soal';
     document.getElementById('quizSubmitBtn').textContent = 'Simpan Perubahan';
@@ -254,13 +310,14 @@ function renderQuizList(questions) {
     }
     let html = '';
     questions.forEach(q => {
+        const isEssay = q.question_type === 'essay';
         html += `<div class="d-flex justify-content-between align-items-start border rounded-3 p-3 mb-2">
             <div>
                 <div class="fw-semibold text-dark mb-1">${q.question}</div>
                 <small class="text-muted">
-                    A. ${q.option_a} &nbsp; B. ${q.option_b} &nbsp; C. ${q.option_c} &nbsp; D. ${q.option_d}
+                    ${isEssay ? '<i class="fas fa-align-left me-1"></i>Soal Essay' : 'A. ' + q.option_a + ' &nbsp; B. ' + q.option_b + ' &nbsp; C. ' + q.option_c + ' &nbsp; D. ' + q.option_d}
                 </small>
-                <div class="mt-1"><span class="badge bg-success bg-opacity-10 text-success small">Kunci: ${q.correct_option.toUpperCase()}</span></div>
+                <div class="mt-1"><span class="badge ${isEssay ? 'bg-info bg-opacity-10 text-info' : 'bg-success bg-opacity-10 text-success'} small">${isEssay ? 'Essay' : 'Kunci: ' + (q.correct_option || '').toUpperCase()}</span></div>
             </div>
             <div class="d-inline-flex gap-2 flex-shrink-0">
                 <button class="btn btn-action btn-soft-primary" title="Edit" onclick="editQuizQuestion(${JSON.stringify(q).replace(/</g, '\\u003c')})"><i class="fas fa-edit"></i></button>
@@ -357,11 +414,11 @@ function deleteItem(type, id) {
                 case 'orders': endpoint = adminBase + '/actions/manage_orders.php'; break;
                 case 'categories': endpoint = adminBase + '/actions/manage_categories.php'; break;
                 case 'testimonials': endpoint = adminBase + '/actions/manage_testimonials.php'; break;
-                case 'examiners': endpoint = adminBase + '/actions/manage_examiners.php'; break;
                 case 'materials': endpoint = adminBase + '/actions/manage_materials.php'; break;
-                case 'bookings': endpoint = adminBase + '/actions/manage_bookings.php'; break;
                 case 'chatbot': endpoint = adminBase + '/actions/manage_chatbot.php'; break;
                 case 'quiz': endpoint = adminBase + '/actions/manage_quiz.php'; break;
+                case 'finance': endpoint = adminBase + '/actions/manage_finance.php'; break;
+                case 'cert_templates': endpoint = adminBase + '/actions/manage_cert_templates.php'; break;
             }
             
             const formData = new FormData();

@@ -3,16 +3,17 @@ session_start();
 header('Content-Type: application/json');
 if (!isset($_SESSION['admin_logged_in'])) exit;
 
-require_once '../../includes/db_config.php';
+require_once '../../config/database.php';
 
 $action = $_POST['action'] ?? '';
 
 if ($action === 'create') {
     $name = trim($_POST['name'] ?? '');
+    $category = trim($_POST['category'] ?? '');
     $spec = trim($_POST['specialization'] ?? '');
     
-    if (empty($name) || empty($spec)) {
-        echo json_encode(['status' => 'error', 'message' => 'Nama dan Spesialisasi wajib diisi.']);
+    if (empty($name) || empty($category) || empty($spec)) {
+        echo json_encode(['status' => 'error', 'message' => 'Nama, Kategori, dan Spesialisasi wajib diisi.']);
         exit;
     }
 
@@ -22,8 +23,8 @@ if ($action === 'create') {
         if (in_array($ext, $allowed)) {
             $dest = 'uploads/instructors/' . uniqid() . '.' . $ext;
             if (move_uploaded_file($_FILES['image']['tmp_name'], '../../' . $dest)) {
-                $stmt = $pdo->prepare("INSERT INTO instructors (name, specialization, image) VALUES (?, ?, ?)");
-                $stmt->execute([$name, $spec, $dest]);
+                $stmt = $pdo->prepare("INSERT INTO instructors (name, category, specialization, image) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$name, $category, $spec, $dest]);
                 echo json_encode(['status' => 'success', 'message' => 'Instruktur berhasil ditambahkan.']);
                 exit;
             }
@@ -31,15 +32,16 @@ if ($action === 'create') {
     }
     
     // Default fallback if no image or upload fails
-    $stmt = $pdo->prepare("INSERT INTO instructors (name, specialization, image) VALUES (?, ?, ?)");
-    $stmt->execute([$name, $spec, 'assets/img/logo.png']);
+    $stmt = $pdo->prepare("INSERT INTO instructors (name, category, specialization, image) VALUES (?, ?, ?, ?)");
+    $stmt->execute([$name, $category, $spec, 'assets/img/logo.png']);
     echo json_encode(['status' => 'success', 'message' => 'Instruktur berhasil ditambahkan (tanpa foto).']);
 } elseif ($action === 'update') {
     $id = $_POST['id'] ?? null;
     $name = trim($_POST['name'] ?? '');
+    $category = trim($_POST['category'] ?? '');
     $spec = trim($_POST['specialization'] ?? '');
 
-    if (!$id || empty($name) || empty($spec)) {
+    if (!$id || empty($name) || empty($category) || empty($spec)) {
         echo json_encode(['status' => 'error', 'message' => 'Data tidak lengkap.']);
         exit;
     }
@@ -57,11 +59,11 @@ if ($action === 'create') {
     }
 
     if ($image) {
-        $stmt = $pdo->prepare("UPDATE instructors SET name = ?, specialization = ?, image = ? WHERE id = ?");
-        $stmt->execute([$name, $spec, $image, $id]);
+        $stmt = $pdo->prepare("UPDATE instructors SET name = ?, category = ?, specialization = ?, image = ? WHERE id = ?");
+        $stmt->execute([$name, $category, $spec, $image, $id]);
     } else {
-        $stmt = $pdo->prepare("UPDATE instructors SET name = ?, specialization = ? WHERE id = ?");
-        $stmt->execute([$name, $spec, $id]);
+        $stmt = $pdo->prepare("UPDATE instructors SET name = ?, category = ?, specialization = ? WHERE id = ?");
+        $stmt->execute([$name, $category, $spec, $id]);
     }
     echo json_encode(['status' => 'success', 'message' => 'Data instruktur diperbarui.']);
 } elseif ($action === 'delete') {

@@ -1,5 +1,5 @@
 <?php
-require_once '../includes/db_config.php';
+require_once '../config/database.php';
 
 $orderNumber = $_GET['order'] ?? '';
 $stmt = $pdo->prepare("SELECT o.*, c.name AS class_name FROM orders o LEFT JOIN classes c ON o.class_id = c.id WHERE o.order_number = ?");

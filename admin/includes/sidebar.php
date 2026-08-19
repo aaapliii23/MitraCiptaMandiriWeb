@@ -1,4 +1,19 @@
 <!-- Sidebar -->
+<?php
+$groupMap = ['dashboard' => 'utama', 'classes' => 'program', 'categories' => 'program', 'instructors' => 'program', 'materials' => 'program', 'gallery' => 'program', 'certs' => 'program', 'orders' => 'penjualan', 'finance' => 'penjualan', 'testimonials' => 'penjualan', 'chat' => 'penjualan', 'chatbot' => 'penjualan', 'reports' => 'laporan', 'admins' => 'sistem', 'settings' => 'sistem'];
+$activeGroup = $groupMap[$page] ?? 'utama';
+function mcm_group($id, $label, $key, $activeGroup) {
+    $open = $activeGroup === $key ? ' show' : '';
+    $expanded = $activeGroup === $key ? 'true' : 'false';
+    return '<button class="sidebar-group-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#grp-' . $id . '" aria-expanded="' . $expanded . '">'
+        . '<span>' . $label . '</span><i class="fas fa-chevron-down"></i></button>'
+        . '<div class="collapse' . $open . '" id="grp-' . $id . '">';
+}
+function mcm_item($page, $target, $icon, $label) {
+    return '<li class="nav-item mb-1"><a href="?page=' . $target . '" class="nav-link ' . ($page === $target ? 'active' : '') . '">'
+        . '<i class="' . $icon . '"></i> ' . $label . '</a></li>';
+}
+?>
 <div class="sidebar d-flex flex-column shadow-lg" id="sidebar">
     <div class="p-4 d-flex align-items-center justify-content-between border-bottom border-secondary border-opacity-25">
         <a class="text-decoration-none d-flex align-items-center" href="#">
@@ -19,88 +34,43 @@
         <div class="badge bg-warning text-dark mt-1 px-3 rounded-pill">Superadmin</div>
     </div>
     
-    <ul class="nav flex-column mb-auto px-2">
-        <li class="nav-item mb-1">
-            <a href="?page=dashboard" class="nav-link <?php echo $page == 'dashboard' ? 'active' : ''; ?>">
-                <i class="fas fa-th-large"></i> Dashboard
-            </a>
-        </li>
-        <li class="nav-item mb-1">
-            <a href="?page=orders" class="nav-link <?php echo $page == 'orders' ? 'active' : ''; ?>">
-                <i class="fas fa-shopping-cart"></i> Pesanan & Transaksi
-            </a>
-        </li>
-        <li class="nav-item mb-1">
-            <a href="?page=bookings" class="nav-link <?php echo $page == 'bookings' ? 'active' : ''; ?>">
-                <i class="fas fa-calendar-check"></i> Form Booking / Kontak
-            </a>
-        </li>
-        <li class="nav-item mb-1">
-            <a href="?page=classes" class="nav-link <?php echo $page == 'classes' ? 'active' : ''; ?>">
-                <i class="fas fa-book-open"></i> Paket Pelatihan
-            </a>
-        </li>
-        <li class="nav-item mb-1">
-            <a href="?page=gallery" class="nav-link <?php echo $page == 'gallery' ? 'active' : ''; ?>">
-                <i class="fas fa-camera-retro"></i> Galeri Foto
-            </a>
-        </li>
-        <li class="nav-item mb-1">
-            <a href="?page=instructors" class="nav-link <?php echo $page == 'instructors' ? 'active' : ''; ?>">
-                <i class="fas fa-user-tie"></i> Instruktur & Penguji
-            </a>
-        </li>
-        <li class="nav-item mb-1">
-            <a href="?page=certs" class="nav-link <?php echo $page == 'certs' ? 'active' : ''; ?>">
-                <i class="fas fa-certificate"></i> Legalitas & Sertifikasi
-            </a>
-        </li>
-        <li class="nav-item mb-1">
-            <a href="?page=reports" class="nav-link <?php echo $page == 'reports' ? 'active' : ''; ?>">
-                <i class="fas fa-chart-line"></i> Laporan & Rekap
-            </a>
-        </li>
-        <li class="nav-item mb-1">
-            <a href="?page=categories" class="nav-link <?php echo $page == 'categories' ? 'active' : ''; ?>">
-                <i class="fas fa-tags"></i> Kategori Pelatihan
-            </a>
-        </li>
-        <li class="nav-item mb-1">
-            <a href="?page=testimonials" class="nav-link <?php echo $page == 'testimonials' ? 'active' : ''; ?>">
-                <i class="fas fa-comment-dots"></i> Testimoni
-            </a>
-        </li>
-        <li class="nav-item mb-1">
-            <a href="?page=examiners" class="nav-link <?php echo $page == 'examiners' ? 'active' : ''; ?>">
-                <i class="fas fa-user-check"></i> Penguji
-            </a>
-        </li>
-        <li class="nav-item mb-1">
-            <a href="?page=materials" class="nav-link <?php echo $page == 'materials' ? 'active' : ''; ?>">
-                <i class="fas fa-graduation-cap"></i> Materi LMS
-            </a>
-        </li>
-        <li class="nav-item mb-1">
-            <a href="?page=chat" class="nav-link <?php echo $page == 'chat' ? 'active' : ''; ?>">
-                <i class="fab fa-whatsapp"></i> Chat WhatsApp
-            </a>
-        </li>
-        <li class="nav-item mb-1">
-            <a href="?page=chatbot" class="nav-link <?php echo $page == 'chatbot' ? 'active' : ''; ?>">
-                <i class="fas fa-robot"></i> Chatbot & Balasan
-            </a>
-        </li>
-        <li class="nav-item mb-1">
-            <a href="?page=admins" class="nav-link <?php echo $page == 'admins' ? 'active' : ''; ?>">
-                <i class="fas fa-users-cog"></i> Kelola Admin
-            </a>
-        </li>
-        <li class="nav-item mb-1">
-            <a href="?page=settings" class="nav-link <?php echo $page == 'settings' ? 'active' : ''; ?>">
-                <i class="fas fa-cog"></i> Pengaturan Web
-            </a>
-        </li>
-    </ul>
+    <div class="sidebar-nav mb-auto">
+        <?php echo mcm_group('utama', 'Utama', 'utama', $activeGroup); ?>
+        <ul class="nav flex-column px-2">
+            <?php echo mcm_item($page, 'dashboard', 'fas fa-th-large', 'Dashboard'); ?>
+        </ul>
+        </div>
+        <?php echo mcm_group('program', 'Program &amp; Konten', 'program', $activeGroup); ?>
+        <ul class="nav flex-column px-2">
+            <?php echo mcm_item($page, 'classes', 'fas fa-book-open', 'Paket Pelatihan'); ?>
+            <?php echo mcm_item($page, 'categories', 'fas fa-tags', 'Kategori Pelatihan'); ?>
+            <?php echo mcm_item($page, 'instructors', 'fas fa-user-tie', 'Instruktur &amp; Penguji'); ?>
+            <?php echo mcm_item($page, 'materials', 'fas fa-graduation-cap', 'Materi LMS'); ?>
+            <?php echo mcm_item($page, 'gallery', 'fas fa-camera-retro', 'Galeri Foto'); ?>
+            <?php echo mcm_item($page, 'certs', 'fas fa-certificate', 'Legalitas &amp; Sertifikasi'); ?>
+        </ul>
+        </div>
+        <?php echo mcm_group('penjualan', 'Penjualan &amp; Pelanggan', 'penjualan', $activeGroup); ?>
+        <ul class="nav flex-column px-2">
+            <?php echo mcm_item($page, 'orders', 'fas fa-shopping-cart', 'Pesanan &amp; Transaksi'); ?>
+            <?php echo mcm_item($page, 'finance', 'fas fa-money-bill-wave', 'Keuangan'); ?>
+            <?php echo mcm_item($page, 'testimonials', 'fas fa-comment-dots', 'Testimoni'); ?>
+            <?php echo mcm_item($page, 'chat', 'fab fa-whatsapp', 'Chat WhatsApp'); ?>
+            <?php echo mcm_item($page, 'chatbot', 'fas fa-robot', 'Chatbot &amp; Balasan'); ?>
+        </ul>
+        </div>
+        <?php echo mcm_group('laporan', 'Laporan', 'laporan', $activeGroup); ?>
+        <ul class="nav flex-column px-2">
+            <?php echo mcm_item($page, 'reports', 'fas fa-chart-line', 'Laporan &amp; Rekap'); ?>
+        </ul>
+        </div>
+        <?php echo mcm_group('sistem', 'Sistem', 'sistem', $activeGroup); ?>
+        <ul class="nav flex-column px-2">
+            <?php echo mcm_item($page, 'admins', 'fas fa-users-cog', 'Kelola Admin'); ?>
+            <?php echo mcm_item($page, 'settings', 'fas fa-cog', 'Pengaturan Web'); ?>
+        </ul>
+        </div>
+    </div>
     
     <div class="p-4 mt-auto border-top border-secondary border-opacity-25">
         <a href="logout.php" class="btn btn-danger w-100 fw-bold shadow-sm" style="background: rgba(220, 53, 69, 0.9);"><i class="fas fa-power-off me-2"></i>Keluar Sistem</a>

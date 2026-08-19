@@ -1,5 +1,5 @@
 <!-- ADMINS PAGE -->
-        <div class="row align-items-center mb-5 g-3">
+        <div class="row align-items-center mb-4 g-3">
             <div class="col-md-6">
                 <h2 class="fw-bold mb-1 text-dark">Manajemen Tim</h2>
                 <p class="text-muted mb-0">Kelola akses dan otoritas admin platform MCM.</p>

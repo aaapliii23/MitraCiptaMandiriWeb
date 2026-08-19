@@ -1,6 +1,6 @@
 <?php
-if (file_exists(__DIR__ . '/config_secrets.php')) {
-    require_once __DIR__ . '/config_secrets.php';
+if (file_exists(__DIR__ . '/../config/secrets.php')) {
+    require_once __DIR__ . '/../config/secrets.php';
 }
 
 function wa_log_inbound($pdo, $fromNumber, $message, $matchedIntent = null, $userId = null) {

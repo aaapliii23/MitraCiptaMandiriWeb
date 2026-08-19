@@ -42,19 +42,6 @@ function reinitBootstrapModals() {
             }
         });
     }
-
-    // Re-attach booking date modal events
-    const bookingDateModal = document.getElementById('bookingDateModal');
-    if (bookingDateModal && !bookingDateModal.dataset.bound) {
-        bookingDateModal.dataset.bound = 'true';
-        bookingDateModal.addEventListener('show.bs.modal', function(event) {
-            const button = event.relatedTarget;
-            if (!button) return;
-            document.getElementById('modalBookingId').value = button.getAttribute('data-id');
-            document.getElementById('modalBookingName').textContent = button.getAttribute('data-name');
-            document.getElementById('modalBookingDate').value = button.getAttribute('data-date') || '';
-        });
-    }
 }
 
 function showModal(id) {

@@ -1,6 +1,6 @@
 <?php
 require_once '../includes/auth_user.php';
-require_once '../includes/db_config.php';
+require_once '../config/database.php';
 
 $userId = (int)$_SESSION['user_id'];
 $classId = (int)($_GET['class_id'] ?? 0);
@@ -19,6 +19,18 @@ try {
       `issued_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`id`),
       UNIQUE KEY `uq_cert_user_class` (`user_id`, `class_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `certificate_templates` (
+      `id` int(11) NOT NULL AUTO_INCREMENT,
+      `name` varchar(150) NOT NULL,
+      `class_id` int(11) DEFAULT NULL,
+      `layout` varchar(50) NOT NULL DEFAULT 'default',
+      `bg_image` varchar(255) DEFAULT NULL,
+      `accent_color` varchar(20) DEFAULT NULL,
+      `is_default` tinyint(1) NOT NULL DEFAULT 0,
+      `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
     $stmt = $pdo->prepare("SELECT * FROM enrollments WHERE user_id = ? AND class_id = ? LIMIT 1");
@@ -65,9 +77,19 @@ try {
             }
         }
 
-        $stmt = $pdo->prepare("SELECT name, email FROM users WHERE id = ? LIMIT 1");
-        $stmt->execute([$userId]);
-        $user = $stmt->fetch();
+$stmt = $pdo->prepare("SELECT name, email FROM users WHERE id = ? LIMIT 1");
+    $stmt->execute([$userId]);
+    $user = $stmt->fetch();
+
+    $template = ['layout' => 'default', 'accent_color' => '#1e40af', 'bg_image' => null];
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM certificate_templates WHERE class_id = ? OR (class_id IS NULL AND is_default = 1) ORDER BY (class_id IS NOT NULL) DESC, is_default DESC LIMIT 1");
+        $stmt->execute([$classId]);
+        $tmpl = $stmt->fetch();
+        if ($tmpl) {
+            $template = ['layout' => $tmpl['layout'], 'accent_color' => $tmpl['accent_color'] ?: '#1e40af', 'bg_image' => $tmpl['bg_image']];
+        }
+    } catch (PDOException $e) {}
     }
 } catch (PDOException $e) {
     header('Location: dashboard.php');
@@ -84,15 +106,25 @@ try {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css">
     <style>
+        :root {
+            --cert-accent: <?php echo htmlspecialchars($template['accent_color']); ?>;
+        }
+        body {
+            background-color: <?php echo !empty($template['bg_image']) ? 'transparent' : ''; ?>;
+            background-image: <?php echo !empty($template['bg_image']) ? "url('" . htmlspecialchars(asset_src($template['bg_image'])) . "')" : 'none'; ?>;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
         .certificate {
             background: #ffffff;
-            border: 12px double #1e40af;
+            border: 12px double var(--cert-accent);
             border-radius: 12px;
             padding: 48px 56px;
             color: #0f172a;
         }
         .cert-ribbon {
-            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            background: linear-gradient(135deg, var(--cert-accent), <?php echo htmlspecialchars($template['accent_color']); ?>cc);
             color: #fff;
             display: inline-block;
             padding: 10px 34px;
@@ -104,15 +136,58 @@ try {
         .cert-name {
             font-size: 2.4rem;
             font-weight: 800;
-            color: #1e3a8a;
+            color: var(--cert-accent);
         }
         .cert-seal {
             color: #f59e0b;
         }
+        .certificate.layout-elegant {
+            border: 2px solid var(--cert-accent);
+            border-radius: 0;
+            padding: 44px 52px;
+            position: relative;
+        }
+        .certificate.layout-elegant::before {
+            content: '';
+            position: absolute;
+            inset: 10px;
+            border: 1px solid var(--cert-accent);
+            border-radius: 4px;
+            pointer-events: none;
+        }
+        .certificate.layout-modern {
+            border: none;
+            border-top: 6px solid var(--cert-accent);
+            border-bottom: 6px solid var(--cert-accent);
+            border-radius: 4px;
+            padding: 48px 56px;
+            box-shadow: 0 0 0 2px var(--cert-accent), 0 10px 40px rgba(0,0,0,0.12);
+        }
+        .certificate.layout-modern .cert-ribbon {
+            border-radius: 0;
+            padding: 12px 44px;
+        }
+        .certificate.layout-premium {
+            border: 8px solid;
+            border-image: linear-gradient(135deg, var(--cert-accent), #d4af37) 1;
+            border-radius: 2px;
+            padding: 48px 56px;
+            background: #fffdf5;
+        }
+        .certificate.layout-premium .cert-ribbon {
+            background: linear-gradient(135deg, #d4af37, #b45309);
+            border-radius: 0;
+        }
+        .certificate.layout-premium .cert-seal {
+            color: #d4af37;
+        }
         @media print {
             body { background: #fff !important; }
             .no-print { display: none !important; }
-            .certificate { border: 12px double #1e40af; box-shadow: none !important; }
+            .certificate { border: 12px double var(--cert-accent); box-shadow: none !important; }
+            .certificate.layout-elegant { border: 2px solid var(--cert-accent); }
+            .certificate.layout-modern { border: none; border-top: 6px solid var(--cert-accent); border-bottom: 6px solid var(--cert-accent); }
+            .certificate.layout-premium { border: 8px solid var(--cert-accent); }
         }
     </style>
 </head>
@@ -136,7 +211,7 @@ try {
                 <button onclick="window.print()" class="btn btn-primary rounded-pill fw-bold px-4"><i class="fas fa-print me-2"></i>Cetak / Simpan PDF</button>
             </div>
             <div class="container" style="max-width: 980px;">
-                <div class="certificate shadow-lg">
+                <div class="certificate shadow-lg layout-<?php echo htmlspecialchars($template['layout']); ?>">
                     <div class="text-center">
                         <img src="../assets/img/logo.png" alt="MCM Logo" style="height: 90px;">
                         <div class="fw-bold mt-2 mb-1" style="letter-spacing: 3px; font-size: 1.15rem;">MITRA CIPTA MANDIRI</div>
@@ -148,7 +223,7 @@ try {
                         <p class="text-muted small mt-1 mb-0"><?php echo htmlspecialchars($user['email']); ?></p>
                         <hr style="width: 55%; margin: 28px auto; border: 1px solid #e2e8f0;">
                         <p class="lead fw-medium px-3">Atas kelulusannya pada program pelatihan</p>
-                        <h4 class="fw-bold mb-0" style="color: #1e40af;"><?php echo htmlspecialchars($class['name']); ?></h4>
+                        <h4 class="fw-bold mb-0" style="color: var(--cert-accent);"><?php echo htmlspecialchars($class['name']); ?></h4>
                         <p class="text-muted small mt-2 mb-0"><?php echo htmlspecialchars($class['category']); ?></p>
                         <p class="mt-4 px-md-5 text-muted small">Peserta telah menyelesaikan seluruh materi pelatihan dan dinyatakan LULUS sesuai standar kompetensi yang ditetapkan.</p>
                         <div class="row mt-5 align-items-end">

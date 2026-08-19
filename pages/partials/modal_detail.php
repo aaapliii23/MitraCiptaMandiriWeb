@@ -151,8 +151,8 @@
                                 <h3 class="fw-bold mb-2">Daftar Sekarang</h3>
                                 <p class="text-muted mb-4">Amankan kursi Anda sekarang dan mulai perjalanan karir profesional bersama MCM.</p>
                                 
-                                <button type="button" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-lg mb-3" id="btnLanjutBooking" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); border: none; font-size: 1.1rem;">
-                                    Mulai Isi Pendaftaran
+                                <button type="button" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-lg mb-3" id="btnLanjutCheckout" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); border: none; font-size: 1.1rem;">
+                                    Daftar & Bayar
                                 </button>
                                 
                                 <hr class="my-4">

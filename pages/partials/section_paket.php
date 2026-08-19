@@ -1,7 +1,6 @@
     <!-- Paket Pelatihan (Swiper Slider) -->
     <section id="paket" class="section-padding bg-light">
         <div class="container">
-            <?php $examinerParam = (int)($_GET['examiner'] ?? 0) > 0 ? '&examiner=' . (int)$_GET['examiner'] : ''; ?>
             <div class="section-title mb-5" data-aos="fade-up">
                 <h2 class="fw-bold display-6 mb-3 text-center">Pilihan <span class="text-secondary">Paket Pelatihan</span></h2>
                 <p class="text-secondary text-center">Pilih paket yang paling sesuai dengan kebutuhan Anda</p>
@@ -41,7 +40,7 @@
                                     </div>
 
                                         <div class="pt-2 mt-auto">
-                                        <a href="pages/class_detail.php?id=<?php echo $c['id']; ?>&from=landing<?php echo $examinerParam; ?>" class="btn btn-primary btn-premium w-100 py-3 rounded-pill fw-bold shadow-sm" 
+                                        <a href="pages/class_detail.php?id=<?php echo $c['id']; ?>&from=landing" class="btn btn-primary btn-premium w-100 py-3 rounded-pill fw-bold shadow-sm" 
                                                 style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); border: none; font-size: 0.9rem;">
                                             Daftar Sekarang
                                         </a>

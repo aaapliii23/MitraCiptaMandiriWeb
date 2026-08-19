@@ -1,6 +1,6 @@
 <?php
 require_once '../includes/auth_user.php';
-require_once '../includes/db_config.php';
+require_once '../config/database.php';
 
 header('Content-Type: application/json');
 
@@ -69,16 +69,45 @@ try {
     $correct = 0;
     $total = count($questions);
     $submitted = [];
-    foreach ($answers as $qid => $opt) {
-        $opt = strtolower(trim((string)$opt));
-        if (in_array($opt, ['a', 'b', 'c', 'd'])) {
-            $submitted[(int)$qid] = $opt;
+    $essayAnswers = [];
+    foreach ($answers as $qid => $val) {
+        $qid = (int)$qid;
+        if (!$qid) continue;
+        $q = null;
+        foreach ($questions as $qq) { if ((int)$qq['id'] === $qid) { $q = $qq; break; } }
+        if (!$q) continue;
+        if ($q['question_type'] === 'essay') {
+            $essayAnswers[$qid] = trim((string)$val);
+        } else {
+            $opt = strtolower(trim((string)$val));
+            if (in_array($opt, ['a', 'b', 'c', 'd'])) {
+                $submitted[$qid] = $opt;
+            }
         }
     }
 
     foreach ($questions as $q) {
         $qid = (int)$q['id'];
-        if (isset($submitted[$qid]) && $submitted[$qid] === $q['correct_option']) {
+        if ($q['question_type'] === 'essay') {
+            $answer = isset($essayAnswers[$qid]) ? mb_strtolower($essayAnswers[$qid]) : '';
+            if ($answer === '') continue;
+            $reference = mb_strtolower(trim($q['essay_answer'] ?? ''));
+            if ($reference === '') {
+                $correct++;
+                continue;
+            }
+            $keywords = preg_split('/[\s,.;:!?()\-]+/', $reference);
+            $keywords = array_filter($keywords, function ($k) { return mb_strlen($k) >= 4; });
+            if (empty($keywords)) {
+                $correct++;
+            } else {
+                $matched = 0;
+                foreach ($keywords as $k) {
+                    if (strpos($answer, $k) !== false) $matched++;
+                }
+                if ($matched >= ceil(count($keywords) / 2)) $correct++;
+            }
+        } elseif (isset($submitted[$qid]) && $submitted[$qid] === $q['correct_option']) {
             $correct++;
         }
     }
