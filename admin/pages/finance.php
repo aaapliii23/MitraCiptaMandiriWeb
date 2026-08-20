@@ -1,6 +1,17 @@
 <!-- FINANCE PAGE -->
 <?php
 $finYear = isset($_GET['fin_year']) ? preg_replace('/[^0-9]/', '', $_GET['fin_year']) : date('Y');
+$rp = (($_GET['rp'] ?? 'keseluruhan') === 'kategori') ? 'kategori' : 'keseluruhan';
+$rpcat = trim($_GET['rpcat'] ?? '');
+if (!function_exists('rp_link')) {
+    function rp_link($rpVal, $rpcatVal = null) {
+        $q = $_GET;
+        $q['rp'] = $rpVal;
+        unset($q['rpcat']);
+        if ($rpcatVal !== null && $rpcatVal !== '') $q['rpcat'] = $rpcatVal;
+        return '?' . http_build_query($q);
+    }
+}
 $finRows = [];
 $totalIn = $totalOut = 0;
 try {
@@ -17,14 +28,6 @@ try {
     }
 } catch (PDOException $e) {}
 $balance = $totalIn - $totalOut;
-
-$catRecap = [];
-foreach ($finRows as $tr) {
-    $key = $tr['type'] . '|' . $tr['category'];
-    if (!isset($catRecap[$key])) $catRecap[$key] = ['type' => $tr['type'], 'category' => $tr['category'], 'total' => 0];
-    $catRecap[$key]['total'] += (int)$tr['amount'];
-}
-usort($catRecap, function($a, $b) { return strcmp($a['type'], $b['type']) ?: $b['total'] <=> $a['total']; });
 ?>
         <div class="row align-items-center mb-4 g-3 no-print" data-aos="fade-down">
             <div class="col-md-6">
@@ -32,7 +35,7 @@ usort($catRecap, function($a, $b) { return strcmp($a['type'], $b['type']) ?: $b[
                 <p class="text-muted mb-0">Rekap uang masuk & uang keluar, termasuk pemasukan sewa/rental.</p>
             </div>
             <div class="col-md-6 text-md-end d-flex justify-content-md-end gap-2 align-items-center">
-                <select id="financeYear" class="form-select rounded-pill border-primary text-primary fw-bold" style="width: auto; height: 42px;" onchange="location.href='?page=finance&fin_year=' + this.value">
+                <select id="financeYear" class="form-select rounded-pill border-primary text-primary fw-bold" style="width: auto; height: 42px;" onchange="location.href='?page=finance&fin_year=' + this.value + '&rp=<?php echo $rp; ?>&rpcat=<?php echo urlencode($rpcat); ?>'">
                     <option value="all">Semua Tahun</option>
                     <?php
                     $finYears = $pdo->query("SELECT DISTINCT YEAR(transaction_date) AS y FROM finance_transactions ORDER BY y DESC")->fetchAll();
@@ -44,12 +47,19 @@ usort($catRecap, function($a, $b) { return strcmp($a['type'], $b['type']) ?: $b[
                     }
                     ?>
                 </select>
+                <div class="dropdown">
+                    <button class="btn btn-soft-primary px-3 rounded-pill dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="height: 42px;">
+                        <i class="fas fa-<?php echo $rp === 'kategori' ? 'layer-group' : 'chart-line'; ?> me-2"></i>
+                        <?php echo $rp === 'kategori' ? 'Rekap Per Kategori' : 'Rekap Keseluruhan'; ?>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3">
+                        <li><a class="dropdown-item <?php echo $rp === 'keseluruhan' ? 'active' : ''; ?>" href="<?php echo rp_link('keseluruhan'); ?>"><i class="fas fa-chart-line me-2 text-primary"></i>Rekap Keseluruhan</a></li>
+                        <li><a class="dropdown-item <?php echo $rp === 'kategori' ? 'active' : ''; ?>" href="<?php echo rp_link('kategori'); ?>"><i class="fas fa-layer-group me-2 text-primary"></i>Rekap Per Kategori</a></li>
+                    </ul>
+                </div>
                 <button class="btn btn-primary px-4 shadow-sm rounded-pill" onclick="resetFinanceForm(); showModal('financeModal');">
                     <i class="fas fa-plus me-2"></i>Tambah Transaksi
                 </button>
-                <a class="btn btn-soft-primary px-4 rounded-pill" href="finance_report_print.php?year=<?php echo htmlspecialchars($finYear); ?>" target="_blank" style="height: 42px; text-decoration: none;">
-                    <i class="fas fa-print me-2"></i>Cetak
-                </a>
             </div>
         </div>
 
@@ -83,30 +93,10 @@ usort($catRecap, function($a, $b) { return strcmp($a['type'], $b['type']) ?: $b[
             </div>
         </div>
 
+        <?php $rpYear = $finYear; include __DIR__ . '/../includes/partials/rekap_panel.php'; ?>
+
         <div class="row g-4 mb-4">
-            <div class="col-lg-4">
-                <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white">
-                    <h6 class="text-muted small text-uppercase fw-bold mb-3">Rekap per Kategori</h6>
-                    <?php if (empty($catRecap)): ?>
-                        <div class="text-center text-muted py-4 small">Belum ada transaksi.</div>
-                    <?php else: ?>
-                        <?php foreach ($catRecap as $cr): ?>
-                            <?php $pct = max(1, round(($cr['total'] / max(($cr['type'] === 'in' ? $totalIn : $totalOut), 1)) * 100)); ?>
-                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                <div>
-                                    <span class="badge <?php echo $cr['type'] === 'in' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger'; ?> me-2"><?php echo $cr['type'] === 'in' ? 'Masuk' : 'Keluar'; ?></span>
-                                    <span class="small fw-bold text-dark"><?php echo ucwords(str_replace('_', ' ', $cr['category'])); ?></span>
-                                </div>
-                                <span class="small fw-bold">Rp <?php echo number_format($cr['total'], 0, ',', '.'); ?></span>
-                            </div>
-                            <div class="progress mb-3" style="height: 5px;">
-                                <div class="progress-bar <?php echo $cr['type'] === 'in' ? 'bg-success' : 'bg-danger'; ?>" style="width: <?php echo $pct; ?>%"></div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-            </div>
-            <div class="col-lg-8">
+            <div class="col-12">
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                     <div class="card-body p-0">
                         <div class="table-responsive">

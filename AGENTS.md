@@ -7,16 +7,16 @@ Aplikasi PHP 8 (prosedural, tanpa framework), MySQL via PDO, tanpa composer/buil
 - Import `database/schema.sql` ke MySQL; `config/database.php` terhubung ke db `mcm_db` (user `root`, password `password`) — ubah di file itu jika DB Anda berbeda.
 - **`database/schema.sql` sudah dilengkapi** (tabel `instructors`, `certifications`, `chatbot_intents`, `certificates`, dan seed-nya kini ada di schema dan DB; sebelum di-update, kode memakainya tapi tabel belum ada sehingga fitur terkait gagal). Tabel `class_categories` dan kolom `classes.start_date` sudah ada; DB lama harus di-upgrade manual (`ALTER TABLE classes ADD COLUMN start_date DATE`). CRUD kelas (admin `?page=classes`) **wajib** punya `start_date`.
 - Tabel baru `certificates`, `certificate_templates`, `finance_transactions`, dan `chatbot_intents` di-auto-create `CREATE TABLE IF NOT EXISTS` dari kode; database/schema.sql tetap sumber otoritatif untuk instalasi baru.
-- Admin default di-seed di schema: `admin` / `admin` (hash bcrypt, diverifikasi via `password_verify`). DB dev yang terpasang juga punya `superadmin` / `AdminMCM2026` (dibuat manual, tidak ada di schema).
-- **`config/secrets.php` di-gitignore dan opsional.** `includes/payment_gateway.php`, `includes/whatsapp_client.php`, `tools/send_chatbot.php` memakainya via `if (file_exists(...)) require_once` — jika tidak ada, kode tetap jalan dengan default mock (PAYMENT_MODE, token WA kosong). Salin dari `config/secrets.example.php` untuk integrasi nyata.
+- Admin default di-seed di schema: `admin` / `admin` dan `superadmin` / `AdminMCM2026` (hash bcrypt, diverifikasi via `password_verify`).
+- **`config/secrets.php` di-gitignore dan opsional** (salin dari `config/secrets.example.php` untuk integrasi nyata). Default mock ada di `includes/config_secrets.php` (`PAYMENT_MODE='mock'`, `WA_ACCESS_TOKEN`/`WA_PHONE_NUMBER_ID` kosong, `WA_VERIFY_TOKEN` = `mcm_wa_verify_token`). `includes/payment_gateway.php`, `includes/whatsapp_client.php`, `tools/send_chatbot.php` memuat `config/secrets.php` via `if (file_exists(...)) require_once` — jika tidak ada, kode tetap jalan dengan default mock.
 
 ## Auth & admin
 
 - Auth admin memakai `$_SESSION['admin_logged_in']`; setiap skrip `admin_*` menjaga endpointnya di bagian atas. Login/logout ditangani `auth/admin_login.php`/`admin/logout.php`.
 - Semua endpoint `admin_manage_*.php` adalah handler JSON (`header('Content-Type: application/json')`, `$_POST['action']` = create/update/delete) yang dipanggil dari dashboard.
 - `admin_dashboard.php` adalah UI admin satu halaman yang digerakkan `?page=`, berisi modal dan JS inline yang memanggil endpoint `admin_manage_*`. Jika belum login ia redirect ke `auth/admin_login.php`.
-- `admin_save_settings.php` hanyalah stub (tidak ada tabel `settings`) — selalu mengembalikan sukses.
-- Halaman admin: `?page=dashboard` (termasuk **rekap pembayaran**: omzet lunas, lunas, menunggu bayar, gagal/kadaluarsa dari `orders`), `orders`, `chatbot` (kelola intent/balasan otomatis), `chat`, `classes`, `gallery`, `instructors` (wajib kategori), `certs` (termasuk **template sertifikat** per kelas), `finance` (rekap uang masuk/keluar incl. sewa + cetak laporan via `admin/finance_report_print.php?year=`), `reports`, `admins`, `settings`, `categories`, `testimonials`, `materials` (termasuk kelola soal quiz **PG + Essay**).
+- `admin/actions/save_settings.php` hanyalah stub (tidak ada tabel `settings`) — selalu mengembalikan sukses.
+- Halaman admin: `?page=dashboard` (termasuk **rekap pembayaran**: omzet lunas, lunas, menunggu bayar, gagal/kadaluarsa dari `orders`), `orders`, `chatbot` (kelola intent/balasan otomatis), `chat`, `classes`, `gallery`, `instructors` (wajib kategori), `certs` (termasuk **template sertifikat** per kelas), `finance` (rekap uang masuk/keluar incl. sewa + cetak laporan via `admin/finance_report_print.php?year=`), `reports` (cetak via `admin/reports_print.php?year=`), `users` (daftar peserta terdaftar, read-only), `admins`, `settings`, `categories`, `testimonials`, `materials` (termasuk kelola soal quiz **PG + Essay**).
 
 ## Alur & jebakan penting
 

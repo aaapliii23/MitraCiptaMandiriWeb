@@ -140,4 +140,8 @@
             .card { border-radius: 1rem; }
             .table thead { display: none; } /* Hide headers on very small mobile if card fallback is used, but for now we keep table-responsive */
         }
+
+        /* Dropdown Cetak: toolbar AOS meninggalkan transform (stacking context) sehingga dropdown tertutup kartu di bawahnya */
+        .main-content [data-aos="fade-down"] { position: relative; z-index: 1050; }
+        .main-content .dropdown-menu { z-index: 1060; max-height: calc(100vh - 140px); overflow-y: auto; }
 </style>

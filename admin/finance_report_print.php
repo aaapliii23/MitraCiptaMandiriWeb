@@ -8,18 +8,19 @@ if (!isset($_SESSION['admin_logged_in'])) {
 require_once '../config/database.php';
 
 $year = isset($_GET['year']) ? preg_replace('/[^0-9]|^0+/', '', $_GET['year']) : date('Y');
+$mode = (isset($_GET['mode']) && $_GET['mode'] === 'kategori') ? 'kategori' : 'menyeluruh';
+$rpcat = trim($_GET['cat'] ?? '');
+$periodLabel = ($year === '' || $year === 'all') ? 'Semua Periode' : 'Tahun ' . $year;
 
 $rows = [];
 $totalIn = $totalOut = 0;
 try {
     if ($year === '' || $year === 'all') {
         $rows = $pdo->query("SELECT * FROM finance_transactions ORDER BY transaction_date ASC, id ASC")->fetchAll();
-        $periodLabel = 'Semua Periode';
     } else {
         $stmt = $pdo->prepare("SELECT * FROM finance_transactions WHERE YEAR(transaction_date) = ? ORDER BY transaction_date ASC, id ASC");
         $stmt->execute([$year]);
         $rows = $stmt->fetchAll();
-        $periodLabel = 'Tahun ' . $year;
     }
     foreach ($rows as $tr) {
         if ($tr['type'] === 'in') $totalIn += (int)$tr['amount'];
@@ -28,28 +29,49 @@ try {
 } catch (PDOException $e) {}
 $balance = $totalIn - $totalOut;
 
-$catRecap = [];
+$periodRecap = [];
+$months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 foreach ($rows as $tr) {
-    $key = $tr['type'] . '|' . $tr['category'];
-    if (!isset($catRecap[$key])) $catRecap[$key] = ['type' => $tr['type'], 'category' => $tr['category'], 'total' => 0];
-    $catRecap[$key]['total'] += (int)$tr['amount'];
+    $ts = strtotime($tr['transaction_date']);
+    if ($year === '' || $year === 'all') {
+        $key = date('Y', $ts);
+        $label = 'Tahun ' . $key;
+    } else {
+        $key = date('Y-m', $ts);
+        $label = $months[(int)date('n', $ts) - 1] . ' ' . date('Y', $ts);
+    }
+    if (!isset($periodRecap[$key])) $periodRecap[$key] = ['label' => $label, 'in' => 0, 'out' => 0];
+    if ($tr['type'] === 'in') $periodRecap[$key]['in'] += (int)$tr['amount'];
+    else $periodRecap[$key]['out'] += (int)$tr['amount'];
 }
-usort($catRecap, function($a, $b) { return strcmp($a['type'], $b['type']) ?: $b['total'] <=> $a['total']; });
+ksort($periodRecap);
 
-$categoryLabels = [
-    'pemasukan_kursus' => 'Pemasukan Kursus',
-    'sewa' => 'Sewa',
-    'gaji' => 'Gaji',
-    'operasional' => 'Operasional',
-    'lainnya' => 'Lainnya',
-];
+$catRows = [];
+$catTotOrders = $catTotOmzet = 0;
+$catLabel = '';
+try {
+    $sql = "SELECT c.category, COUNT(o.id) AS total_orders, SUM(o.amount) AS omzet
+            FROM orders o JOIN classes c ON o.class_id = c.id
+            WHERE o.payment_status = 'paid'";
+    $args = [];
+    if ($year !== '' && $year !== 'all') { $sql .= " AND YEAR(o.created_at) = ?"; $args[] = $year; }
+    if ($rpcat !== '') { $sql .= " AND c.category = ?"; $args[] = $rpcat; $catLabel = $rpcat; }
+    $sql .= " GROUP BY c.category ORDER BY omzet DESC";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($args);
+    $catRows = $stmt->fetchAll();
+    foreach ($catRows as $cr) {
+        $catTotOrders += (int)$cr['total_orders'];
+        $catTotOmzet += (int)$cr['omzet'];
+    }
+} catch (PDOException $e) {}
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Keuangan - Mitra Cipta Mandiri</title>
+    <title><?php echo $mode === 'kategori' ? 'Laporan Rekap Omzet per Kategori' : 'Laporan Keuangan'; ?> - Mitra Cipta Mandiri</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -92,7 +114,7 @@ $categoryLabels = [
                 </div>
             </div>
             <div class="text-end small">
-                <div class="fw-bold">LAPORAN KEUANGAN</div>
+                <div class="fw-bold"><?php echo $mode === 'kategori' ? 'REKAP OMZET PER KATEGORI' : 'LAPORAN KEUANGAN'; ?></div>
                 <div class="opacity-75"><?php echo htmlspecialchars($periodLabel); ?></div>
                 <div class="opacity-75">Dicetak: <?php echo date('d F Y'); ?></div>
             </div>
@@ -100,28 +122,64 @@ $categoryLabels = [
 
         <div class="report-body">
             <div class="kop text-center mb-4">
-                <h4 class="fw-bold mb-1">LAPORAN REKAP KEUANGAN</h4>
-                <span class="text-muted small">Periode: <?php echo htmlspecialchars($periodLabel); ?></span>
+                <h4 class="fw-bold mb-1"><?php echo $mode === 'kategori' ? 'REKAP OMZET PER KATEGORI PELATIHAN' : 'LAPORAN REKAP KEUANGAN MENYELURUH'; ?></h4>
+                <span class="text-muted small">Periode: <?php echo htmlspecialchars($periodLabel); ?><?php echo $catLabel !== '' ? ' | Kategori: ' . htmlspecialchars($catLabel) : ''; ?></span>
             </div>
 
-            <table class="table align-middle mb-4">
+            <?php if ($mode === 'kategori'): ?>
+            <table class="table align-middle mb-0">
                 <thead>
                     <tr>
-                        <th>Kategori</th>
-                        <th class="text-end">Uang Masuk</th>
-                        <th class="text-end">Uang Keluar</th>
+                        <th>Kategori Pelatihan</th>
+                        <th class="text-end">Jumlah Pesanan</th>
+                        <th class="text-end">Omzet</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($catRecap as $cr): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $cr['category']))); ?></td>
-                            <td class="text-end"><?php echo $cr['type'] === 'in' ? 'Rp ' . number_format($cr['total'], 0, ',', '.') : '-'; ?></td>
-                            <td class="text-end"><?php echo $cr['type'] === 'out' ? 'Rp ' . number_format($cr['total'], 0, ',', '.') : '-'; ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    <?php if (empty($catRecap)): ?>
-                        <tr><td colspan="3" class="text-center text-muted py-4">Belum ada transaksi pada periode ini.</td></tr>
+                    <?php if (empty($catRows)): ?>
+                        <tr><td colspan="3" class="text-center text-muted py-4">Belum ada omzet pada periode ini.</td></tr>
+                    <?php else: ?>
+                        <?php foreach ($catRows as $cr): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($cr['category']); ?></td>
+                                <td class="text-end"><?php echo number_format($cr['total_orders'], 0, ',', '.'); ?> pesanan</td>
+                                <td class="text-end fw-bold">Rp <?php echo number_format($cr['omzet'], 0, ',', '.'); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+                <?php if (!empty($catRows)): ?>
+                <tfoot>
+                    <tr class="table-light fw-bold">
+                        <td>TOTAL</td>
+                        <td class="text-end"><?php echo number_format($catTotOrders, 0, ',', '.'); ?> pesanan</td>
+                        <td class="text-end">Rp <?php echo number_format($catTotOmzet, 0, ',', '.'); ?></td>
+                    </tr>
+                </tfoot>
+                <?php endif; ?>
+            </table>
+            <?php else: ?>
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Periode</th>
+                        <th class="text-end">Uang Masuk</th>
+                        <th class="text-end">Uang Keluar</th>
+                        <th class="text-end">Saldo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($periodRecap)): ?>
+                        <tr><td colspan="4" class="text-center text-muted py-4">Belum ada transaksi pada periode ini.</td></tr>
+                    <?php else: ?>
+                        <?php $running = 0; foreach ($periodRecap as $pr): $running += $pr['in'] - $pr['out']; ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($pr['label']); ?></td>
+                                <td class="text-end">Rp <?php echo number_format($pr['in'], 0, ',', '.'); ?></td>
+                                <td class="text-end">Rp <?php echo number_format($pr['out'], 0, ',', '.'); ?></td>
+                                <td class="text-end">Rp <?php echo number_format($running, 0, ',', '.'); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
                     <?php endif; ?>
                 </tbody>
                 <tfoot>
@@ -129,13 +187,11 @@ $categoryLabels = [
                         <td>TOTAL</td>
                         <td class="text-end">Rp <?php echo number_format($totalIn, 0, ',', '.'); ?></td>
                         <td class="text-end">Rp <?php echo number_format($totalOut, 0, ',', '.'); ?></td>
-                    </tr>
-                    <tr class="fw-bold" style="border-top: 2px solid #0c4a6e;">
-                        <td colspan="2">SALDO AKHIR</td>
                         <td class="text-end <?php echo $balance < 0 ? 'text-danger' : 'text-success'; ?>">Rp <?php echo number_format($balance, 0, ',', '.'); ?></td>
                     </tr>
                 </tfoot>
             </table>
+            <?php endif; ?>
 
             <div class="row mt-5">
                 <div class="col-6">

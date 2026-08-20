@@ -1,5 +1,18 @@
 <!-- REPORTS PAGE -->
-<?php $reportYear = (int)($_GET['year'] ?? date('Y')); ?>
+<?php
+$reportYear = (int)($_GET['year'] ?? date('Y'));
+$rp = (($_GET['rp'] ?? 'keseluruhan') === 'kategori') ? 'kategori' : 'keseluruhan';
+$rpcat = trim($_GET['rpcat'] ?? '');
+if (!function_exists('rp_link')) {
+    function rp_link($rpVal, $rpcatVal = null) {
+        $q = $_GET;
+        $q['rp'] = $rpVal;
+        unset($q['rpcat']);
+        if ($rpcatVal !== null && $rpcatVal !== '') $q['rpcat'] = $rpcatVal;
+        return '?' . http_build_query($q);
+    }
+}
+?>
         <div class="row align-items-center mb-4 g-3 no-print" data-aos="fade-down">
             <div class="col-md-6">
                 <h2 class="fw-bold mb-1 text-dark">Laporan & Analitik</h2>
@@ -15,8 +28,18 @@
                     }
                     ?>
                 </select>
+                <div class="dropdown">
+                    <button class="btn btn-soft-primary px-3 rounded-pill dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="height: 42px;">
+                        <i class="fas fa-<?php echo $rp === 'kategori' ? 'layer-group' : 'chart-line'; ?> me-2"></i>
+                        <?php echo $rp === 'kategori' ? 'Rekap Per Kategori' : 'Rekap Keseluruhan'; ?>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3">
+                        <li><a class="dropdown-item <?php echo $rp === 'keseluruhan' ? 'active' : ''; ?>" href="<?php echo rp_link('keseluruhan'); ?>"><i class="fas fa-chart-line me-2 text-primary"></i>Rekap Keseluruhan</a></li>
+                        <li><a class="dropdown-item <?php echo $rp === 'kategori' ? 'active' : ''; ?>" href="<?php echo rp_link('kategori'); ?>"><i class="fas fa-layer-group me-2 text-primary"></i>Rekap Per Kategori</a></li>
+                    </ul>
+                </div>
                 <button class="btn btn-soft-primary px-4 rounded-pill" onclick="window.open('reports_print.php?year=' + document.getElementById('reportYear').value, '_blank')" style="height: 42px;">
-                    <i class="fas fa-print me-2"></i>Cetak
+                    <i class="fas fa-chart-bar me-2"></i>Cetak Pendaftaran
                 </button>
             </div>
         </div>
@@ -205,6 +228,8 @@
             </div>
         </div>
 
+        <?php $rpYear = $reportYear; include __DIR__ . '/../includes/partials/rekap_panel.php'; ?>
+
         <div class="row g-4 mb-4">
             <div class="col-lg-8">
                 <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
@@ -326,7 +351,7 @@
             }
 
             function updateReportYear(year) {
-                location.href = '?page=reports&year=' + year;
+                location.href = '?page=reports&year=' + year + '&rp=<?php echo $rp; ?>&rpcat=<?php echo urlencode($rpcat); ?>';
             }
 
             document.addEventListener('DOMContentLoaded', () => initReportsChart('weekly', <?php echo $reportYear; ?>));
