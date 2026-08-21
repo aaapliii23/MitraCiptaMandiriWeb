@@ -1,4 +1,89 @@
 <script>
+function updateFacilityFilePreview(input) {
+    const previewContainer = document.getElementById('facilityFilePreview');
+    if (!previewContainer) return;
+    if (!input.files || input.files.length === 0) {
+        previewContainer.innerHTML = '';
+        return;
+    }
+    const count = input.files.length;
+    let html = `<div class="alert alert-info py-2 px-3 mb-0 rounded-3 small">`;
+    html += `<div class="fw-bold mb-1"><i class="fas fa-images me-2"></i>Terpilih ${count} foto:</div>`;
+    html += `<ul class="mb-0 ps-3" style="max-height: 120px; overflow-y: auto;">`;
+    for (let i = 0; i < Math.min(count, 10); i++) {
+        html += `<li>${input.files[i].name} (${(input.files[i].size / 1024).toFixed(1)} KB)</li>`;
+    }
+    if (count > 10) {
+        html += `<li><em>...dan ${count - 10} foto lainnya</em></li>`;
+    }
+    html += `</ul></div>`;
+    previewContainer.innerHTML = html;
+}
+
+function resetFacilityForm() {
+    const form = document.getElementById('facilityForm');
+    if (form) form.reset();
+    document.getElementById('facilityAction').value = 'create';
+    document.getElementById('facilityId').value = '';
+    document.getElementById('facilityAdminModalTitle').innerHTML = '<i class="fas fa-building me-2 text-primary"></i>Tambah Foto Lokasi &amp; Fasilitas';
+    document.getElementById('facilityImageInput').required = true;
+    document.getElementById('facilityImageInput').setAttribute('multiple', 'multiple');
+    document.getElementById('facilitySubmitBtn').innerHTML = '<i class="fas fa-cloud-upload-alt me-2"></i>Upload Foto';
+    document.getElementById('facilityImageLabel').innerHTML = 'Pilih File Foto <span class="text-danger">*</span>';
+    const previewContainer = document.getElementById('facilityFilePreview');
+    if (previewContainer) previewContainer.innerHTML = '';
+}
+
+function editFacility(data) {
+    resetFacilityForm();
+    document.getElementById('facilityAction').value = 'update';
+    document.getElementById('facilityId').value = data.id;
+    document.getElementById('facilityCategory').value = data.category;
+    document.getElementById('facilityTitle').value = data.title;
+    document.getElementById('facilityDescription').value = data.description || '';
+    document.getElementById('facilityImageInput').required = false;
+    document.getElementById('facilityImageInput').removeAttribute('multiple');
+    document.getElementById('facilityImageLabel').innerHTML = 'Ganti File Foto (Opsional)';
+    document.getElementById('facilityAdminModalTitle').innerHTML = '<i class="fas fa-edit me-2 text-primary"></i>Edit Foto Lokasi';
+    document.getElementById('facilitySubmitBtn').innerHTML = '<i class="fas fa-save me-2"></i>Simpan Perubahan';
+    new bootstrap.Modal(document.getElementById('facilityAdminModal')).show();
+}
+
+function deleteFacilityCategory(id, name) {
+    Swal.fire({
+        title: 'Hapus Kategori?',
+        text: `Apakah Anda yakin ingin menghapus kategori "${name}"?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const formData = new FormData();
+            formData.append('action', 'delete_category');
+            formData.append('id', id);
+
+            fetch('<?php echo $adminBase; ?>/actions/manage_facilities.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    Swal.fire('Terhapus!', data.message, 'success').then(() => window.location.reload());
+                } else {
+                    Swal.fire('Gagal!', data.message, 'error');
+                }
+            })
+            .catch(() => {
+                Swal.fire('Gagal!', 'Terjadi kesalahan sistem.', 'error');
+            });
+        }
+    });
+}
+
 function updateGalleryFilePreview(input) {
     const previewContainer = document.getElementById('galleryFilePreview');
     if (!previewContainer) return;
@@ -419,6 +504,7 @@ function deleteItem(type, id) {
                 case 'quiz': endpoint = adminBase + '/actions/manage_quiz.php'; break;
                 case 'finance': endpoint = adminBase + '/actions/manage_finance.php'; break;
                 case 'cert_templates': endpoint = adminBase + '/actions/manage_cert_templates.php'; break;
+                case 'facilities': endpoint = adminBase + '/actions/manage_facilities.php'; break;
             }
             
             const formData = new FormData();

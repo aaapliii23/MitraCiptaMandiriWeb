@@ -13,3 +13,4 @@
 <?php include __DIR__ . '/modal_quiz.php'; ?>
 <?php include __DIR__ . '/modal_chatbot.php'; ?>
 <?php include __DIR__ . '/modal_finance.php'; ?>
+<?php include __DIR__ . '/modal_facilities.php'; ?>

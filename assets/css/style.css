@@ -19,7 +19,7 @@
 
 html {
     scroll-behavior: smooth;
-    scroll-padding-top: 95px;
+    scroll-padding-top: 110px;
 }
 
 html, body {
@@ -29,7 +29,7 @@ html, body {
 }
 
 section[id], div[id] {
-    scroll-margin-top: 95px;
+    scroll-margin-top: 110px;
 }
 
 body {
@@ -501,7 +501,6 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     flex-direction: column;
     transition: all 0.3s ease;
-    overflow: hidden;
     height: auto;
 }
 .paket-card:hover {
@@ -908,8 +907,9 @@ h1, h2, h3, h4, h5, h6 {
         width: 100% !important;
         max-width: 100% !important;
         margin: 0 0 20px 0 !important;
-        display: block !important;
-        height: auto !important; /* Prevent long empty space */
+        display: flex !important;
+        flex-direction: column !important;
+        height: auto !important;
     }
 
     .swiper-container, .swiper, .swiper-slide {
@@ -989,32 +989,51 @@ body, html {
 /* Swiper Slider Padding & Card Alignment Fix */
 .paket-slider-container {
     position: relative;
-    overflow: hidden !important;
-    padding: 10px 10px 50px 10px !important;
+    padding: 10px 0 60px 0 !important;
 }
 
 .paketSwiper {
     overflow: visible !important;
-    padding: 10px 0 20px 0 !important;
-    margin: 0 !important;
+    padding: 20px 10px 50px 10px !important;
+    margin: 0 -10px !important;
 }
 
 .paketSwiper .swiper-wrapper {
+    display: flex !important;
     align-items: stretch !important;
 }
 
 .paketSwiper .swiper-slide {
     height: auto !important;
     display: flex !important;
+    box-sizing: border-box;
+    padding-bottom: 15px !important;
 }
 
 .paket-card {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    background: #ffffff !important;
     border-radius: 1.25rem !important;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.07) !important;
-    background-color: #ffffff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.paket-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 18px 35px rgba(14, 165, 233, 0.18) !important;
+}
+
+.paket-card-content {
+    display: flex !important;
+    flex-direction: column !important;
+    flex-grow: 1 !important;
+    padding: 1.5rem 1.5rem 2rem 1.5rem !important;
+    background: #ffffff !important;
+    border-bottom-left-radius: 1.25rem !important;
+    border-bottom-right-radius: 1.25rem !important;
 }
 
 .testimonial-card {

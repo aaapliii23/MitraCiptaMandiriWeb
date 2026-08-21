@@ -12,20 +12,12 @@
         <div class="icon-wrapper"><i class="fas fa-book-open"></i></div>
         <span>Paket</span>
     </a>
-    <a href="?page=gallery" class="mcm-nav-item <?php echo $page == 'gallery' ? 'active' : ''; ?>">
-        <div class="icon-wrapper"><i class="fas fa-camera-retro"></i></div>
-        <span>Galeri</span>
+    <a href="?page=finance" class="mcm-nav-item <?php echo $page == 'finance' ? 'active' : ''; ?>">
+        <div class="icon-wrapper"><i class="fas fa-money-bill-wave"></i></div>
+        <span>Keuangan</span>
     </a>
-    <a href="?page=instructors" class="mcm-nav-item <?php echo $page == 'instructors' ? 'active' : ''; ?>">
-        <div class="icon-wrapper"><i class="fas fa-user-tie"></i></div>
-        <span>Guru</span>
-    </a>
-    <a href="?page=certs" class="mcm-nav-item <?php echo $page == 'certs' ? 'active' : ''; ?>">
-        <div class="icon-wrapper"><i class="fas fa-certificate"></i></div>
-        <span>Legal</span>
-    </a>
-    <a href="?page=reports" class="mcm-nav-item <?php echo $page == 'reports' ? 'active' : ''; ?>">
-        <div class="icon-wrapper"><i class="fas fa-chart-bar"></i></div>
-        <span>Laporan</span>
+    <a href="javascript:void(0)" class="mcm-nav-item" data-bs-toggle="offcanvas" data-bs-target="#adminOffcanvas" role="button">
+        <div class="icon-wrapper"><i class="fas fa-bars"></i></div>
+        <span>Semua Menu</span>
     </a>
 </div>

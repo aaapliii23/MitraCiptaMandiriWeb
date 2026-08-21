@@ -184,7 +184,10 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
                                     <input type="hidden" name="customer_name" value="<?php echo htmlspecialchars($loggedUser['name'] ?? ''); ?>">
                                     <input type="hidden" name="customer_email" value="<?php echo htmlspecialchars($loggedUser['email'] ?? ''); ?>">
                                     <input type="hidden" name="customer_phone" value="<?php echo htmlspecialchars($loggedUser['phone'] ?? ''); ?>">
-                                    <input type="hidden" name="customer_address" value="-">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-secondary mb-1 d-block">Alamat Lengkap *</label>
+                                        <textarea class="form-control bg-light border-0 py-2 rounded-3" name="customer_address" rows="2" required placeholder="Jl. Sudirman No. 123..."></textarea>
+                                    </div>
 
                                     <?php if (!empty($instructorOptions)): ?>
                                     <div class="mb-4">

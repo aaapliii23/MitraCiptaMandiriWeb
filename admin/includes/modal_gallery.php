@@ -17,7 +17,7 @@
                     <div class="mb-3">
                         <label class="form-label small fw-medium">Filter / Kategori</label>
                          <select class="form-select" name="category" required id="galleryCategory">
-                            <option value="all">Umum</option>
+                            <option value="umum">Umum</option>
                             <?php foreach ($categories as $cat): ?>
                                 <option value="<?php echo htmlspecialchars($cat['slug']); ?>"><?php echo htmlspecialchars($cat['name']); ?></option>
                             <?php endforeach; ?>

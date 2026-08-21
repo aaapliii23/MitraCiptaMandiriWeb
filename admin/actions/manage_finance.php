@@ -2,84 +2,178 @@
 session_start();
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['admin_logged_in'])) {
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+    echo json_encode(['status' => 'error', 'message' => 'Akses ditolak.']);
     exit;
 }
+
 require_once '../../config/database.php';
 
+// Auto-create & upgrade table
 try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS `finance_transactions` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `type` ENUM('in','out') NOT NULL,
       `category` varchar(50) NOT NULL,
-      `description` text DEFAULT NULL,
+      `item_name` varchar(255) DEFAULT NULL,
+      `quantity` int(11) NOT NULL DEFAULT 1,
+      `unit_price` int(11) NOT NULL DEFAULT 0,
       `amount` int(11) NOT NULL,
+      `description` text DEFAULT NULL,
+      `receipt_image` varchar(255) DEFAULT NULL,
+      `order_id` int(11) DEFAULT NULL,
       `transaction_date` date NOT NULL,
       `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+    // Check if columns exist, if not add them
+    $cols = $pdo->query("SHOW COLUMNS FROM finance_transactions")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('item_name', $cols)) $pdo->exec("ALTER TABLE finance_transactions ADD COLUMN item_name VARCHAR(255) DEFAULT NULL");
+    if (!in_array('quantity', $cols)) $pdo->exec("ALTER TABLE finance_transactions ADD COLUMN quantity INT(11) NOT NULL DEFAULT 1");
+    if (!in_array('unit_price', $cols)) $pdo->exec("ALTER TABLE finance_transactions ADD COLUMN unit_price INT(11) NOT NULL DEFAULT 0");
+    if (!in_array('receipt_image', $cols)) $pdo->exec("ALTER TABLE finance_transactions ADD COLUMN receipt_image VARCHAR(255) DEFAULT NULL");
+    if (!in_array('order_id', $cols)) $pdo->exec("ALTER TABLE finance_transactions ADD COLUMN order_id INT(11) DEFAULT NULL");
 } catch (PDOException $e) {}
 
 $action = $_POST['action'] ?? '';
-$allowedCategories = ['pemasukan_kursus', 'sewa', 'gaji', 'operasional', 'lainnya'];
 
+// ACTION: SINKRONISASI PEMASUKAN DARI PESANAN LUNAS
+if ($action === 'sync_orders') {
+    try {
+        $stmt = $pdo->query("SELECT o.id, o.order_number, o.customer_name, o.amount, o.created_at, c.name as class_name 
+                             FROM orders o 
+                             JOIN classes c ON o.class_id = c.id 
+                             WHERE o.payment_status = 'paid'");
+        $paidOrders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $insertedCount = 0;
+        $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM finance_transactions WHERE order_id = ?");
+        $insStmt = $pdo->prepare("INSERT INTO finance_transactions (type, category, item_name, quantity, unit_price, amount, description, order_id, transaction_date) 
+                                  VALUES ('in', 'pemasukan_kursus', ?, 1, ?, ?, ?, ?, ?)");
+
+        foreach ($paidOrders as $ord) {
+            $checkStmt->execute([$ord['id']]);
+            if ($checkStmt->fetchColumn() == 0) {
+                $itemName = "Pendaftaran " . $ord['class_name'] . " (" . $ord['customer_name'] . ")";
+                $desc = "Pemasukan otomatis dari pesanan " . $ord['order_number'];
+                $tDate = date('Y-m-d', strtotime($ord['created_at']));
+                $insStmt->execute([$itemName, $ord['amount'], $ord['amount'], $desc, $ord['id'], $tDate]);
+                $insertedCount++;
+            }
+        }
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => $insertedCount > 0 ? "Berhasil menyinkronkan $insertedCount transaksi pesanan lunas ke catatan keuangan." : "Semua pesanan lunas sudah tersinkronisasi ke keuangan."
+        ]);
+    } catch (PDOException $e) {
+        echo json_encode(['status' => 'error', 'message' => 'Gagal menyinkronkan pesanan: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// ACTION: CREATE / UPDATE TRANSAKSI
 if ($action === 'create' || $action === 'update') {
-    $id = $_POST['id'] ?? '';
-    $type = $_POST['type'] ?? '';
-    $category = trim($_POST['category'] ?? '');
-    $description = trim($_POST['description'] ?? '');
+    $id = (int)($_POST['id'] ?? 0);
+    $type = $_POST['type'] ?? 'out';
+    $category = trim($_POST['category'] ?? 'operasional');
+    $item_name = trim($_POST['item_name'] ?? '');
+    $quantity = max(1, (int)($_POST['quantity'] ?? 1));
+    $unit_price = (int)($_POST['unit_price'] ?? 0);
     $amount = (int)($_POST['amount'] ?? 0);
-    $transaction_date = $_POST['transaction_date'] ?? '';
+    $description = trim($_POST['description'] ?? '');
+    $transaction_date = trim($_POST['transaction_date'] ?? date('Y-m-d'));
 
     if (!in_array($type, ['in', 'out'])) {
-        echo json_encode(['status' => 'error', 'message' => 'Tipe transaksi tidak valid']);
+        echo json_encode(['status' => 'error', 'message' => 'Tipe transaksi tidak valid.']);
         exit;
     }
-    if (!in_array($category, $allowedCategories)) {
-        echo json_encode(['status' => 'error', 'message' => 'Kategori tidak valid']);
-        exit;
+
+    if (empty($item_name)) {
+        $item_name = ($type === 'in' ? 'Pemasukan ' : 'Pengeluaran ') . ucwords(str_replace('_', ' ', $category));
     }
+
+    // Auto-calculate amount if unit_price is provided and amount is not set
+    if ($amount <= 0 && $unit_price > 0) {
+        $amount = $quantity * $unit_price;
+    }
+
     if ($amount <= 0) {
-        echo json_encode(['status' => 'error', 'message' => 'Nominal harus lebih dari 0']);
+        echo json_encode(['status' => 'error', 'message' => 'Nominal total harus lebih dari 0.']);
         exit;
     }
+
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $transaction_date)) {
-        echo json_encode(['status' => 'error', 'message' => 'Tanggal transaksi tidak valid']);
-        exit;
+        $transaction_date = date('Y-m-d');
+    }
+
+    // Handle receipt image upload
+    $receipt_image = null;
+    if (isset($_FILES['receipt_image']) && $_FILES['receipt_image']['error'] === UPLOAD_ERR_OK) {
+        $allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+        $ext = strtolower(pathinfo($_FILES['receipt_image']['name'], PATHINFO_EXTENSION));
+        if (in_array($ext, $allowed)) {
+            $uploadDir = '../../uploads/finance';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+
+            $newFilename = uniqid('rec_') . '.' . $ext;
+            $dest = 'uploads/finance/' . $newFilename;
+            if (move_uploaded_file($_FILES['receipt_image']['tmp_name'], '../../' . $dest)) {
+                $receipt_image = $dest;
+            }
+        }
     }
 
     try {
         if ($action === 'create') {
-            $stmt = $pdo->prepare("INSERT INTO finance_transactions (type, category, description, amount, transaction_date) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$type, $category, $description ?: null, $amount, $transaction_date]);
-            echo json_encode(['status' => 'success', 'message' => 'Transaksi berhasil disimpan']);
+            $stmt = $pdo->prepare("INSERT INTO finance_transactions (type, category, item_name, quantity, unit_price, amount, description, receipt_image, transaction_date) 
+                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$type, $category, $item_name, $quantity, $unit_price, $amount, $description ?: null, $receipt_image, $transaction_date]);
+            echo json_encode(['status' => 'success', 'message' => 'Transaksi keuangan berhasil dicatat.']);
         } else {
-            if (empty($id)) {
-                echo json_encode(['status' => 'error', 'message' => 'ID tidak valid']);
+            if ($id <= 0) {
+                echo json_encode(['status' => 'error', 'message' => 'ID transaksi tidak valid.']);
                 exit;
             }
-            $stmt = $pdo->prepare("UPDATE finance_transactions SET type = ?, category = ?, description = ?, amount = ?, transaction_date = ? WHERE id = ?");
-            $stmt->execute([$type, $category, $description ?: null, $amount, $transaction_date, $id]);
-            echo json_encode(['status' => 'success', 'message' => 'Transaksi berhasil diperbarui']);
+            if ($receipt_image) {
+                $stmt = $pdo->prepare("UPDATE finance_transactions SET type = ?, category = ?, item_name = ?, quantity = ?, unit_price = ?, amount = ?, description = ?, receipt_image = ?, transaction_date = ? WHERE id = ?");
+                $stmt->execute([$type, $category, $item_name, $quantity, $unit_price, $amount, $description ?: null, $receipt_image, $transaction_date, $id]);
+            } else {
+                $stmt = $pdo->prepare("UPDATE finance_transactions SET type = ?, category = ?, item_name = ?, quantity = ?, unit_price = ?, amount = ?, description = ?, transaction_date = ? WHERE id = ?");
+                $stmt->execute([$type, $category, $item_name, $quantity, $unit_price, $amount, $description ?: null, $transaction_date, $id]);
+            }
+            echo json_encode(['status' => 'success', 'message' => 'Data transaksi berhasil diperbarui.']);
         }
     } catch (PDOException $e) {
-        echo json_encode(['status' => 'error', 'message' => 'Gagal menyimpan transaksi']);
+        echo json_encode(['status' => 'error', 'message' => 'Gagal menyimpan transaksi: ' . $e->getMessage()]);
     }
     exit;
 }
 
+// ACTION: DELETE
 if ($action === 'delete') {
-    $id = $_POST['id'] ?? '';
+    $id = (int)($_POST['id'] ?? 0);
+    if ($id <= 0) {
+        echo json_encode(['status' => 'error', 'message' => 'ID tidak valid.']);
+        exit;
+    }
+
     try {
-        $stmt = $pdo->prepare("DELETE FROM finance_transactions WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT receipt_image FROM finance_transactions WHERE id = ?");
         $stmt->execute([$id]);
-        echo json_encode(['status' => 'success', 'message' => 'Transaksi berhasil dihapus']);
+        $rec = $stmt->fetch();
+        if ($rec && !empty($rec['receipt_image'])) {
+            @unlink('../../' . $rec['receipt_image']);
+        }
+
+        $del = $pdo->prepare("DELETE FROM finance_transactions WHERE id = ?");
+        $del->execute([$id]);
+        echo json_encode(['status' => 'success', 'message' => 'Transaksi berhasil dihapus.']);
     } catch (PDOException $e) {
-        echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus transaksi']);
+        echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus transaksi.']);
     }
     exit;
 }
 
-echo json_encode(['status' => 'error', 'message' => 'Aksi tidak dikenali']);
-?>
+echo json_encode(['status' => 'error', 'message' => 'Aksi tidak dikenal.']);

@@ -59,12 +59,29 @@
                 <!-- Right Side Clean Photo Slider -->
                 <div class="col-lg-5 d-none d-lg-block" data-aos="fade-left" data-aos-delay="200">
                     <div class="position-relative ms-lg-4">
+                        <?php
+                        $slideFolder = dirname(__DIR__, 2) . '/assets/img/gallery/slide_landingpages';
+                        $slideImages = [];
+                        if (is_dir($slideFolder)) {
+                            $scanned = scandir($slideFolder);
+                            foreach ($scanned as $sf) {
+                                if ($sf !== '.' && $sf !== '..' && preg_match('/\.(jpe?g|png|webp)$/i', $sf)) {
+                                    $slideImages[] = 'assets/img/gallery/slide_landingpages/' . $sf;
+                                }
+                            }
+                        }
+                        if (empty($slideImages)) {
+                            foreach ($galleryItems as $gi) {
+                                $slideImages[] = $gi['image'];
+                            }
+                        }
+                        ?>
                         <!-- Clean Photo Frame -->
                         <div class="swiper activitySwiper rounded-5 overflow-hidden position-relative" style="height: 440px; border: 3px solid rgba(255, 255, 255, 0.25); box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6);">
                             <div class="swiper-wrapper">
-                                <?php foreach ($galleryItems as $gi): ?>
+                                <?php foreach ($slideImages as $img): ?>
                                 <div class="swiper-slide">
-                                    <img src="<?php echo htmlspecialchars(asset_src($gi['image'])); ?>" alt="<?php echo htmlspecialchars($gi['title']); ?>" class="w-100 h-100" style="object-fit: cover;">
+                                    <img src="<?php echo htmlspecialchars(asset_src($img)); ?>" alt="Kegiatan MCM" class="w-100 h-100" style="object-fit: cover;">
                                 </div>
                                 <?php endforeach; ?>
                             </div>

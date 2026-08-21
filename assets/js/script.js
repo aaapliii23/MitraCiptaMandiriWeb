@@ -58,37 +58,132 @@ document.addEventListener('DOMContentLoaded', function () {
             if (backdrop) backdrop.remove();
         }
     });
-    // 3. Gallery Filtering
+    // 3. Gallery Filtering & Max 6 Limitation with "+X Foto Lainnya"
     const filterBtns = document.querySelectorAll('.filter-btn');
     const galleryItems = document.querySelectorAll('.gallery-item');
+    const galleryGrid = document.getElementById('galleryGrid');
+    const galleryExpandContainer = document.getElementById('galleryExpandContainer');
+    const lightboxModalEl = document.getElementById('galleryLightboxModal');
+    const lightboxModal = lightboxModalEl ? new bootstrap.Modal(lightboxModalEl) : null;
+
+    let isGalleryExpanded = false;
+    let currentGalleryFilter = 'all';
+
+    function renderGallery(filter = 'all', expanded = false) {
+        currentGalleryFilter = filter;
+        isGalleryExpanded = expanded;
+
+        const matchingItems = [];
+        galleryItems.forEach(item => {
+            const cat = item.getAttribute('data-category');
+            if (filter === 'all' || cat === filter) {
+                matchingItems.push(item);
+            } else {
+                item.style.display = 'none';
+                item.classList.remove('gallery-more-trigger');
+                const prevBadge = item.querySelector('.overlay-more-badge');
+                if (prevBadge) prevBadge.remove();
+            }
+        });
+
+        const totalMatching = matchingItems.length;
+        const maxVisible = 6;
+        const showLimit = (expanded || totalMatching <= maxVisible) ? totalMatching : maxVisible;
+
+        matchingItems.forEach((item, index) => {
+            item.classList.remove('gallery-more-trigger');
+            const prevBadge = item.querySelector('.overlay-more-badge');
+            if (prevBadge) prevBadge.remove();
+
+            if (index < showLimit) {
+                item.style.display = 'block';
+                setTimeout(() => {
+                    item.style.opacity = '1';
+                    item.style.transform = 'scale(1)';
+                }, 30);
+
+                // If not expanded and this is the 6th item (index == 5) and there are more items
+                if (!expanded && index === maxVisible - 1 && totalMatching > maxVisible) {
+                    const remainingCount = totalMatching - maxVisible;
+                    item.classList.add('gallery-more-trigger');
+                    
+                    const moreOverlay = document.createElement('div');
+                    moreOverlay.className = 'overlay-more-badge';
+                    moreOverlay.innerHTML = `
+                        <div class="more-content">
+                            <div class="more-icon"><i class="fas fa-images"></i></div>
+                            <div class="more-number">+${remainingCount} Foto</div>
+                            <div class="more-text">Lihat Lebih Banyak <i class="fas fa-chevron-right ms-1"></i></div>
+                        </div>
+                    `;
+                    item.appendChild(moreOverlay);
+                }
+            } else {
+                item.style.display = 'none';
+                item.style.opacity = '0';
+            }
+        });
+
+        if (galleryExpandContainer) {
+            if (expanded && totalMatching > maxVisible) {
+                galleryExpandContainer.innerHTML = `
+                    <button class="btn btn-outline-primary rounded-pill px-4 py-2 fw-bold shadow-sm" id="btnCollapseGallery">
+                        <i class="fas fa-chevron-up me-2"></i>Tampilkan Lebih Sedikit
+                    </button>
+                `;
+                galleryExpandContainer.style.display = 'block';
+                const btnCollapse = document.getElementById('btnCollapseGallery');
+                if (btnCollapse) {
+                    btnCollapse.addEventListener('click', () => {
+                        renderGallery(currentGalleryFilter, false);
+                        const sec = document.getElementById('galeri');
+                        if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+                    });
+                }
+            } else {
+                galleryExpandContainer.innerHTML = '';
+                galleryExpandContainer.style.display = 'none';
+            }
+        }
+    }
+
+    if (galleryGrid) {
+        galleryGrid.addEventListener('click', function(e) {
+            const moreTrigger = e.target.closest('.gallery-more-trigger');
+            if (moreTrigger) {
+                e.preventDefault();
+                e.stopPropagation();
+                renderGallery(currentGalleryFilter, true);
+                return;
+            }
+
+            const item = e.target.closest('.gallery-item');
+            if (item && lightboxModal) {
+                const img = item.querySelector('img');
+                const titleEl = item.querySelector('.overlay h5');
+                const title = titleEl ? titleEl.textContent : 'Dokumentasi Pelatihan MCM';
+                if (img) {
+                    document.getElementById('galleryLightboxImg').src = img.src;
+                    document.getElementById('galleryLightboxTitle').textContent = title;
+                    lightboxModal.show();
+                }
+            }
+        });
+    }
 
     filterBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            // Remove active class from all
             filterBtns.forEach(b => b.classList.remove('active'));
-            // Add active class to clicked
             btn.classList.add('active');
-
             const filterValue = btn.getAttribute('data-filter');
-
-            galleryItems.forEach(item => {
-                if (filterValue === 'all' || item.getAttribute('data-category') === filterValue) {
-                    item.style.display = 'block';
-                    // Trigger reflow for animation
-                    setTimeout(() => {
-                        item.style.opacity = '1';
-                        item.style.transform = 'scale(1)';
-                    }, 50);
-                } else {
-                    item.style.opacity = '0';
-                    item.style.transform = 'scale(0.8)';
-                    setTimeout(() => {
-                        item.style.display = 'none';
-                    }, 300); // match transition duration
-                }
-            });
+            renderGallery(filterValue, false);
         });
     });
+
+    // Initial load
+    if (galleryItems.length > 0) {
+        renderGallery('all', false);
+    }
 
 
 
@@ -96,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const swiper = new Swiper('.paketSwiper', {
             slidesPerView: 1,
             spaceBetween: 30,
-            autoHeight: true, 
+            autoHeight: false, 
             observer: true,
             observeParents: true,
             resizeObserver: true,
@@ -163,23 +258,36 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Smooth scrolling
+    // Robust Smooth Scrolling with accurate Navbar Offset
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             const targetId = this.getAttribute('href');
-            if (targetId === '#') return;
+            if (!targetId || targetId === '#') return;
             
             const target = document.querySelector(targetId);
             if (target) {
                 e.preventDefault();
-                const navHeight = navbar ? navbar.offsetHeight : 90;
-                const elementPosition = target.getBoundingClientRect().top;
-                const offsetPosition = elementPosition + window.pageYOffset - navHeight;
+                const nav = document.querySelector('.navbar');
+                const navHeight = nav ? (nav.offsetHeight || 80) : 80;
+                
+                // Traverse offsetParent chain to get true absolute document top
+                let elementTop = 0;
+                let el = target;
+                while (el) {
+                    elementTop += el.offsetTop || 0;
+                    el = el.offsetParent;
+                }
+                
+                const targetPosition = Math.max(0, elementTop - navHeight - 15);
 
                 window.scrollTo({
-                    top: offsetPosition,
+                    top: targetPosition,
                     behavior: 'smooth'
                 });
+
+                if (history.pushState) {
+                    history.pushState(null, null, targetId);
+                }
 
                 // Close mobile menu if open
                 const navCollapse = document.getElementById('navbarNav');

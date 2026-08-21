@@ -1,6 +1,6 @@
 <!-- Sidebar -->
 <?php
-$groupMap = ['dashboard' => 'utama', 'classes' => 'program', 'categories' => 'program', 'instructors' => 'program', 'materials' => 'program', 'users' => 'program', 'gallery' => 'program', 'certs' => 'program', 'orders' => 'penjualan', 'finance' => 'penjualan', 'testimonials' => 'penjualan', 'chat' => 'penjualan', 'chatbot' => 'penjualan', 'reports' => 'laporan', 'admins' => 'sistem', 'settings' => 'sistem'];
+$groupMap = ['dashboard' => 'utama', 'classes' => 'program', 'categories' => 'program', 'instructors' => 'program', 'materials' => 'program', 'users' => 'program', 'gallery' => 'program', 'facilities' => 'program', 'certs' => 'program', 'orders' => 'penjualan', 'finance' => 'penjualan', 'testimonials' => 'penjualan', 'chat' => 'penjualan', 'chatbot' => 'penjualan', 'reports' => 'laporan', 'admins' => 'sistem', 'settings' => 'sistem'];
 $activeGroup = $groupMap[$page] ?? 'utama';
 function mcm_group($id, $label, $key, $activeGroup) {
     $open = $activeGroup === $key ? ' show' : '';
@@ -48,6 +48,7 @@ function mcm_item($page, $target, $icon, $label) {
             <?php echo mcm_item($page, 'materials', 'fas fa-graduation-cap', 'Materi LMS'); ?>
             <?php echo mcm_item($page, 'users', 'fas fa-users', 'Peserta Terdaftar'); ?>
             <?php echo mcm_item($page, 'gallery', 'fas fa-camera-retro', 'Galeri Foto'); ?>
+            <?php echo mcm_item($page, 'facilities', 'fas fa-building', 'Foto Lokasi &amp; Fasilitas'); ?>
             <?php echo mcm_item($page, 'certs', 'fas fa-certificate', 'Legalitas &amp; Sertifikasi'); ?>
         </ul>
         </div>

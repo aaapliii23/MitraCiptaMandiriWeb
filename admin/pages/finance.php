@@ -1,172 +1,471 @@
-<!-- FINANCE PAGE -->
+<!-- FINANCE PAGE (MANAJEMEN KEUANGAN & LABA BERSIH) -->
 <?php
 $finYear = isset($_GET['fin_year']) ? preg_replace('/[^0-9]/', '', $_GET['fin_year']) : date('Y');
+
+// Auto-create & upgrade table
+try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `finance_transactions` (
+      `id` int(11) NOT NULL AUTO_INCREMENT,
+      `type` ENUM('in','out') NOT NULL,
+      `category` varchar(50) NOT NULL,
+      `item_name` varchar(255) DEFAULT NULL,
+      `quantity` int(11) NOT NULL DEFAULT 1,
+      `unit_price` int(11) NOT NULL DEFAULT 0,
+      `amount` int(11) NOT NULL,
+      `description` text DEFAULT NULL,
+      `receipt_image` varchar(255) DEFAULT NULL,
+      `order_id` int(11) DEFAULT NULL,
+      `transaction_date` date NOT NULL,
+      `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+    $cols = $pdo->query("SHOW COLUMNS FROM finance_transactions")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('item_name', $cols)) $pdo->exec("ALTER TABLE finance_transactions ADD COLUMN item_name VARCHAR(255) DEFAULT NULL");
+    if (!in_array('quantity', $cols)) $pdo->exec("ALTER TABLE finance_transactions ADD COLUMN quantity INT(11) NOT NULL DEFAULT 1");
+    if (!in_array('unit_price', $cols)) $pdo->exec("ALTER TABLE finance_transactions ADD COLUMN unit_price INT(11) NOT NULL DEFAULT 0");
+    if (!in_array('receipt_image', $cols)) $pdo->exec("ALTER TABLE finance_transactions ADD COLUMN receipt_image VARCHAR(255) DEFAULT NULL");
+    if (!in_array('order_id', $cols)) $pdo->exec("ALTER TABLE finance_transactions ADD COLUMN order_id INT(11) DEFAULT NULL");
+
+    // Automatic Realtime Sync: Sync all paid orders from orders table into finance_transactions
+    $paidOrders = $pdo->query("SELECT o.id, o.order_number, o.customer_name, o.amount, o.created_at, c.name as class_name 
+                               FROM orders o 
+                               JOIN classes c ON o.class_id = c.id 
+                               WHERE o.payment_status = 'paid'")->fetchAll(PDO::FETCH_ASSOC);
+
+    $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM finance_transactions WHERE order_id = ?");
+    $insStmt = $pdo->prepare("INSERT INTO finance_transactions (type, category, item_name, quantity, unit_price, amount, description, order_id, transaction_date) 
+                              VALUES ('in', 'pemasukan_kursus', ?, 1, ?, ?, ?, ?, ?)");
+
+    foreach ($paidOrders as $ord) {
+        $checkStmt->execute([$ord['id']]);
+        if ($checkStmt->fetchColumn() == 0) {
+            $itemName = "Pendaftaran " . $ord['class_name'] . " (" . $ord['customer_name'] . ")";
+            $desc = "Pemasukan pembayaran kursus no. order " . $ord['order_number'];
+            $tDate = date('Y-m-d', strtotime($ord['created_at']));
+            $insStmt->execute([$itemName, $ord['amount'], $ord['amount'], $desc, $ord['id'], $tDate]);
+        }
+    }
+} catch (PDOException $e) {}
+
 $finRows = [];
-$totalIn = $totalOut = 0;
+$totalIn = 0;
+$totalOut = 0;
+
 try {
     if ($finYear === '' || $finYear === 'all') {
-        $finRows = $pdo->query("SELECT * FROM finance_transactions ORDER BY transaction_date DESC, id DESC")->fetchAll();
+        $stmt = $pdo->query("SELECT * FROM finance_transactions ORDER BY transaction_date DESC, id DESC");
     } else {
         $stmt = $pdo->prepare("SELECT * FROM finance_transactions WHERE YEAR(transaction_date) = ? ORDER BY transaction_date DESC, id DESC");
         $stmt->execute([$finYear]);
-        $finRows = $stmt->fetchAll();
     }
+    $finRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
     foreach ($finRows as $tr) {
-        if ($tr['type'] === 'in') $totalIn += (int)$tr['amount'];
-        else $totalOut += (int)$tr['amount'];
+        if ($tr['type'] === 'in') {
+            $totalIn += (int)$tr['amount'];
+        } else {
+            $totalOut += (int)$tr['amount'];
+        }
     }
 } catch (PDOException $e) {}
-$balance = $totalIn - $totalOut;
 
+// Laba Bersih & Margin
+$netProfit = $totalIn - $totalOut;
+$profitMargin = $totalIn > 0 ? round(($netProfit / $totalIn) * 100, 1) : 0;
+
+// Rekap Pengeluaran & Pemasukan per Kategori
 $catRecap = [];
 foreach ($finRows as $tr) {
-    $key = $tr['type'] . '|' . $tr['category'];
-    if (!isset($catRecap[$key])) $catRecap[$key] = ['type' => $tr['type'], 'category' => $tr['category'], 'total' => 0];
+    $cat = $tr['category'] ?: 'lainnya';
+    $key = $tr['type'] . '|' . $cat;
+    if (!isset($catRecap[$key])) {
+        $catRecap[$key] = [
+            'type' => $tr['type'],
+            'category' => $cat,
+            'total' => 0,
+            'count' => 0
+        ];
+    }
     $catRecap[$key]['total'] += (int)$tr['amount'];
+    $catRecap[$key]['count']++;
 }
 usort($catRecap, function($a, $b) { return strcmp($a['type'], $b['type']) ?: $b['total'] <=> $a['total']; });
+
+// Monthly breakdown for visual chart
+$monthlyData = [];
+for ($m = 1; $m <= 12; $m++) {
+    $monthlyData[$m] = ['in' => 0, 'out' => 0];
+}
+foreach ($finRows as $tr) {
+    $m = (int)date('n', strtotime($tr['transaction_date']));
+    if (isset($monthlyData[$m])) {
+        if ($tr['type'] === 'in') $monthlyData[$m]['in'] += (int)$tr['amount'];
+        else $monthlyData[$m]['out'] += (int)$tr['amount'];
+    }
+}
+$monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+$chartIn = [];
+$chartOut = [];
+for ($m = 1; $m <= 12; $m++) {
+    $chartIn[] = $monthlyData[$m]['in'];
+    $chartOut[] = $monthlyData[$m]['out'];
+}
 ?>
-        <div class="row align-items-center mb-4 g-3 no-print" data-aos="fade-down">
-            <div class="col-md-6">
-                <h2 class="fw-bold mb-1 text-dark">Keuangan</h2>
-                <p class="text-muted mb-0">Rekap uang masuk & uang keluar, termasuk pemasukan sewa/rental.</p>
+
+<div class="row align-items-center mb-4 g-3 no-print" data-aos="fade-down">
+    <div class="col-lg-5">
+        <h2 class="fw-bold mb-1 text-dark">Keuangan &amp; Laba Bersih</h2>
+        <p class="text-muted mb-0">Kelola arus kas, pembelian barang, pendapatan kotor &amp; laba bersih.</p>
+    </div>
+    <div class="col-lg-7 text-lg-end">
+        <div class="d-flex flex-wrap justify-content-lg-end gap-2 align-items-center">
+            <!-- Filter Tahun -->
+            <select id="financeYear" class="form-select rounded-pill border-primary text-primary fw-bold" style="width: auto; height: 42px;" onchange="location.href='?page=finance&fin_year=' + this.value">
+                <option value="all" <?php echo $finYear === 'all' ? 'selected' : ''; ?>>Semua Tahun</option>
+                <?php
+                $finYears = $pdo->query("SELECT DISTINCT YEAR(transaction_date) AS y FROM finance_transactions ORDER BY y DESC")->fetchAll();
+                $yRange = range(date('Y'), date('Y') - 5);
+                $finYears = array_unique(array_merge(array_column($finYears, 'y'), $yRange));
+                foreach ($finYears as $y) {
+                    $sel = ($y == $finYear) ? 'selected' : '';
+                    echo "<option value='$y' $sel>Tahun $y</option>";
+                }
+                ?>
+            </select>
+
+            <!-- Tombol Sinkronisasi Pesanan Lunas -->
+            <button class="btn btn-outline-success rounded-pill px-3 fw-bold shadow-sm d-flex align-items-center gap-2" style="height: 42px;" onclick="syncPaidOrders()" title="Tarik data transaksi pesanan lunas ke catatan pemasukan otomatis">
+                <i class="fas fa-sync-alt"></i> <span>Sinkronkan Pesanan Lunas</span>
+            </button>
+
+            <!-- Tombol Tambah Transaksi -->
+            <button class="btn btn-primary px-3 rounded-pill fw-bold shadow-sm d-flex align-items-center gap-2" style="height: 42px;" onclick="resetFinanceForm(); showModal('financeModal');">
+                <i class="fas fa-plus-circle"></i> <span>Tambah Transaksi</span>
+            </button>
+
+            <!-- Tombol Cetak -->
+            <a class="btn btn-soft-primary px-3 rounded-pill fw-bold d-flex align-items-center gap-2" href="finance_report_print.php?year=<?php echo htmlspecialchars($finYear); ?>" target="_blank" style="height: 42px; text-decoration: none;">
+                <i class="fas fa-print"></i> <span>Cetak</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 4 Key Financial KPI Cards -->
+<div class="row g-4 mb-4">
+    <!-- Pendapatan Kotor -->
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white border-top border-success border-4">
+            <div class="d-flex align-items-center mb-3">
+                <div class="bg-success bg-opacity-10 p-3 rounded-circle me-3 text-success">
+                    <i class="fas fa-arrow-down fs-5"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted small text-uppercase fw-bold mb-0">Pendapatan Kotor</h6>
+                    <small class="text-success fw-semibold">Total Uang Masuk</small>
+                </div>
             </div>
-            <div class="col-md-6 text-md-end d-flex justify-content-md-end gap-2 align-items-center">
-                <select id="financeYear" class="form-select rounded-pill border-primary text-primary fw-bold" style="width: auto; height: 42px;" onchange="location.href='?page=finance&fin_year=' + this.value">
-                    <option value="all">Semua Tahun</option>
-                    <?php
-                    $finYears = $pdo->query("SELECT DISTINCT YEAR(transaction_date) AS y FROM finance_transactions ORDER BY y DESC")->fetchAll();
-                    $yRange = range(date('Y'), date('Y') - 5);
-                    $finYears = array_unique(array_merge(array_column($finYears, 'y'), $yRange));
-                    foreach ($finYears as $y) {
-                        $sel = ($y == $finYear) ? 'selected' : '';
-                        echo "<option value='$y' $sel>Tahun $y</option>";
-                    }
-                    ?>
-                </select>
-                <button class="btn btn-primary px-4 shadow-sm rounded-pill" onclick="resetFinanceForm(); showModal('financeModal');">
-                    <i class="fas fa-plus me-2"></i>Tambah Transaksi
-                </button>
-                <a class="btn btn-soft-primary px-4 rounded-pill" href="finance_report_print.php?year=<?php echo htmlspecialchars($finYear); ?>" target="_blank" style="height: 42px; text-decoration: none;">
-                    <i class="fas fa-print me-2"></i>Cetak
-                </a>
+            <h3 class="fw-bold text-success mb-1">Rp <?php echo number_format($totalIn, 0, ',', '.'); ?></h3>
+            <p class="small text-muted mb-0">Kursus, sewa &amp; pemasukan lain</p>
+        </div>
+    </div>
+
+    <!-- Total Uang Terpakai / Pengeluaran -->
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white border-top border-danger border-4">
+            <div class="d-flex align-items-center mb-3">
+                <div class="bg-danger bg-opacity-10 p-3 rounded-circle me-3 text-danger">
+                    <i class="fas fa-shopping-cart fs-5"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted small text-uppercase fw-bold mb-0">Uang Terpakai</h6>
+                    <small class="text-danger fw-semibold">Total Pengeluaran</small>
+                </div>
+            </div>
+            <h3 class="fw-bold text-danger mb-1">Rp <?php echo number_format($totalOut, 0, ',', '.'); ?></h3>
+            <p class="small text-muted mb-0">Beli barang, bahan, operasional</p>
+        </div>
+    </div>
+
+    <!-- Laba Bersih (Net Profit) -->
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white border-top <?php echo $netProfit >= 0 ? 'border-primary' : 'border-warning'; ?> border-4">
+            <div class="d-flex align-items-center mb-3">
+                <div class="<?php echo $netProfit >= 0 ? 'bg-primary text-primary' : 'bg-warning text-warning'; ?> bg-opacity-10 p-3 rounded-circle me-3">
+                    <i class="fas fa-wallet fs-5"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted small text-uppercase fw-bold mb-0">Laba Bersih</h6>
+                    <small class="<?php echo $netProfit >= 0 ? 'text-primary' : 'text-warning'; ?> fw-semibold">Saldo Akhir / Profit</small>
+                </div>
+            </div>
+            <h3 class="fw-bold <?php echo $netProfit >= 0 ? 'text-primary' : 'text-danger'; ?> mb-1">
+                Rp <?php echo number_format($netProfit, 0, ',', '.'); ?>
+            </h3>
+            <p class="small mb-0 <?php echo $netProfit >= 0 ? 'text-success' : 'text-danger'; ?>">
+                <i class="fas <?php echo $netProfit >= 0 ? 'fa-check-circle' : 'fa-exclamation-triangle'; ?> me-1"></i>
+                <?php echo $netProfit >= 0 ? 'Surplus / Menguntungkan' : 'Defisit Operasional'; ?>
+            </p>
+        </div>
+    </div>
+
+    <!-- Margin Keuntungan -->
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white border-top border-info border-4">
+            <div class="d-flex align-items-center mb-3">
+                <div class="bg-info bg-opacity-10 p-3 rounded-circle me-3 text-info">
+                    <i class="fas fa-percentage fs-5"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted small text-uppercase fw-bold mb-0">Margin Laba</h6>
+                    <small class="text-info fw-semibold">Rasio Bersih / Kotor</small>
+                </div>
+            </div>
+            <h3 class="fw-bold text-dark mb-1"><?php echo $profitMargin; ?>%</h3>
+            <div class="progress mt-2" style="height: 6px; border-radius: 10px;">
+                <div class="progress-bar bg-info" style="width: <?php echo max(0, min(100, $profitMargin)); ?>%"></div>
             </div>
         </div>
+    </div>
+</div>
 
-        <div class="row g-4 mb-4">
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-success bg-opacity-10 p-2 rounded-3 me-3"><i class="fas fa-arrow-down text-success"></i></div>
-                        <h6 class="text-muted small text-uppercase fw-bold mb-0">Total Uang Masuk</h6>
-                    </div>
-                    <h3 class="fw-bold text-success mb-0">Rp <?php echo number_format($totalIn, 0, ',', '.'); ?></h3>
+<!-- Charts & Category Recap Section -->
+<div class="row g-4 mb-4">
+    <!-- Visual Financial Chart -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <div>
+                    <h5 class="fw-bold mb-1 text-dark">Grafik Arus Kas Bulanan</h5>
+                    <p class="small text-muted mb-0">Perbandingan uang masuk vs uang terpakai <?php echo $finYear === 'all' ? 'sepanjang waktu' : 'tahun ' . $finYear; ?></p>
+                </div>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2"><i class="fas fa-circle me-1 small"></i> Pemasukan</span>
+                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-2"><i class="fas fa-circle me-1 small"></i> Pengeluaran</span>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-danger bg-opacity-10 p-2 rounded-3 me-3"><i class="fas fa-arrow-up text-danger"></i></div>
-                        <h6 class="text-muted small text-uppercase fw-bold mb-0">Total Uang Keluar</h6>
-                    </div>
-                    <h3 class="fw-bold text-danger mb-0">Rp <?php echo number_format($totalOut, 0, ',', '.'); ?></h3>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-primary bg-opacity-10 p-2 rounded-3 me-3"><i class="fas fa-wallet text-primary"></i></div>
-                        <h6 class="text-muted small text-uppercase fw-bold mb-0">Saldo</h6>
-                    </div>
-                    <h3 class="fw-bold text-primary mb-0">Rp <?php echo number_format($balance, 0, ',', '.'); ?></h3>
-                </div>
+            <div style="height: 300px;">
+                <canvas id="financeMonthlyChart"></canvas>
             </div>
         </div>
+    </div>
 
-        <div class="row g-4 mb-4">
-            <div class="col-lg-4">
-                <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white">
-                    <h6 class="text-muted small text-uppercase fw-bold mb-3">Rekap per Kategori</h6>
-                    <?php if (empty($catRecap)): ?>
-                        <div class="text-center text-muted py-4 small">Belum ada transaksi.</div>
-                    <?php else: ?>
-                        <?php foreach ($catRecap as $cr): ?>
-                            <?php $pct = max(1, round(($cr['total'] / max(($cr['type'] === 'in' ? $totalIn : $totalOut), 1)) * 100)); ?>
-                            <div class="d-flex align-items-center justify-content-between mb-2">
+    <!-- Breakdown per Kategori -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+            <h6 class="text-muted small text-uppercase fw-bold mb-3">Rekapitulasi per Kategori</h6>
+            <div class="overflow-auto" style="max-height: 300px;">
+                <?php if (empty($catRecap)): ?>
+                    <div class="text-center py-5 text-muted small">
+                        <i class="fas fa-receipt fs-3 d-block mb-2 opacity-50"></i>Belum ada transaksi pada periode ini.
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($catRecap as $cr): ?>
+                        <div class="p-3 mb-2 rounded-3 border bg-light">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
                                 <div>
-                                    <span class="badge <?php echo $cr['type'] === 'in' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger'; ?> me-2"><?php echo $cr['type'] === 'in' ? 'Masuk' : 'Keluar'; ?></span>
+                                    <span class="badge <?php echo $cr['type'] === 'in' ? 'bg-success' : 'bg-danger'; ?> rounded-pill px-2 py-1 small me-1" style="font-size: 0.65rem;">
+                                        <?php echo $cr['type'] === 'in' ? 'Masuk' : 'Keluar'; ?>
+                                    </span>
                                     <span class="small fw-bold text-dark"><?php echo ucwords(str_replace('_', ' ', $cr['category'])); ?></span>
                                 </div>
-                                <span class="small fw-bold">Rp <?php echo number_format($cr['total'], 0, ',', '.'); ?></span>
+                                <span class="badge bg-white text-dark border rounded-pill"><?php echo $cr['count']; ?>x</span>
                             </div>
-                            <div class="progress mb-3" style="height: 5px;">
-                                <div class="progress-bar <?php echo $cr['type'] === 'in' ? 'bg-success' : 'bg-danger'; ?>" style="width: <?php echo $pct; ?>%"></div>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <small class="text-muted">Total Nominal:</small>
+                                <span class="small fw-bold <?php echo $cr['type'] === 'in' ? 'text-success' : 'text-danger'; ?>">
+                                    Rp <?php echo number_format($cr['total'], 0, ',', '.'); ?>
+                                </span>
                             </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-            </div>
-            <div class="col-lg-8">
-                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0">
-                                <thead class="bg-light">
-                                    <tr>
-                                        <th class="ps-4">Tanggal</th>
-                                        <th>Tipe</th>
-                                        <th>Kategori</th>
-                                        <th>Keterangan</th>
-                                        <th class="text-end">Nominal</th>
-                                        <th class="text-end pe-4">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if (empty($finRows)): ?>
-                                        <tr><td colspan="6" class="text-center py-5 text-muted">Belum ada transaksi keuangan.</td></tr>
-                                    <?php else: ?>
-                                        <?php foreach ($finRows as $tr): ?>
-                                            <tr>
-                                                <td class="ps-4"><?php echo date('d M Y', strtotime($tr['transaction_date'])); ?></td>
-                                                <td>
-                                                    <?php if ($tr['type'] === 'in'): ?>
-                                                        <span class="badge bg-success bg-opacity-10 text-success"><i class="fas fa-arrow-down me-1"></i>Masuk</span>
-                                                    <?php else: ?>
-                                                        <span class="badge bg-danger bg-opacity-10 text-danger"><i class="fas fa-arrow-up me-1"></i>Keluar</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td><span class="fw-bold text-dark small"><?php echo ucwords(str_replace('_', ' ', $tr['category'])); ?></span></td>
-                                                <td class="small text-muted"><?php echo htmlspecialchars($tr['description'] ?: '-'); ?></td>
-                                                <td class="text-end fw-bold <?php echo $tr['type'] === 'in' ? 'text-success' : 'text-danger'; ?>">
-                                                    <?php echo ($tr['type'] === 'out' ? '-' : '+') . ' Rp ' . number_format($tr['amount'], 0, ',', '.'); ?>
-                                                </td>
-                                                <td class="text-end pe-4">
-                                                    <div class="d-inline-flex gap-2">
-                                                        <button class="btn btn-action btn-soft-primary" title="Edit" onclick="editFinance(<?php echo htmlspecialchars(json_encode($tr)); ?>)">
-                                                            <i class="fas fa-edit"></i>
-                                                        </button>
-                                                        <button class="btn btn-action btn-soft-danger" title="Hapus" onclick="deleteItem('finance', <?php echo $tr['id']; ?>)">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
                         </div>
-                    </div>
-                </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </div>
+    </div>
+</div>
 
-        <style>
-            @media print {
-                .no-print, .sidebar, .mcm-bottom-nav, .d-md-none, .btn-action { display: none !important; }
-                .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
-                .card { border: 1px solid #eee !important; box-shadow: none !important; }
-                body { background: white !important; }
+<!-- Detailed Transactions Table -->
+<div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h5 class="fw-bold text-dark mb-0">Daftar Transaksi &amp; Pengeluaran</h5>
+            <p class="small text-muted mb-0">Rincian seluruh pembelian barang, biaya operasional, dan pemasukan.</p>
+        </div>
+        <span class="badge bg-light text-secondary rounded-pill px-3 py-2 border"><?php echo count($finRows); ?> Transaksi</span>
+    </div>
+
+    <div class="table-responsive rounded-4 border">
+        <table class="table align-middle table-hover mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-3 py-2 small" style="width: 40px;">No</th>
+                    <th class="py-2 small">Tanggal</th>
+                    <th class="py-2 small">Tipe</th>
+                    <th class="py-2 small">Kategori</th>
+                    <th class="py-2 small">Nama Barang / Uraian</th>
+                    <th class="py-2 small text-center">Kuantitas</th>
+                    <th class="py-2 small text-end">Nominal</th>
+                    <th class="py-2 small text-center">Nota / Struk</th>
+                    <th class="py-2 small text-end pe-3">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($finRows)): ?>
+                    <tr><td colspan="9" class="text-center py-5 text-muted small">Belum ada data transaksi keuangan tercatat.</td></tr>
+                <?php else: ?>
+                    <?php foreach ($finRows as $idx => $tr): ?>
+                        <tr>
+                            <td class="ps-3 py-3 text-muted small"><?php echo $idx + 1; ?></td>
+                            <td class="py-3 text-nowrap small text-muted"><?php echo date('d M Y', strtotime($tr['transaction_date'])); ?></td>
+                            <td class="py-3">
+                                <?php if ($tr['type'] === 'in'): ?>
+                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1"><i class="fas fa-arrow-down me-1"></i>Masuk</span>
+                                <?php else: ?>
+                                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-1"><i class="fas fa-arrow-up me-1"></i>Keluar</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="py-3">
+                                <span class="badge bg-light text-dark border small"><?php echo ucwords(str_replace('_', ' ', $tr['category'])); ?></span>
+                            </td>
+                            <td class="py-3">
+                                <div class="fw-bold text-dark"><?php echo htmlspecialchars($tr['item_name'] ?: ucwords(str_replace('_', ' ', $tr['category']))); ?></div>
+                                <?php if (!empty($tr['description'])): ?>
+                                    <small class="text-muted d-block" style="font-size: 0.75rem;"><?php echo htmlspecialchars($tr['description']); ?></small>
+                                <?php endif; ?>
+                            </td>
+                            <td class="py-3 text-center">
+                                <?php if ($tr['quantity'] > 1 || $tr['unit_price'] > 0): ?>
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill">
+                                        <?php echo $tr['quantity']; ?> unit <?php echo $tr['unit_price'] > 0 ? '(@ Rp ' . number_format($tr['unit_price'], 0, ',', '.') . ')' : ''; ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="text-muted small">1 unit</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="py-3 text-end fw-bold <?php echo $tr['type'] === 'in' ? 'text-success' : 'text-danger'; ?>">
+                                <?php echo $tr['type'] === 'in' ? '+' : '-'; ?> Rp <?php echo number_format($tr['amount'], 0, ',', '.'); ?>
+                            </td>
+                            <td class="py-3 text-center">
+                                <?php if (!empty($tr['receipt_image'])): ?>
+                                    <a href="../<?php echo htmlspecialchars($tr['receipt_image']); ?>" target="_blank" class="btn btn-sm btn-outline-info rounded-pill px-2 py-1" title="Lihat Nota/Kuitansi">
+                                        <i class="fas fa-file-invoice me-1"></i>Nota
+                                    </a>
+                                <?php else: ?>
+                                    <span class="text-muted small">-</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="py-3 text-end pe-3">
+                                <div class="d-inline-flex gap-1">
+                                    <button class="btn btn-action btn-soft-primary btn-sm" onclick="editFinance(<?php echo htmlspecialchars(json_encode($tr)); ?>)" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-action btn-soft-danger btn-sm" onclick="deleteItem('finance', <?php echo $tr['id']; ?>)" title="Hapus">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function syncPaidOrders() {
+    Swal.fire({
+        title: 'Sinkronkan Pesanan Lunas?',
+        text: 'Sistem akan otomatis mendata seluruh pesanan lunas ke catatan pemasukan keuangan.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Sinkronkan!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Sedang memproses...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            const formData = new FormData();
+            formData.append('action', 'sync_orders');
+
+            fetch('actions/manage_finance.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    Swal.fire('Berhasil!', data.message, 'success').then(() => window.location.reload());
+                } else {
+                    Swal.fire('Gagal!', data.message, 'error');
+                }
+            })
+            .catch(() => {
+                Swal.fire('Gagal!', 'Terjadi kesalahan saat memproses data.', 'error');
+            });
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('financeMonthlyChart').getContext('2d');
+    const monthLabels = <?php echo json_encode($monthLabels); ?>;
+    const chartIn = <?php echo json_encode($chartIn); ?>;
+    const chartOut = <?php echo json_encode($chartOut); ?>;
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: monthLabels,
+            datasets: [
+                {
+                    label: 'Pemasukan (Uang Masuk)',
+                    data: chartIn,
+                    backgroundColor: 'rgba(22, 163, 74, 0.85)',
+                    borderRadius: 6,
+                },
+                {
+                    label: 'Pengeluaran (Uang Terpakai)',
+                    data: chartOut,
+                    backgroundColor: 'rgba(220, 38, 38, 0.85)',
+                    borderRadius: 6,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': Rp ' + new Intl.NumberFormat('id-ID').format(context.raw);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'Rp ' + (value >= 1000000 ? (value / 1000000) + ' Jt' : (value / 1000) + ' Rb');
+                        }
+                    },
+                    grid: { color: 'rgba(0,0,0,0.05)' }
+                },
+                x: {
+                    grid: { display: false }
+                }
             }
-            .main-content { overflow-y: auto !important; height: 100vh; }
-        </style>
+        }
+    });
+});
+</script>

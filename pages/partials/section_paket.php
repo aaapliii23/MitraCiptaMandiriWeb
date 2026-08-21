@@ -13,14 +13,14 @@
                             $featuresArr = json_decode($c['features'], true) ?: [];
                         ?>
                         <div class="swiper-slide d-flex align-items-stretch">
-                            <div class="paket-card w-100 shadow-sm border-0 rounded-4 bg-white d-flex flex-column">
-                                <div class="position-relative" style="height: 190px; flex-shrink: 0; border-top-left-radius: 1rem; border-top-right-radius: 1rem; overflow: hidden;">
-                                    <img src="<?php echo htmlspecialchars($c['image']); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="w-100 h-100" style="object-fit: cover;">
+                            <div class="paket-card w-100 border-0 rounded-4 bg-white d-flex flex-column">
+                                <div class="position-relative" style="height: 190px; flex-shrink: 0; border-top-left-radius: 1.25rem; border-top-right-radius: 1.25rem; overflow: hidden;">
+                                    <img src="<?php echo htmlspecialchars(asset_src($c['image'])); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="w-100 h-100" style="object-fit: cover;" onerror="this.onerror=null;this.src='assets/img/logo.png';">
                                     <div class="position-absolute top-0 end-0 m-3">
                                         <span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm" style="font-size: 0.7rem; font-weight: 600;">MCM Official</span>
                                     </div>
                                 </div>
-                                <div class="paket-card-content p-4 pb-4 d-flex flex-column flex-grow-1">
+                                <div class="paket-card-content p-4 d-flex flex-column flex-grow-1 bg-white" style="border-bottom-left-radius: 1.25rem; border-bottom-right-radius: 1.25rem;">
                                     <h4 class="fw-bold mb-2 text-dark" style="font-size: 1.2rem;"><?php echo htmlspecialchars($c['name']); ?></h4>
                                     <div class="mb-3">
                                         <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill small fw-bold" style="background-color: rgba(14, 165, 233, 0.1) !important;">
@@ -30,7 +30,7 @@
                                     <p class="text-muted small mb-3" style="min-height: 2.6em; line-height: 1.4;"><?php echo substr(strip_tags($c['description']), 0, 90); ?>...</p>
                                     <h5 class="text-primary fw-bold mb-3" style="font-size: 1.1rem;">Rp <?php echo number_format($c['price'], 0, ',', '.'); ?></h5>
                                     
-                                    <div class="mb-3 flex-grow-1">
+                                    <div class="mb-3">
                                         <?php foreach (array_slice($featuresArr, 0, 3) as $f): ?>
                                             <div class="d-flex align-items-center mb-2">
                                                 <i class="fas fa-check-circle text-success me-2" style="font-size: 0.85rem;"></i>
@@ -39,9 +39,9 @@
                                         <?php endforeach; ?>
                                     </div>
 
-                                        <div class="pt-2 mt-auto">
-                                        <a href="pages/class_detail.php?id=<?php echo $c['id']; ?>&from=landing" class="btn btn-primary btn-premium w-100 py-3 rounded-pill fw-bold shadow-sm" 
-                                                style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); border: none; font-size: 0.9rem;">
+                                    <div class="mt-auto pt-3 pb-2">
+                                        <a href="pages/class_detail.php?id=<?php echo $c['id']; ?>&from=landing" class="btn btn-primary btn-premium w-100 py-3 rounded-pill fw-bold shadow-sm d-block text-center" 
+                                                style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); border: none; font-size: 0.95rem;">
                                             Daftar Sekarang
                                         </a>
                                     </div>

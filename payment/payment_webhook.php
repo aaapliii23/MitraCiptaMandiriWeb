@@ -58,6 +58,19 @@ try {
         $stmt->execute([$order['class_id']]);
         $className = (string)$stmt->fetchColumn();
 
+        // Auto-record into finance_transactions
+        try {
+            $checkFin = $pdo->prepare("SELECT COUNT(*) FROM finance_transactions WHERE order_id = ?");
+            $checkFin->execute([$order['id']]);
+            if ($checkFin->fetchColumn() == 0) {
+                $insFin = $pdo->prepare("INSERT INTO finance_transactions (type, category, item_name, quantity, unit_price, amount, description, order_id, transaction_date) 
+                                          VALUES ('in', 'pemasukan_kursus', ?, 1, ?, ?, ?, ?, CURDATE())");
+                $itemName = "Pendaftaran " . $className . " (" . $order['customer_name'] . ")";
+                $desc = "Pemasukan pembayaran kursus no. order " . $orderNumber;
+                $insFin->execute([$itemName, $order['amount'], $order['amount'], $desc, $order['id']]);
+            }
+        } catch (Exception $fe) {}
+
         $msg = "*PEMBAYARAN LUNAS - MCM*\n\n";
         $msg .= "Halo " . $order['customer_name'] . ", pembayaran Anda untuk *" . $className . "* sudah kami terima. ✅\n";
         $msg .= "No. Order: " . $orderNumber . "\n";

@@ -7,41 +7,47 @@ if (!isset($_SESSION['admin_logged_in'])) {
 require_once '../../config/database.php';
 
 $type = $_GET['type'] ?? 'monthly';
+$category = $_GET['category'] ?? 'all';
+$classId = (int)($_GET['class_id'] ?? 0);
+$year = $_GET['year'] ?? date('Y');
+
+$filterJoin = " FROM orders o JOIN classes c ON o.class_id = c.id WHERE 1=1";
+$filterParams = [];
+
+if ($category !== 'all' && !empty($category)) {
+    $filterJoin .= " AND c.category = :cat";
+    $filterParams[':cat'] = $category;
+}
+if ($classId > 0) {
+    $filterJoin .= " AND o.class_id = :cid";
+    $filterParams[':cid'] = $classId;
+}
 
 try {
     if ($type === 'weekly') {
         // Last 7 days
-        $stmt = $pdo->query("SELECT DATE(created_at) as label, COUNT(*) as count 
-                             FROM orders 
-                             WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-                             GROUP BY DATE(created_at)
-                             ORDER BY DATE(created_at) ASC");
+        $sql = "SELECT DATE(o.created_at) as label, COUNT(o.id) as count $filterJoin AND o.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) GROUP BY DATE(o.created_at) ORDER BY DATE(o.created_at) ASC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($filterParams);
         $data = $stmt->fetchAll();
     } elseif ($type === 'monthly') {
-        $year = $_GET['year'] ?? date('Y');
-        // Specific year monthly breakdown
-        $stmt = $pdo->prepare("SELECT DATE_FORMAT(created_at, '%b') as label, COUNT(*) as count 
-                             FROM orders 
-                             WHERE YEAR(created_at) = ?
-                             GROUP BY MONTH(created_at)
-                             ORDER BY MONTH(created_at) ASC");
-        $stmt->execute([$year]);
+        if ($year === 'all' || empty($year)) {
+            $sql = "SELECT DATE_FORMAT(o.created_at, '%b %Y') as label, COUNT(o.id) as count $filterJoin GROUP BY YEAR(o.created_at), MONTH(o.created_at) ORDER BY o.created_at ASC";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($filterParams);
+        } else {
+            $sql = "SELECT DATE_FORMAT(o.created_at, '%b') as label, COUNT(o.id) as count $filterJoin AND YEAR(o.created_at) = :year GROUP BY MONTH(o.created_at) ORDER BY MONTH(o.created_at) ASC";
+            $stmt = $pdo->prepare($sql);
+            $filterParams[':year'] = (int)$year;
+            $stmt->execute($filterParams);
+        }
         $data = $stmt->fetchAll();
     } elseif ($type === 'yearly') {
         // Last 10 years
-        $stmt = $pdo->query("SELECT YEAR(created_at) as label, COUNT(*) as count 
-                             FROM orders 
-                             WHERE created_at >= DATE_SUB(NOW(), INTERVAL 10 YEAR)
-                             GROUP BY YEAR(created_at)
-                             ORDER BY YEAR(created_at) ASC");
+        $sql = "SELECT YEAR(o.created_at) as label, COUNT(o.id) as count $filterJoin AND o.created_at >= DATE_SUB(NOW(), INTERVAL 10 YEAR) GROUP BY YEAR(o.created_at) ORDER BY YEAR(o.created_at) ASC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($filterParams);
         $data = $stmt->fetchAll();
-    } elseif ($type === 'payment') {
-        $stmt = $pdo->query("SELECT payment_status, COUNT(*) as count, SUM(amount) as total 
-                             FROM orders 
-                             GROUP BY payment_status");
-        $data = $stmt->fetchAll();
-        echo json_encode(['status' => 'success', 'payment' => $data]);
-        exit;
     }
 
     echo json_encode([
@@ -52,4 +58,3 @@ try {
 } catch (PDOException $e) {
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
-?>

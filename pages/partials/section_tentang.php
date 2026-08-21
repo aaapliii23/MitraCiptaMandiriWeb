@@ -5,11 +5,7 @@
                 <div class="col-lg-6 mb-5 mb-lg-0" data-aos="fade-right">
                     <!-- Placeholder for About Image, using a colored div or unspash placeholder -->
                     <div class="position-relative">
-                        <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Tentang MCM" class="img-fluid rounded-4 shadow-lg">
-                        <div class="position-absolute bottom-0 end-0 bg-white p-4 rounded-4 shadow-lg" style="transform: translate(20px, 20px);">
-                            <h3 class="mb-0 fw-bold" style="color: var(--secondary-color) !important;">10+</h3>
-                            <p class="text-muted mb-0">Tahun Pengalaman</p>
-                        </div>
+                        <img src="<?php echo htmlspecialchars(asset_src('assets/img/gallery/slide_landingpages/WhatsApp Image 2026-08-14 at 14.44.00.jpeg')); ?>" alt="Tentang MCM" class="img-fluid rounded-4 shadow-lg w-100" style="object-fit: cover; max-height: 450px;" onerror="this.onerror=null;this.src='assets/img/hero-bg.jpg';">
                     </div>
                 </div>
                 <div class="col-lg-6 ps-lg-5" data-aos="fade-left">

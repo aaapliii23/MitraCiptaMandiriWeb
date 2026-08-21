@@ -93,7 +93,10 @@
                                     <input type="hidden" name="customer_name"    value="<?php echo htmlspecialchars($checkoutUser['name']  ?? ''); ?>">
                                     <input type="hidden" name="customer_email"   value="<?php echo htmlspecialchars($checkoutUser['email'] ?? ''); ?>">
                                     <input type="hidden" name="customer_phone"   value="<?php echo htmlspecialchars($checkoutUser['phone'] ?? ''); ?>">
-                                    <input type="hidden" name="customer_address" value="-">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.7rem;">Alamat Lengkap *</label>
+                                        <textarea class="form-control form-control-sm bg-light" name="customer_address" rows="2" required placeholder="Jl. Sudirman No. 123..."></textarea>
+                                    </div>
                                     <input type="hidden" name="class_id" id="checkoutClassId">
 
                                     <!-- Instructor dropdown populated by JS -->

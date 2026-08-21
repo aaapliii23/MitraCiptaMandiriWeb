@@ -242,6 +242,84 @@ if ($page === 'finance') {
     } catch (PDOException $e) {}
 }
 
+// Fetch Facility Locations & Categories
+$facilities = [];
+$facilityCategories = [];
+if ($page === 'facilities') {
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `facility_categories` (
+          `id` int(11) NOT NULL AUTO_INCREMENT,
+          `slug` varchar(50) NOT NULL UNIQUE,
+          `name` varchar(100) NOT NULL,
+          `icon` varchar(50) NOT NULL DEFAULT 'fa-building',
+          `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `facility_locations` (
+          `id` int(11) NOT NULL AUTO_INCREMENT,
+          `category` varchar(50) NOT NULL,
+          `title` varchar(255) NOT NULL,
+          `image` varchar(255) NOT NULL,
+          `description` text DEFAULT NULL,
+          `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+        // Seed default categories if empty
+        $catCount = (int)$pdo->query("SELECT COUNT(*) FROM facility_categories")->fetchColumn();
+        if ($catCount === 0) {
+            $defaultCats = [
+                ['alat_pemadam', 'Alat Pemadam', 'fa-fire-extinguisher'],
+                ['balkon',       'Balkon',       'fa-door-open'],
+                ['kantor',       'Kantor',       'fa-building'],
+                ['kelas',        'Kelas',        'fa-chalkboard-teacher'],
+                ['lobby',        'Lobby',        'fa-couch'],
+                ['mushola',      'Mushola',      'fa-mosque'],
+                ['parkiran',     'Parkiran',     'fa-parking'],
+                ['toilet',       'Toilet',       'fa-restroom']
+            ];
+            $ins = $pdo->prepare("INSERT IGNORE INTO facility_categories (slug, name, icon) VALUES (?, ?, ?)");
+            foreach ($defaultCats as $d) {
+                $ins->execute($d);
+            }
+        }
+
+        $count = (int)$pdo->query("SELECT COUNT(*) FROM facility_locations")->fetchColumn();
+        if ($count === 0) {
+            $baseDir = dirname(__DIR__) . '/assets/img/fasilitas';
+            $cats = [
+                'alat_pemadam' => 'Alat Pemadam',
+                'balkon'       => 'Balkon',
+                'kantor'       => 'Kantor',
+                'kelas'        => 'Kelas',
+                'lobby'        => 'Lobby',
+                'mushola'      => 'Mushola',
+                'parkiran'     => 'Parkiran',
+                'toilet'       => 'Toilet'
+            ];
+            foreach ($cats as $slug => $cName) {
+                $dir = $baseDir . '/' . $slug;
+                if (is_dir($dir)) {
+                    $files = scandir($dir);
+                    $num = 1;
+                    foreach ($files as $f) {
+                        if ($f !== '.' && $f !== '..' && preg_match('/\.(jpe?g|png|webp)$/i', $f)) {
+                            $imgPath = 'assets/img/fasilitas/' . $slug . '/' . $f;
+                            $t = 'Foto ' . $cName . ' MCM #' . $num;
+                            $stmt = $pdo->prepare("INSERT INTO facility_locations (category, title, image, description) VALUES (?, ?, ?, ?)");
+                            $stmt->execute([$slug, $t, $imgPath, 'Dokumentasi area ' . strtolower($cName) . ' LPK Mitra Cipta Mandiri']);
+                            $num++;
+                        }
+                    }
+                }
+            }
+        }
+
+        $facilityCategories = $pdo->query("SELECT * FROM facility_categories ORDER BY name ASC")->fetchAll();
+        $facilities = $pdo->query("SELECT * FROM facility_locations ORDER BY id DESC")->fetchAll();
+    } catch (PDOException $e) {}
+}
 
 ?>
 
@@ -251,6 +329,7 @@ if ($page === 'finance') {
 <?php if ($page === 'orders') include __DIR__ . '/pages/orders.php'; ?>
 <?php if ($page === 'classes') include __DIR__ . '/pages/classes.php'; ?>
 <?php if ($page === 'gallery') include __DIR__ . '/pages/gallery.php'; ?>
+<?php if ($page === 'facilities') include __DIR__ . '/pages/facilities.php'; ?>
 <?php if ($page === 'instructors') include __DIR__ . '/pages/instructors.php'; ?>
 <?php if ($page === 'certs') include __DIR__ . '/pages/certs.php'; ?>
 <?php if ($page === 'reports') include __DIR__ . '/pages/reports.php'; ?>
