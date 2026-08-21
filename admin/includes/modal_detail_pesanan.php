@@ -37,8 +37,9 @@
                     <div class="col-12 border-top pt-3">
                         <div class="bg-light p-3 rounded-3 d-flex justify-content-between align-items-center">
                             <div>
-                                <label class="small text-muted d-block">Kelas Pilihan</label>
+                                <label class="small text-muted d-block">Kelas &amp; Metode</label>
                                 <span class="fw-bold text-primary" id="detailKelas"></span>
+                                <div class="small fw-semibold text-secondary mt-1" id="detailMetode"></div>
                             </div>
                             <div class="text-end">
                                 <label class="small text-muted d-block">Total Bayar</label>

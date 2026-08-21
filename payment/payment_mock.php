@@ -41,6 +41,12 @@ if (!$order) {
                     <span class="fw-bold small"><?php echo htmlspecialchars($order['class_name']); ?></span>
                 </div>
                 <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted small">Metode Belajar</span>
+                    <span class="badge <?php echo ($order['learning_type'] ?? '') === 'online' ? 'bg-info' : 'bg-primary'; ?> rounded-pill small">
+                        <?php echo ($order['learning_type'] ?? '') === 'online' ? '<i class="fas fa-laptop me-1"></i>Online (LMS)' : '<i class="fas fa-chalkboard-teacher me-1"></i>Offline (Tatap Muka)'; ?>
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
                     <span class="text-muted small">Nama</span>
                     <span class="fw-bold small"><?php echo htmlspecialchars($order['customer_name']); ?></span>
                 </div>

@@ -6,7 +6,7 @@ $userId = (int)$_SESSION['user_id'];
 
 try {
     $stmt = $pdo->prepare("
-        SELECT e.id AS enrollment_id, e.enrolled_at, c.*,
+        SELECT e.id AS enrollment_id, e.learning_type, e.enrolled_at, c.*,
                (SELECT COUNT(*) FROM materials m WHERE m.class_id = c.id) AS total_materials,
                (SELECT COUNT(*) FROM material_progress mp JOIN materials m ON mp.material_id = m.id WHERE mp.user_id = ? AND m.class_id = c.id AND mp.completed = 1) AS done_materials
         FROM enrollments e
@@ -74,14 +74,42 @@ try {
                         $total = (int)$c['total_materials'];
                         $done = (int)$c['done_materials'];
                         $pct = $total > 0 ? round(($done / $total) * 100) : 0;
+                        $learnType = $c['learning_type'] ?? 'offline';
                     ?>
                         <div class="col-md-6 col-lg-4">
                             <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
                                 <img src="../<?php echo htmlspecialchars($c['image']); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="card-img-top" style="height: 160px; object-fit: cover;" onerror="this.src='../assets/img/logo.png';">
                                 <div class="card-body p-4 d-flex flex-column">
-                                    <span class="badge bg-soft-primary text-primary align-self-start rounded-pill px-3 mb-2"><?php echo htmlspecialchars($c['category']); ?></span>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="badge bg-soft-primary text-primary rounded-pill px-3"><?php echo htmlspecialchars($c['category']); ?></span>
+                                        <span class="badge <?php echo $learnType === 'online' ? 'bg-info text-white' : 'bg-primary text-white'; ?> rounded-pill px-3" style="font-size: 0.7rem;">
+                                            <?php echo $learnType === 'online' ? '<i class="fas fa-laptop me-1"></i>Online' : '<i class="fas fa-chalkboard-teacher me-1"></i>Offline'; ?>
+                                        </span>
+                                    </div>
                                     <h5 class="fw-bold text-dark mb-2"><?php echo htmlspecialchars($c['name']); ?></h5>
                                     <p class="text-muted small mb-3 text-truncate"><?php echo htmlspecialchars($c['description']); ?></p>
+                                    <?php if ($learnType === 'offline'): ?>
+                                    <div class="mb-3">
+                                        <div class="d-flex align-items-center gap-2 p-2 rounded-3" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+                                            <i class="fab fa-whatsapp text-success fs-5"></i>
+                                            <span class="small text-success fw-medium">Pelatihan Tatap Muka</span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-auto d-flex flex-column gap-2">
+                                        <a href="course.php?class_id=<?php echo (int)$c['id']; ?>" class="btn btn-outline-secondary w-100 rounded-pill btn-sm">
+                                            <i class="fas fa-info-circle me-1"></i>Detail Kelas
+                                        </a>
+                                        <?php if (!empty($c['wa_group_link'])): ?>
+                                        <a href="<?php echo htmlspecialchars($c['wa_group_link']); ?>" target="_blank" rel="noopener noreferrer" class="btn w-100 rounded-pill fw-bold" style="background: linear-gradient(135deg, #25d366, #128c7e); border: none; color: #fff;">
+                                            <i class="fab fa-whatsapp me-1"></i>Gabung Grup WA
+                                        </a>
+                                        <?php else: ?>
+                                        <button class="btn btn-outline-success w-100 rounded-pill btn-sm" disabled>
+                                            <i class="fas fa-clock me-1"></i>Link WA Belum Tersedia
+                                        </button>
+                                        <?php endif; ?>
+                                    </div>
+                                    <?php else: ?>
                                     <div class="mb-3">
                                         <div class="d-flex justify-content-between small mb-1">
                                             <span class="text-muted">Progres Belajar</span>
@@ -94,6 +122,7 @@ try {
                                     <div class="mt-auto">
                                         <a href="course.php?class_id=<?php echo (int)$c['id']; ?>" class="btn btn-primary w-100 rounded-pill fw-bold"><?php echo $total > 0 ? 'Mulai Belajar' : 'Lihat Kelas'; ?></a>
                                     </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>

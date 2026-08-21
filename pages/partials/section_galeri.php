@@ -50,13 +50,11 @@
     <!-- Gallery Lightbox Modal -->
     <div class="modal fade" id="galleryLightboxModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content border-0 rounded-4 overflow-hidden shadow-lg bg-dark">
-                <div class="modal-header border-0 pb-0 px-4 pt-3 position-absolute top-0 end-0 z-index-1">
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
+            <div class="modal-content border-0 rounded-4 overflow-hidden shadow-lg bg-dark position-relative">
+                <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3 shadow" data-bs-dismiss="modal" aria-label="Close" style="z-index: 1060; background-color: rgba(0, 0, 0, 0.65); padding: 0.65rem; border-radius: 50%; opacity: 0.9; cursor: pointer;"></button>
                 <div class="modal-body p-0 text-center position-relative">
                     <img src="" id="galleryLightboxImg" class="img-fluid w-100" style="max-height: 80vh; object-fit: contain;" alt="Preview Foto">
-                    <div class="p-3 text-white text-start" style="background: rgba(15, 23, 42, 0.9);">
+                    <div class="p-3 text-white text-start" style="background: rgba(15, 23, 42, 0.95);">
                         <h5 class="fw-bold mb-0" id="galleryLightboxTitle"></h5>
                     </div>
                 </div>

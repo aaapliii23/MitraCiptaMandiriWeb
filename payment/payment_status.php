@@ -48,7 +48,13 @@ $meta = $statusMeta[$order['payment_status'] ?? 'unpaid'] ?? $statusMeta['unpaid
                             <span class="fw-bold small"><?php echo htmlspecialchars($order['class_name'] ?? '-'); ?></span>
                         </div>
                         <div class="d-flex justify-content-between py-1">
-                            <span class="text-muted small">Metode</span>
+                            <span class="text-muted small">Tipe Pelatihan</span>
+                            <span class="badge <?php echo ($order['learning_type'] ?? '') === 'online' ? 'bg-info' : 'bg-primary'; ?> rounded-pill small">
+                                <?php echo ($order['learning_type'] ?? '') === 'online' ? 'Online (LMS)' : 'Offline (Tatap Muka)'; ?>
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span class="text-muted small">Metode Bayar</span>
                             <span class="fw-bold small"><?php echo htmlspecialchars($order['payment_method'] ?? '-'); ?></span>
                         </div>
                         <div class="d-flex justify-content-between py-1">

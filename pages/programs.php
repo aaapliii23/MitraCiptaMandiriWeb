@@ -95,9 +95,21 @@ try {
                         </div>
                     </div>
                     <div class="paket-card-content p-4">
-                        <h4 class="fw-bold mb-2"><?php echo htmlspecialchars($c['name']); ?></h4>
-                        <p class="text-muted small mb-4" style="height: 4.5em; overflow: hidden;"><?php echo substr(strip_tags($c['description']), 0, 120); ?>...</p>
-                        <h5 class="text-primary fw-bold mb-4">Rp <?php echo number_format($c['price'], 0, ',', '.'); ?></h5>
+                        <p class="text-muted small mb-3" style="height: 3.8em; overflow: hidden;"><?php echo substr(strip_tags($c['description']), 0, 120); ?>...</p>
+                        <?php 
+                            $offPrice = (!empty($c['price_offline']) && (int)$c['price_offline'] > 0) ? (int)$c['price_offline'] : (int)$c['price'];
+                            $onPrice = (!empty($c['price_online']) && (int)$c['price_online'] > 0) ? (int)$c['price_online'] : (int)round($offPrice * 0.75);
+                        ?>
+                        <div class="d-flex align-items-baseline justify-content-between mb-3 bg-light p-2 px-3 rounded-3">
+                            <div>
+                                <span class="d-block small text-muted" style="font-size: 0.7rem;"><i class="fas fa-chalkboard-teacher text-primary me-1"></i>Offline</span>
+                                <span class="text-primary fw-bold" style="font-size: 0.95rem;">Rp <?php echo number_format($offPrice, 0, ',', '.'); ?></span>
+                            </div>
+                            <div class="border-start ps-3 text-end">
+                                <span class="d-block small text-muted" style="font-size: 0.7rem;"><i class="fas fa-laptop text-info me-1"></i>Online</span>
+                                <span class="text-info fw-bold" style="font-size: 0.95rem;">Rp <?php echo number_format($onPrice, 0, ',', '.'); ?></span>
+                            </div>
+                        </div>
                         
                         <div class="mb-4">
                             <?php foreach (array_slice($featuresArr, 0, 3) as $f): ?>

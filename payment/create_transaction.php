@@ -83,7 +83,15 @@ if (!$class) {
     exit;
 }
 
-$amount = (int)$class['price'];
+$learningType = strtolower(trim($_POST['learning_type'] ?? 'offline'));
+if ($learningType !== 'online' && $learningType !== 'offline') {
+    $learningType = 'offline';
+}
+
+$offPrice = (!empty($class['price_offline']) && (int)$class['price_offline'] > 0) ? (int)$class['price_offline'] : (int)$class['price'];
+$onPrice = (!empty($class['price_online']) && (int)$class['price_online'] > 0) ? (int)$class['price_online'] : (int)round($offPrice * 0.75);
+
+$amount = ($learningType === 'online') ? $onPrice : $offPrice;
 $orderNumber = 'ORD-' . strtoupper(uniqid()) . '-' . time();
 
 if (!$userId) {
@@ -119,8 +127,8 @@ if (!$userId) {
     }
 }
 
-$stmt = $pdo->prepare("INSERT INTO orders (order_number, user_id, customer_name, customer_phone, customer_email, customer_address, customer_institution, class_id, instructor_id, amount, status, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid')");
-$stmt->execute([$orderNumber, $userId, $customerName, $digits, $customerEmail, $customerAddress, $customerInstitution ?: '-', $classId, $instructorId ?: null, $amount]);
+$stmt = $pdo->prepare("INSERT INTO orders (order_number, user_id, customer_name, customer_phone, customer_email, customer_address, customer_institution, class_id, learning_type, instructor_id, amount, status, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid')");
+$stmt->execute([$orderNumber, $userId, $customerName, $digits, $customerEmail, $customerAddress, $customerInstitution ?: '-', $classId, $learningType, $instructorId ?: null, $amount]);
 $orderId = (int)$pdo->lastInsertId();
 
 $res = pg_create_transaction($pdo, ['id' => $orderId, 'order_number' => $orderNumber, 'amount' => $amount], $class);

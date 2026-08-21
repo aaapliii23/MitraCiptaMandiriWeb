@@ -16,7 +16,7 @@
                         </div>
                     </div>
                     <div class="card-body p-4 pt-0">
-                        <form action="<?php echo $adminBase; ?>/actions/save_settings.php" method="POST" class="ajax-form">
+                        <form id="settingsForm" action="<?php echo $adminBase; ?>/actions/save_settings.php" method="POST" onsubmit="event.preventDefault(); submitAjaxForm('settingsForm');">
                             <div class="row g-4">
                                 <div class="col-md-6">
                                     <label class="form-label small fw-bold text-muted text-uppercase">WhatsApp Bisnis</label>
@@ -71,7 +71,7 @@
                             <img src="../assets/img/logo.png" alt="MCM Logo" class="mb-3" style="max-height: 80px;">
                             <p class="small text-muted mb-0">Logo saat ini (.png)</p>
                         </div>
-                        <form action="<?php echo $adminBase; ?>/actions/save_settings.php" method="POST" enctype="multipart/form-data" class="ajax-form">
+                        <form id="logoForm" action="<?php echo $adminBase; ?>/actions/save_settings.php" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault(); submitAjaxForm('logoForm');">
                             <div class="mb-3">
                                 <input type="file" class="form-control" name="logo" accept="image/png">
                             </div>

@@ -8,7 +8,7 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="financeForm" class="ajax-form" action="<?php echo $adminBase; ?>/actions/manage_finance.php" method="POST" enctype="multipart/form-data">
+            <form id="financeForm" action="<?php echo $adminBase; ?>/actions/manage_finance.php" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault(); submitAjaxForm('financeForm');">
                 <input type="hidden" name="action" value="create" id="financeAction">
                 <input type="hidden" name="id" id="financeId">
 

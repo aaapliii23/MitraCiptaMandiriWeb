@@ -34,7 +34,7 @@ function reinitBootstrapModals() {
                 'detailOrderNum': 'data-order', 'detailName': 'data-name',
                 'detailPhone': 'data-phone', 'detailEmail': 'data-email',
                 'detailInstansi': 'data-instansi', 'detailAlamat': 'data-alamat',
-                'detailKelas': 'data-kelas', 'detailHarga': 'data-harga'
+                'detailKelas': 'data-kelas', 'detailMetode': 'data-metode', 'detailHarga': 'data-harga'
             };
             for (const [id, attr] of Object.entries(map)) {
                 const el = document.getElementById(id);

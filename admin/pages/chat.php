@@ -110,7 +110,7 @@ if (empty($threadNumber)) {
                     <?php endif; ?>
                 </div>
                 <div class="card-footer bg-white border-0 p-4">
-                    <form id="chatReplyForm" class="ajax-form d-flex gap-2" action="<?php echo $adminBase; ?>/actions/manage_chat.php" method="POST">
+                    <form id="chatReplyForm" class="d-flex gap-2" action="<?php echo $adminBase; ?>/actions/manage_chat.php" method="POST" onsubmit="event.preventDefault(); submitAjaxForm('chatReplyForm');">
                         <input type="hidden" name="action" value="send_reply">
                         <input type="hidden" name="wa_number" value="<?php echo htmlspecialchars($threadNumber); ?>">
                         <input type="text" class="form-control rounded-pill" name="message" required placeholder="Tulis balasan...">

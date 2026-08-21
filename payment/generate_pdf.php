@@ -198,12 +198,14 @@ if ($order['payment_status'] !== 'paid') {
                     <div>
                         <div class="info-label">Program Pelatihan</div>
                         <h5 class="fw-bold mb-0"><?php echo htmlspecialchars($order['class_name']); ?></h5>
-                        <small class="text-muted">Standard Kurikulum Vokasi Nasional</small>
+                        <small class="text-muted">
+                            Metode: <strong><?php echo ($order['learning_type'] ?? '') === 'online' ? 'Kelas Online (LMS)' : 'Kelas Offline (Tatap Muka)'; ?></strong>
+                        </small>
                     </div>
                 </div>
                 <div class="text-end">
                     <div class="info-label">Biaya</div>
-                    <h5 class="fw-bold mb-0 text-primary">Rp <?php echo number_format($order['price'], 0, ',', '.'); ?></h5>
+                    <h5 class="fw-bold mb-0 text-primary">Rp <?php echo number_format($order['amount'], 0, ',', '.'); ?></h5>
                 </div>
             </div>
 

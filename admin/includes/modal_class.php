@@ -30,8 +30,18 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-medium">Harga (Rp)</label>
-                            <input type="number" class="form-control" name="price" id="classPrice" placeholder="Misal: 500000" required>
+                            <label class="form-label small fw-medium text-dark"><i class="fas fa-chalkboard-teacher text-primary me-1"></i>Harga Kelas Offline / Tatap Muka (Rp) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="price_offline" id="classPriceOffline" placeholder="Misal: 1200000" min="0" required>
+                            <input type="hidden" name="price" id="classPrice">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-medium text-dark"><i class="fas fa-laptop-code text-info me-1"></i>Harga Kelas Online / LMS (Rp) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="price_online" id="classPriceOnline" placeholder="Misal: 850000" min="0" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-medium text-dark"><i class="fab fa-whatsapp text-success me-1"></i>Link Grup WhatsApp <span class="text-muted fw-normal">(khusus peserta offline)</span></label>
+                            <input type="url" class="form-control" name="wa_group_link" id="classWaGroupLink" placeholder="https://chat.whatsapp.com/..." id="classWaGroupLink">
+                            <small class="text-muted d-block mt-1"><i class="fas fa-info-circle me-1"></i>Link ini akan ditampilkan kepada peserta yang mendaftar dengan metode <strong>Offline</strong>. Kosongkan jika belum ada.</small>
                         </div>
                         <div class="col-12">
                             <label class="form-label small fw-medium">Deskripsi</label>

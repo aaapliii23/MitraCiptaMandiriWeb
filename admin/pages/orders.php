@@ -47,7 +47,10 @@
                                         </td>
                                         <td>
                                             <div class="small text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;"><?php echo htmlspecialchars($o['class_category']); ?></div>
-                                            <div class="fw-bold text-primary"><?php echo htmlspecialchars($o['class_name']); ?></div>
+                                            <div class="fw-bold text-primary mb-1"><?php echo htmlspecialchars($o['class_name']); ?></div>
+                                            <span class="badge <?php echo ($o['learning_type'] ?? '') === 'online' ? 'bg-info bg-opacity-10 text-info' : 'bg-primary bg-opacity-10 text-primary'; ?> rounded-pill" style="font-size: 0.68rem;">
+                                                <?php echo ($o['learning_type'] ?? '') === 'online' ? '<i class="fas fa-laptop me-1"></i>Online (LMS)' : '<i class="fas fa-chalkboard-teacher me-1"></i>Offline'; ?>
+                                            </span>
                                         </td>
                                         <td class="small text-muted"><?php echo $o['instructor_name'] ? htmlspecialchars($o['instructor_name']) : '<span class="text-muted">-</span>'; ?></td>
                                         <td class="fw-bold text-dark">Rp <?php echo number_format($o['amount'], 0, ',', '.'); ?></td>
@@ -83,6 +86,7 @@
                                                     data-instansi="<?php echo htmlspecialchars(!empty($o['customer_institution']) ? $o['customer_institution'] : '-'); ?>"
                                                     data-alamat="<?php echo htmlspecialchars(!empty($o['customer_address']) ? $o['customer_address'] : '-'); ?>"
                                                     data-kelas="<?php echo htmlspecialchars($o['class_name']); ?>"
+                                                    data-metode="<?php echo ($o['learning_type'] ?? '') === 'online' ? 'Online (LMS)' : 'Offline (Tatap Muka)'; ?>"
                                                     data-harga="<?php echo number_format($o['amount'], 0, ',', '.'); ?>">
                                                     <i class="fas fa-eye"></i>
                                                 </button>

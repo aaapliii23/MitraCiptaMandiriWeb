@@ -197,6 +197,8 @@ CREATE TABLE IF NOT EXISTS `classes` (
   `image` varchar(255) NOT NULL,
   `features` text NOT NULL,
   `price` int NOT NULL DEFAULT '500000',
+  `price_offline` int NOT NULL DEFAULT '500000',
+  `price_online` int NOT NULL DEFAULT '350000',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -252,6 +254,7 @@ CREATE TABLE IF NOT EXISTS `enrollments` (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
   `class_id` int NOT NULL,
+  `learning_type` enum('online','offline') NOT NULL DEFAULT 'offline',
   `order_id` int NOT NULL,
   `enrolled_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -428,6 +431,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `customer_address` text,
   `customer_institution` varchar(100) DEFAULT NULL,
   `class_id` int NOT NULL,
+  `learning_type` enum('online','offline') NOT NULL DEFAULT 'offline',
   `instructor_id` int DEFAULT NULL,
   `amount` int NOT NULL,
   `status` enum('pending','confirmed','cancelled') DEFAULT 'pending',

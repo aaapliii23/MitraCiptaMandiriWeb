@@ -49,9 +49,10 @@ try {
         $stmt = $pdo->prepare("UPDATE orders SET payment_status = 'paid', payment_method = ?, payment_gateway_ref = COALESCE(payment_gateway_ref, ?), paid_at = NOW(), status = 'confirmed' WHERE id = ?");
         $stmt->execute([$method, $gatewayRef, $order['id']]);
 
+        $learningType = $order['learning_type'] ?? 'offline';
         if ($order['user_id']) {
-            $stmt = $pdo->prepare("INSERT IGNORE INTO enrollments (user_id, class_id, order_id) VALUES (?, ?, ?)");
-            $stmt->execute([$order['user_id'], $order['class_id'], $order['id']]);
+            $stmt = $pdo->prepare("INSERT IGNORE INTO enrollments (user_id, class_id, learning_type, order_id) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$order['user_id'], $order['class_id'], $learningType, $order['id']]);
         }
 
         $stmt = $pdo->prepare("SELECT name FROM classes WHERE id = ?");
@@ -65,14 +66,16 @@ try {
             if ($checkFin->fetchColumn() == 0) {
                 $insFin = $pdo->prepare("INSERT INTO finance_transactions (type, category, item_name, quantity, unit_price, amount, description, order_id, transaction_date) 
                                           VALUES ('in', 'pemasukan_kursus', ?, 1, ?, ?, ?, ?, CURDATE())");
-                $itemName = "Pendaftaran " . $className . " (" . $order['customer_name'] . ")";
+                $typeLabel = ($learningType === 'online') ? 'Online' : 'Offline';
+                $itemName = "Pendaftaran " . $className . " [" . $typeLabel . "] (" . $order['customer_name'] . ")";
                 $desc = "Pemasukan pembayaran kursus no. order " . $orderNumber;
                 $insFin->execute([$itemName, $order['amount'], $order['amount'], $desc, $order['id']]);
             }
         } catch (Exception $fe) {}
 
+        $methodLabel = ($learningType === 'online') ? 'Kelas Online (LMS)' : 'Kelas Offline (Tatap Muka)';
         $msg = "*PEMBAYARAN LUNAS - MCM*\n\n";
-        $msg .= "Halo " . $order['customer_name'] . ", pembayaran Anda untuk *" . $className . "* sudah kami terima. ✅\n";
+        $msg .= "Halo " . $order['customer_name'] . ", pembayaran Anda untuk *" . $className . "* (" . $methodLabel . ") sudah kami terima. ✅\n";
         $msg .= "No. Order: " . $orderNumber . "\n";
         $msg .= "Silakan login ke LMS untuk mulai belajar: " . pg_base_url() . "/lms/dashboard.php";
         wa_send_message($pdo, $order['customer_phone'], $msg, 'pembayaran');

@@ -258,6 +258,19 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    const btnLanjutCheckout = document.getElementById('btnLanjutCheckout');
+    if (btnLanjutCheckout) {
+        btnLanjutCheckout.addEventListener('click', function() {
+            if (currentSelectedClass) {
+                if (detailModal) detailModal.hide();
+                if (typeof populateCheckoutModal === 'function') {
+                    populateCheckoutModal(currentSelectedClass);
+                }
+                if (checkoutModal) checkoutModal.show();
+            }
+        });
+    }
+
     // Robust Smooth Scrolling with accurate Navbar Offset
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {

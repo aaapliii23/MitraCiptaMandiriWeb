@@ -8,7 +8,7 @@
             </div>
             <div class="modal-body p-4">
                 <p class="text-muted small mb-4">Ubah status pesanan untuk <strong id="modalParticipantName" class="text-dark"></strong>.</p>
-                <form id="updateStatusForm" action="<?php echo $adminBase; ?>/actions/update_order.php" method="POST" class="ajax-form">
+                <form id="updateStatusForm" action="<?php echo $adminBase; ?>/actions/update_order.php" method="POST" onsubmit="event.preventDefault(); submitAjaxForm('updateStatusForm');">
                     <input type="hidden" name="order_id" id="modalOrderId">
                     <div class="mb-4">
                         <select class="form-select form-control-lg" name="status" id="modalOrderStatus" required>

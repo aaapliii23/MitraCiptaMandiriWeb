@@ -46,6 +46,10 @@ function resetClassForm() {
     document.getElementById('classForm').reset();
     document.getElementById('classAction').value = 'create';
     document.getElementById('classId').value = '';
+    if (document.getElementById('classPriceOffline')) document.getElementById('classPriceOffline').value = '';
+    if (document.getElementById('classPriceOnline')) document.getElementById('classPriceOnline').value = '';
+    if (document.getElementById('classPrice')) document.getElementById('classPrice').value = '';
+    if (document.getElementById('classWaGroupLink')) document.getElementById('classWaGroupLink').value = '';
     document.getElementById('classModalTitle').textContent = 'Tambah Kelas';
     document.getElementById('classImage').required = true;
 }
@@ -57,7 +61,11 @@ function editClass(data) {
     document.getElementById('className').value = data.name;
     document.getElementById('classStartDate').value = data.start_date || '';
     document.getElementById('classCategory').value = data.category;
-    document.getElementById('classPrice').value = data.price || '';
+    const offPrice = data.price_offline && parseInt(data.price_offline) > 0 ? data.price_offline : data.price;
+    const onPrice = data.price_online && parseInt(data.price_online) > 0 ? data.price_online : Math.round(data.price * 0.75);
+    if (document.getElementById('classPriceOffline')) document.getElementById('classPriceOffline').value = offPrice || '';
+    if (document.getElementById('classPriceOnline')) document.getElementById('classPriceOnline').value = onPrice || '';
+    if (document.getElementById('classPrice')) document.getElementById('classPrice').value = offPrice || data.price || '';
     document.getElementById('classDescription').value = data.description;
     
     // Parse features from JSON array
@@ -71,6 +79,7 @@ function editClass(data) {
         document.getElementById('classFeatures').value = data.features;
     }
     
+    if (document.getElementById('classWaGroupLink')) document.getElementById('classWaGroupLink').value = data.wa_group_link || '';
     document.getElementById('classImage').required = false;
     document.getElementById('classModalTitle').textContent = 'Edit Paket Pelatihan';
     

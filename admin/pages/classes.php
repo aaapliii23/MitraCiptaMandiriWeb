@@ -39,7 +39,20 @@
                             </div>
                             <div class="card-body p-4">
                                 <h5 class="fw-bold text-dark mb-2"><?php echo htmlspecialchars($c['name']); ?></h5>
-                                <div class="text-primary fw-bold fs-5 mb-3">Rp <?php echo number_format($c['price'], 0, ',', '.'); ?></div>
+                                <?php 
+                                    $offPrice = (!empty($c['price_offline']) && (int)$c['price_offline'] > 0) ? (int)$c['price_offline'] : (int)$c['price'];
+                                    $onPrice = (!empty($c['price_online']) && (int)$c['price_online'] > 0) ? (int)$c['price_online'] : (int)round($offPrice * 0.75);
+                                ?>
+                                <div class="bg-light p-2 rounded-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="small text-muted"><i class="fas fa-chalkboard-teacher text-primary me-1"></i>Offline (Tatap Muka):</span>
+                                        <span class="fw-bold text-primary small">Rp <?php echo number_format($offPrice, 0, ',', '.'); ?></span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="small text-muted"><i class="fas fa-laptop text-info me-1"></i>Online (LMS):</span>
+                                        <span class="fw-bold text-info small">Rp <?php echo number_format($onPrice, 0, ',', '.'); ?></span>
+                                    </div>
+                                </div>
                                 <p class="text-muted small mb-4" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"><?php echo htmlspecialchars($c['description'] ?? 'Tidak ada deskripsi.'); ?></p>
                                 
                                 <div class="d-flex gap-2">

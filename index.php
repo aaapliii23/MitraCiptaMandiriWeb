@@ -23,12 +23,17 @@ try {
 // Prepare Class Details for JS
 $jsClassData = [];
 foreach($classItems as $c) {
+    $offPrice = (!empty($c['price_offline']) && (int)$c['price_offline'] > 0) ? (int)$c['price_offline'] : (int)$c['price'];
+    $onPrice = (!empty($c['price_online']) && (int)$c['price_online'] > 0) ? (int)$c['price_online'] : (int)round($offPrice * 0.75);
     $jsClassData[$c['id']] = [
         'id' => $c['id'],
         'name' => $c['name'],
         'category' => $c['category'],
         'description' => $c['description'],
-        'price' => $c['price'],
+        'price' => $offPrice,
+        'price_offline' => $offPrice,
+        'price_online' => $onPrice,
+        'wa_group_link' => $c['wa_group_link'] ?? '',
         'image' => $c['image'],
         'features' => json_decode($c['features'], true) ?: []
     ];

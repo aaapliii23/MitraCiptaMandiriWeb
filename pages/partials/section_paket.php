@@ -27,8 +27,20 @@
                                             <i class="fas fa-calendar-alt me-2"></i>Mulai: <?php echo date('d M Y', strtotime($c['start_date'])); ?>
                                         </span>
                                     </div>
-                                    <p class="text-muted small mb-3" style="min-height: 2.6em; line-height: 1.4;"><?php echo substr(strip_tags($c['description']), 0, 90); ?>...</p>
-                                    <h5 class="text-primary fw-bold mb-3" style="font-size: 1.1rem;">Rp <?php echo number_format($c['price'], 0, ',', '.'); ?></h5>
+                                    <?php 
+                                        $offPrice = (!empty($c['price_offline']) && (int)$c['price_offline'] > 0) ? (int)$c['price_offline'] : (int)$c['price'];
+                                        $onPrice = (!empty($c['price_online']) && (int)$c['price_online'] > 0) ? (int)$c['price_online'] : (int)round($offPrice * 0.75);
+                                    ?>
+                                    <div class="d-flex align-items-baseline justify-content-between mb-3 bg-light p-2 px-3 rounded-3">
+                                        <div>
+                                            <span class="d-block small text-muted" style="font-size: 0.7rem;"><i class="fas fa-chalkboard-teacher text-primary me-1"></i>Offline</span>
+                                            <span class="text-primary fw-bold" style="font-size: 0.95rem;">Rp <?php echo number_format($offPrice, 0, ',', '.'); ?></span>
+                                        </div>
+                                        <div class="border-start ps-3 text-end">
+                                            <span class="d-block small text-muted" style="font-size: 0.7rem;"><i class="fas fa-laptop text-info me-1"></i>Online</span>
+                                            <span class="text-info fw-bold" style="font-size: 0.95rem;">Rp <?php echo number_format($onPrice, 0, ',', '.'); ?></span>
+                                        </div>
+                                    </div>
                                     
                                     <div class="mb-3">
                                         <?php foreach (array_slice($featuresArr, 0, 3) as $f): ?>

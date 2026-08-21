@@ -18,10 +18,16 @@ if ($action === 'create' || $action === 'update') {
     $category = trim($_POST['category'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $features_raw = trim($_POST['features'] ?? '');
-    $price = trim($_POST['price'] ?? '');
+    $price_offline = (int)($_POST['price_offline'] ?? 0);
+    $price_online = (int)($_POST['price_online'] ?? 0);
+    $price = (int)($_POST['price'] ?? 0);
+    $wa_group_link = trim($_POST['wa_group_link'] ?? '');
+    if ($price <= 0) $price = $price_offline > 0 ? $price_offline : $price_online;
+    if ($price_offline <= 0 && $price > 0) $price_offline = $price;
+    if ($price_online <= 0 && $price > 0) $price_online = (int)round($price * 0.75);
     
-    if (empty($name) || empty($start_date) || empty($category) || empty($description) || empty($features_raw) || empty($price)) {
-        echo json_encode(['status' => 'error', 'message' => 'Semua kolom wajib diisi (termasuk harga).']);
+    if (empty($name) || empty($start_date) || empty($category) || empty($description) || empty($features_raw) || $price_offline <= 0) {
+        echo json_encode(['status' => 'error', 'message' => 'Semua kolom wajib diisi (termasuk harga offline & online).']);
         exit;
     }
 
@@ -57,19 +63,19 @@ if ($action === 'create' || $action === 'update') {
             echo json_encode(['status' => 'error', 'message' => 'Gambar wajib diupload untuk kelas baru.']);
             exit;
         }
-        $stmt = $pdo->prepare("INSERT INTO classes (name, start_date, category, description, image, features, price) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        if ($stmt->execute([$name, $start_date, $category, $description, $imagePath, $features_json, $price])) {
+        $stmt = $pdo->prepare("INSERT INTO classes (name, start_date, category, description, image, features, price, price_offline, price_online, wa_group_link) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        if ($stmt->execute([$name, $start_date, $category, $description, $imagePath, $features_json, $price, $price_offline, $price_online, $wa_group_link ?: null])) {
             echo json_encode(['status' => 'success', 'message' => 'Kelas berhasil ditambahkan.']);
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Gagal menyimpan kelas.']);
         }
     } else { // Update
         if (!empty($imagePath)) {
-            $stmt = $pdo->prepare("UPDATE classes SET name=?, start_date=?, category=?, description=?, image=?, features=?, price=? WHERE id=?");
-            $res = $stmt->execute([$name, $start_date, $category, $description, $imagePath, $features_json, $price, $id]);
+            $stmt = $pdo->prepare("UPDATE classes SET name=?, start_date=?, category=?, description=?, image=?, features=?, price=?, price_offline=?, price_online=?, wa_group_link=? WHERE id=?");
+            $res = $stmt->execute([$name, $start_date, $category, $description, $imagePath, $features_json, $price, $price_offline, $price_online, $wa_group_link ?: null, $id]);
         } else {
-            $stmt = $pdo->prepare("UPDATE classes SET name=?, start_date=?, category=?, description=?, features=?, price=? WHERE id=?");
-            $res = $stmt->execute([$name, $start_date, $category, $description, $features_json, $price, $id]);
+            $stmt = $pdo->prepare("UPDATE classes SET name=?, start_date=?, category=?, description=?, features=?, price=?, price_offline=?, price_online=?, wa_group_link=? WHERE id=?");
+            $res = $stmt->execute([$name, $start_date, $category, $description, $features_json, $price, $price_offline, $price_online, $wa_group_link ?: null, $id]);
         }
         
         if ($res) echo json_encode(['status' => 'success', 'message' => 'Kelas berhasil diperbarui.']);

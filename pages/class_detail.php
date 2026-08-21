@@ -135,9 +135,41 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
                         <h3 class="fw-bold mb-2 text-dark text-center">Daftar Sekarang</h3>
                         <p class="text-muted small mb-4 text-center">Amankan kursi Anda sekarang dan mulai perjalanan karir profesional bersama MCM.</p>
                         
+                        <?php 
+                            $offPrice = (!empty($class['price_offline']) && (int)$class['price_offline'] > 0) ? (int)$class['price_offline'] : (int)$class['price'];
+                            $onPrice = (!empty($class['price_online']) && (int)$class['price_online'] > 0) ? (int)$class['price_online'] : (int)round($offPrice * 0.75);
+                        ?>
+
                         <div class="text-center mb-4 bg-light p-3 rounded-4 border border-light">
-                            <label class="small text-muted d-block mb-1">Investasi Pelatihan</label>
-                            <h4 class="fw-bold mb-0" style="color: #0c4a6e;">Rp <?php echo number_format($class['price'], 0, ',', '.'); ?></h4>
+                            <label class="small text-muted d-block mb-1" id="detailPriceLabel">Investasi Pelatihan (Offline / Tatap Muka)</label>
+                            <h4 class="fw-bold mb-0" id="detailPriceDisplay" style="color: #0c4a6e;">Rp <?php echo number_format($offPrice, 0, ',', '.'); ?></h4>
+                        </div>
+
+                        <!-- Learning Type Selector -->
+                        <div class="mb-4 text-start">
+                            <label class="small text-muted d-block mb-2 fw-bold">Pilih Metode Pembelajaran *</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="learning-type-card d-block p-3 rounded-4 border text-start position-relative h-100 border-primary bg-primary bg-opacity-10" id="cardClassDetailOffline" style="cursor: pointer; transition: all 0.2s ease;">
+                                        <div class="form-check m-0 p-0">
+                                            <input class="form-check-input me-2 mt-0" type="radio" name="learning_type_radio" id="detailLearnOffline" value="offline" checked onchange="switchDetailLearningType('offline')">
+                                            <div class="fw-bold text-dark small"><i class="fas fa-chalkboard-teacher text-primary me-1"></i>Offline</div>
+                                            <div class="text-muted" style="font-size: 0.68rem;">Tatap Muka &amp; Praktek</div>
+                                            <div class="fw-bold text-primary mt-1 small">Rp <?php echo number_format($offPrice, 0, ',', '.'); ?></div>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <label class="learning-type-card d-block p-3 rounded-4 border text-start position-relative h-100 border-light" id="cardClassDetailOnline" style="cursor: pointer; transition: all 0.2s ease;">
+                                        <div class="form-check m-0 p-0">
+                                            <input class="form-check-input me-2 mt-0" type="radio" name="learning_type_radio" id="detailLearnOnline" value="online" onchange="switchDetailLearningType('online')">
+                                            <div class="fw-bold text-dark small"><i class="fas fa-laptop text-info me-1"></i>Online</div>
+                                            <div class="text-muted" style="font-size: 0.68rem;">LMS &amp; Video Modul</div>
+                                            <div class="fw-bold text-info mt-1 small">Rp <?php echo number_format($onPrice, 0, ',', '.'); ?></div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
 
                         <?php if ($selectedInstructor): ?>
@@ -181,6 +213,7 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
                                 <form action="../payment/create_transaction.php" method="POST" onsubmit="return submitPayment(this);">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
                                     <input type="hidden" name="class_id" value="<?php echo $class['id']; ?>">
+                                    <input type="hidden" name="learning_type" class="detailLearningTypeInput" value="offline">
                                     <input type="hidden" name="customer_name" value="<?php echo htmlspecialchars($loggedUser['name'] ?? ''); ?>">
                                     <input type="hidden" name="customer_email" value="<?php echo htmlspecialchars($loggedUser['email'] ?? ''); ?>">
                                     <input type="hidden" name="customer_phone" value="<?php echo htmlspecialchars($loggedUser['phone'] ?? ''); ?>">
@@ -205,7 +238,7 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
 
                                     <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm"
                                             style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); border: none; font-size: 1rem;">
-                                        <i class="fas fa-credit-card me-2"></i>Bayar Sekarang
+                                        <i class="fas fa-credit-card me-2"></i>Daftar &amp; Bayar
                                     </button>
                                 </form>
 
@@ -214,6 +247,8 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
                                 <h5 class="fw-bold mb-3 text-dark">Data Diri Peserta</h5>
                                 <form action="../payment/create_transaction.php" method="POST" onsubmit="return submitPayment(this);">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+                                    <input type="hidden" name="class_id" value="<?php echo $class['id']; ?>">
+                                    <input type="hidden" name="learning_type" class="detailLearningTypeInput" value="offline">
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold text-secondary mb-1 d-block">Nama Lengkap *</label>
                                         <input type="text" class="form-control bg-light border-0 py-2 rounded-3" name="customer_name" required placeholder="Budi Santoso">
@@ -231,7 +266,6 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
                                         <textarea class="form-control bg-light border-0 py-2 rounded-3" name="customer_address" rows="2" required placeholder="Jl. Sudirman No. 123..."></textarea>
                                     </div>
 
-                                    <input type="hidden" name="class_id" value="<?php echo $class['id']; ?>">
                                     <?php if (!empty($instructorOptions)): ?>
                                     <div class="mb-4">
                                         <label class="form-label small fw-bold text-secondary mb-1 d-block">Pilih Asesor / Instruktur <span class="text-muted fw-normal">(opsional)</span></label>
@@ -257,10 +291,42 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
 
                                     <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm"
                                             style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); border: none; font-size: 1rem;">
-                                        <i class="fas fa-credit-card me-2"></i>Bayar Sekarang
+                                        <i class="fas fa-credit-card me-2"></i>Daftar &amp; Bayar
                                     </button>
                                 </form>
                             <?php endif; ?>
+
+                        </div>
+                        
+                        <script>
+                        function switchDetailLearningType(type) {
+                            const offPrice = <?php echo $offPrice; ?>;
+                            const onPrice = <?php echo $onPrice; ?>;
+                            const selectedPrice = (type === 'online') ? onPrice : offPrice;
+                            
+                            document.querySelectorAll('.detailLearningTypeInput').forEach(el => el.value = type);
+                            const priceDisp = document.getElementById('detailPriceDisplay');
+                            const priceLbl = document.getElementById('detailPriceLabel');
+                            if (priceDisp) priceDisp.textContent = 'Rp ' + selectedPrice.toLocaleString('id-ID');
+                            if (priceLbl) priceLbl.textContent = (type === 'online') ? 'Investasi Pelatihan (Online / LMS)' : 'Investasi Pelatihan (Offline / Tatap Muka)';
+                            
+                            const offCard = document.getElementById('cardClassDetailOffline');
+                            const onCard = document.getElementById('cardClassDetailOnline');
+                            if (offCard && onCard) {
+                                if (type === 'offline') {
+                                    offCard.classList.add('border-primary', 'bg-primary', 'bg-opacity-10');
+                                    offCard.classList.remove('border-light');
+                                    onCard.classList.remove('border-info', 'bg-info', 'bg-opacity-10');
+                                    onCard.classList.add('border-light');
+                                } else {
+                                    onCard.classList.add('border-info', 'bg-info', 'bg-opacity-10');
+                                    onCard.classList.remove('border-light');
+                                    offCard.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
+                                    offCard.classList.add('border-light');
+                                }
+                            }
+                        }
+                        </script>
 
                         </div>
                         

@@ -19,18 +19,23 @@ try {
         $notEnrolled = true;
     } else {
         $notEnrolled = false;
+        $learningType = $enrollment['learning_type'] ?? 'online';
         $stmt = $pdo->prepare("SELECT c.*, COUNT(m.id) AS total_materials FROM classes c LEFT JOIN materials m ON m.class_id = c.id WHERE c.id = ? GROUP BY c.id");
         $stmt->execute([$classId]);
         $class = $stmt->fetch();
 
-        $stmt = $pdo->prepare("SELECT m.*, (SELECT mp.completed FROM material_progress mp WHERE mp.material_id = m.id AND mp.user_id = ?) AS is_done FROM materials m WHERE m.class_id = ? ORDER BY m.sort_order ASC, m.id ASC");
-        $stmt->execute([$userId, $classId]);
-        $materials = $stmt->fetchAll();
+        if ($learningType === 'offline') {
+            $materials = [];
+        } else {
+            $stmt = $pdo->prepare("SELECT m.*, (SELECT mp.completed FROM material_progress mp WHERE mp.material_id = m.id AND mp.user_id = ?) AS is_done FROM materials m WHERE m.class_id = ? ORDER BY m.sort_order ASC, m.id ASC");
+            $stmt->execute([$userId, $classId]);
+            $materials = $stmt->fetchAll();
 
-        $prevAllDone = true;
-        foreach ($materials as $k => $m) {
-            $materials[$k]['locked'] = !$prevAllDone;
-            if (!$m['is_done']) $prevAllDone = false;
+            $prevAllDone = true;
+            foreach ($materials as $k => $m) {
+                $materials[$k]['locked'] = !$prevAllDone;
+                if (!$m['is_done']) $prevAllDone = false;
+            }
         }
     }
 } catch (PDOException $e) {
@@ -78,6 +83,46 @@ try {
                         <a href="../pages/programs.php" class="btn btn-primary rounded-pill fw-bold px-4">Lihat Program</a>
                     </div>
                 </div>
+            <?php else:
+                if ($learningType === 'offline'):
+                    $waLink = !empty($class['wa_group_link']) ? $class['wa_group_link'] : null;
+            ?>
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="../<?php echo htmlspecialchars($class['image']); ?>" alt="<?php echo htmlspecialchars($class['name']); ?>" style="width: 100%; height: 100%; min-height: 200px; object-fit: cover;" onerror="this.src='../assets/img/logo.png';">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="p-4">
+                                <span class="badge bg-warning text-dark rounded-pill px-3 mb-2"><i class="fas fa-map-marker-alt me-1"></i>Kelas Offline / Tatap Muka</span>
+                                <h3 class="fw-bold text-dark mb-1"><?php echo htmlspecialchars($class['name']); ?></h3>
+                                <p class="text-muted mb-2"><?php echo htmlspecialchars($class['description']); ?></p>
+                                <p class="small text-muted mb-0"><i class="fas fa-info-circle me-1"></i>Kelas ini diselenggarakan secara <strong>offline / tatap muka</strong>. Materi belajar daring tidak tersedia. Semua informasi pelatihan akan disampaikan melalui Grup WhatsApp.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4 p-5 text-center" style="background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%); border: 2px solid #bbf7d0 !important;">
+                    <div class="mb-4">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success bg-opacity-10 mb-3" style="width: 80px; height: 80px;">
+                            <i class="fab fa-whatsapp text-success" style="font-size: 2.5rem;"></i>
+                        </div>
+                        <h4 class="fw-bold text-dark mb-2">Bergabung ke Grup WhatsApp</h4>
+                        <p class="text-muted mb-0">Klik tombol di bawah untuk bergabung ke grup WhatsApp pelatihan ini. Semua informasi jadwal, materi, dan pengumuman akan dibagikan melalui grup tersebut.</p>
+                    </div>
+                    <?php if ($waLink): ?>
+                        <a href="<?php echo htmlspecialchars($waLink); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-success btn-lg rounded-pill px-5 fw-bold shadow-sm" style="background: linear-gradient(135deg, #25d366, #128c7e); border: none;">
+                            <i class="fab fa-whatsapp me-2"></i>Gabung Grup WhatsApp
+                        </a>
+                        <p class="small text-muted mt-3 mb-0"><i class="fas fa-lock me-1"></i>Link hanya untuk peserta terdaftar kelas ini.</p>
+                    <?php else: ?>
+                        <div class="alert alert-warning border-0 rounded-3 d-inline-block px-4">
+                            <i class="fas fa-clock me-2"></i>Link grup WhatsApp sedang disiapkan oleh admin. Mohon tunggu informasi selanjutnya.
+                        </div>
+                    <?php endif; ?>
+                </div>
+
             <?php else:
                 $doneCount = 0;
                 foreach ($materials as $m) if ($m['is_done']) $doneCount++;
@@ -155,6 +200,7 @@ try {
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
+            <?php endif; ?>
             <?php endif; ?>
         </div>
     </section>
