@@ -58,16 +58,82 @@ document.addEventListener('DOMContentLoaded', function () {
             if (backdrop) backdrop.remove();
         }
     });
-    // 3. Gallery Filtering & Max 6 Limitation with "+X Foto Lainnya"
+    // 3. Gallery Filtering & Max 6 Limitation with "+X Foto Lainnya" + Premium Lightbox
     const filterBtns = document.querySelectorAll('.filter-btn');
     const galleryItems = document.querySelectorAll('.gallery-item');
     const galleryGrid = document.getElementById('galleryGrid');
     const galleryExpandContainer = document.getElementById('galleryExpandContainer');
     const lightboxModalEl = document.getElementById('galleryLightboxModal');
     const lightboxModal = lightboxModalEl ? new bootstrap.Modal(lightboxModalEl) : null;
+    const lbImg = document.getElementById('galleryLightboxImg');
+    const lbTitle = document.getElementById('galleryLightboxTitle');
+    const lbCounter = document.getElementById('galleryLightboxCounter');
+    const lbThumbs = document.getElementById('galleryLightboxThumbs');
+    const lbPrev = document.getElementById('galleryLightboxPrev');
+    const lbNext = document.getElementById('galleryLightboxNext');
+    const lbFrame = document.querySelector('.gallery-lb-frame');
 
     let isGalleryExpanded = false;
     let currentGalleryFilter = 'all';
+    let lbList = [];
+    let lbIndex = 0;
+
+    function buildLbThumbs() {
+        if (!lbThumbs) return;
+        lbThumbs.innerHTML = '';
+        lbList.forEach((it, i) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'gallery-lb-thumb' + (i === lbIndex ? ' active' : '');
+            btn.setAttribute('aria-label', 'Foto ' + (i + 1) + ': ' + it.title);
+            btn.innerHTML = '<img src="' + it.src + '" alt="' + it.title.replace(/"/g, '&quot;') + '" loading="lazy">';
+            btn.addEventListener('click', function() { showLbAt(i); });
+            lbThumbs.appendChild(btn);
+        });
+        const active = lbThumbs.querySelector('.gallery-lb-thumb.active');
+        if (active) active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+
+    function updateLb() {
+        if (!lbList.length) return;
+        const it = lbList[lbIndex];
+        if (lbImg) {
+            lbImg.style.opacity = '0.35';
+            const newSrc = it.src;
+            const newAlt = it.title;
+            setTimeout(function() {
+                lbImg.src = newSrc;
+                lbImg.alt = newAlt;
+                if (lbImg.complete) lbImg.style.opacity = '1';
+                else lbImg.onload = function() { lbImg.style.opacity = '1'; };
+            }, 110);
+        }
+        if (lbTitle) lbTitle.textContent = it.title;
+        if (lbCounter) lbCounter.textContent = (lbIndex + 1) + ' / ' + lbList.length;
+        const single = lbList.length <= 1;
+        if (lbPrev) lbPrev.style.display = single ? 'none' : '';
+        if (lbNext) lbNext.style.display = single ? 'none' : '';
+        if (lbThumbs) {
+            lbThumbs.querySelectorAll('.gallery-lb-thumb').forEach(function(el, i) {
+                el.classList.toggle('active', i === lbIndex);
+            });
+            const act = lbThumbs.querySelector('.gallery-lb-thumb.active');
+            if (act) act.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }
+
+    function showLbAt(i) {
+        if (!lbList.length) return;
+        lbIndex = (i + lbList.length) % lbList.length;
+        updateLb();
+    }
+
+    function openLbAt(i) {
+        lbIndex = i;
+        buildLbThumbs();
+        updateLb();
+        if (lightboxModal) lightboxModal.show();
+    }
 
     function renderGallery(filter = 'all', expanded = false) {
         currentGalleryFilter = filter;
@@ -84,6 +150,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 const prevBadge = item.querySelector('.overlay-more-badge');
                 if (prevBadge) prevBadge.remove();
             }
+        });
+
+        // Build lightbox list from filtered items (for navigation + counter)
+        lbList = matchingItems.map(function(el) {
+            const img = el.querySelector('img');
+            const titleEl = el.querySelector('.overlay h5');
+            return {
+                src: img ? img.src : '',
+                title: titleEl ? titleEl.textContent.trim() : 'Dokumentasi Pelatihan MCM',
+                el: el
+            };
         });
 
         const totalMatching = matchingItems.length;
@@ -159,16 +236,51 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const item = e.target.closest('.gallery-item');
             if (item && lightboxModal) {
-                const img = item.querySelector('img');
-                const titleEl = item.querySelector('.overlay h5');
-                const title = titleEl ? titleEl.textContent : 'Dokumentasi Pelatihan MCM';
-                if (img) {
-                    document.getElementById('galleryLightboxImg').src = img.src;
-                    document.getElementById('galleryLightboxTitle').textContent = title;
-                    lightboxModal.show();
+                const idx = lbList.findIndex(function(o) { return o.el === item; });
+                if (idx >= 0) openLbAt(idx);
+                else {
+                    // fallback
+                    const img = item.querySelector('img');
+                    const titleEl = item.querySelector('.overlay h5');
+                    const title = titleEl ? titleEl.textContent : 'Dokumentasi Pelatihan MCM';
+                    if (img && lbImg && lbTitle) {
+                        lbImg.src = img.src;
+                        lbTitle.textContent = title;
+                        lightboxModal.show();
+                    }
                 }
             }
         });
+    }
+
+    if (lbPrev) lbPrev.addEventListener('click', function(e) { e.stopPropagation(); showLbAt(lbIndex - 1); });
+    if (lbNext) lbNext.addEventListener('click', function(e) { e.stopPropagation(); showLbAt(lbIndex + 1); });
+
+    // Keyboard navigation when lightbox open
+    function handleLbKey(e) {
+        if (!lightboxModalEl || !lightboxModalEl.classList.contains('show')) return;
+        if (e.key === 'ArrowLeft') { e.preventDefault(); showLbAt(lbIndex - 1); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); showLbAt(lbIndex + 1); }
+    }
+    if (lightboxModalEl) {
+        lightboxModalEl.addEventListener('shown.bs.modal', function() {
+            document.addEventListener('keydown', handleLbKey);
+        });
+        lightboxModalEl.addEventListener('hidden.bs.modal', function() {
+            document.removeEventListener('keydown', handleLbKey);
+        });
+        // Click on frame image also next (optional, but not conflicting with nav)
+        if (lbFrame) {
+            let touchStartX = 0;
+            lbFrame.addEventListener('touchstart', function(e) { touchStartX = e.touches[0].clientX; }, { passive: true });
+            lbFrame.addEventListener('touchend', function(e) {
+                const dx = e.changedTouches[0].clientX - touchStartX;
+                if (Math.abs(dx) > 48) {
+                    if (dx < 0) showLbAt(lbIndex + 1);
+                    else showLbAt(lbIndex - 1);
+                }
+            }, { passive: true });
+        }
     }
 
     filterBtns.forEach(btn => {
@@ -258,6 +370,75 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // Checkout Mode handling (Online/Offline)
+    let checkoutSelectedMode = 'offline';
+    let checkoutPriceOnline = 0;
+    let checkoutPriceOffline = 0;
+    let checkoutModeAvailable = 'both';
+    function updateCheckoutPrice() {
+        const isOnline = checkoutSelectedMode === 'online';
+        const price = isOnline ? checkoutPriceOnline : checkoutPriceOffline;
+        const priceEl = document.getElementById('checkoutClassPrice');
+        const totalEl = document.getElementById('checkoutTotalPrice');
+        const modeInfo = document.getElementById('checkoutModeInfo');
+        if (priceEl) priceEl.textContent = 'Rp ' + price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        if (totalEl) totalEl.textContent = 'Rp ' + price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        document.querySelectorAll('input[name="class_mode"]').forEach(function(el){ el.value = checkoutSelectedMode; });
+        document.querySelectorAll('#checkoutClassMode').forEach(function(el){ el.value = checkoutSelectedMode; });
+        if (modeInfo) {
+            if (checkoutModeAvailable === 'both') {
+                modeInfo.classList.remove('d-none');
+                modeInfo.innerHTML = isOnline ? '<i class="fas fa-laptop me-1 text-info"></i> Online: fleksibel, hemat 20%' : '<i class="fas fa-chalkboard-teacher me-1 text-success"></i> Offline: praktik langsung & advance';
+            } else modeInfo.classList.add('d-none');
+        }
+        document.querySelectorAll('.mode-checkout-btn').forEach(function(btn){
+            const m = btn.getAttribute('data-mode');
+            if (m === checkoutSelectedMode) {
+                btn.classList.add('active');
+                btn.style.background = 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))';
+                btn.style.color = 'white';
+                btn.classList.remove('text-muted');
+            } else {
+                btn.classList.remove('active');
+                btn.style.background = 'transparent';
+                btn.style.color = '';
+                btn.classList.add('text-muted');
+            }
+        });
+        document.querySelectorAll('#checkoutModeWrap').forEach(function(wrap){
+            wrap.style.display = checkoutModeAvailable === 'both' ? '' : 'none';
+        });
+    }
+    document.querySelectorAll('.mode-checkout-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){ checkoutSelectedMode = this.getAttribute('data-mode'); updateCheckoutPrice(); });
+    });
+    document.getElementById('btnLanjutCheckout')?.addEventListener('click', function(){
+        if (!currentSelectedClass) return;
+        const d = currentSelectedClass;
+        checkoutPriceOnline = parseInt(d.price_online) || Math.round(parseInt(d.price||0)*0.8);
+        checkoutPriceOffline = parseInt(d.price_offline) || parseInt(d.price||0);
+        checkoutModeAvailable = d.mode_available || 'both';
+        if (checkoutModeAvailable === 'online') checkoutSelectedMode = 'online';
+        else if (checkoutModeAvailable === 'offline') checkoutSelectedMode = 'offline';
+        else checkoutSelectedMode = 'offline';
+        document.querySelectorAll('#checkoutClassId').forEach(function(el){ el.value = d.id; });
+        const nameEl = document.getElementById('checkoutClassName');
+        if (nameEl) nameEl.textContent = d.name;
+        updateCheckoutPrice();
+        if (detailModal) detailModal.hide();
+        setTimeout(function(){ if (checkoutModal) checkoutModal.show(); }, 300);
+    });
+    if (checkoutModalEl) {
+        checkoutModalEl.addEventListener('show.bs.modal', function(){
+            if (currentSelectedClass) {
+                checkoutPriceOnline = parseInt(currentSelectedClass.price_online) || Math.round(parseInt(currentSelectedClass.price||0)*0.8);
+                checkoutPriceOffline = parseInt(currentSelectedClass.price_offline) || parseInt(currentSelectedClass.price||0);
+                checkoutModeAvailable = currentSelectedClass.mode_available || 'both';
+                updateCheckoutPrice();
+            }
+        });
+    }
+
     // Robust Smooth Scrolling with accurate Navbar Offset
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
@@ -299,4 +480,3 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
-

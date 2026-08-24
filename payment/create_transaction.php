@@ -23,6 +23,8 @@ if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', 
 }
 
 $classId = (int)($_POST['class_id'] ?? 0);
+$classMode = strtolower(trim($_POST['class_mode'] ?? 'offline'));
+if (!in_array($classMode, ['online','offline'], true)) $classMode = 'offline';
 $instructorId = (int)($_POST['instructor_id'] ?? 0);
 $userId = isset($_SESSION['user_logged_in']) ? (int)($_SESSION['user_id'] ?? 0) : null;
 if ($userId < 1) $userId = null;
@@ -83,7 +85,16 @@ if (!$class) {
     exit;
 }
 
-$amount = (int)$class['price'];
+// Validasi mode_available dan hitung amount server-side (jangan percaya client)
+$modeAvailable = $class['mode_available'] ?? 'both';
+if (!in_array($modeAvailable, ['online','offline','both'], true)) $modeAvailable = 'both';
+if ($modeAvailable === 'online' && $classMode !== 'online') $classMode = 'online';
+if ($modeAvailable === 'offline' && $classMode !== 'offline') $classMode = 'offline';
+$priceLegacy = (int)($class['price'] ?? 0);
+$priceOnline = isset($class['price_online']) && (int)$class['price_online'] > 0 ? (int)$class['price_online'] : (int)round($priceLegacy * 0.8);
+$priceOffline = isset($class['price_offline']) && (int)$class['price_offline'] > 0 ? (int)$class['price_offline'] : $priceLegacy;
+$amount = $classMode === 'online' ? $priceOnline : $priceOffline;
+if ($amount <= 0) $amount = $priceLegacy;
 $orderNumber = 'ORD-' . strtoupper(uniqid()) . '-' . time();
 
 if (!$userId) {
@@ -119,8 +130,18 @@ if (!$userId) {
     }
 }
 
-$stmt = $pdo->prepare("INSERT INTO orders (order_number, user_id, customer_name, customer_phone, customer_email, customer_address, customer_institution, class_id, instructor_id, amount, status, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid')");
-$stmt->execute([$orderNumber, $userId, $customerName, $digits, $customerEmail, $customerAddress, $customerInstitution ?: '-', $classId, $instructorId ?: null, $amount]);
+// Cek apakah kolom class_mode ada (untuk DB yang belum migrasi, fallback)
+$hasClassMode = true;
+try {
+    $pdo->query("SELECT class_mode FROM orders LIMIT 1");
+} catch (PDOException $e) { $hasClassMode = false; }
+if ($hasClassMode) {
+    $stmt = $pdo->prepare("INSERT INTO orders (order_number, user_id, customer_name, customer_phone, customer_email, customer_address, customer_institution, class_id, class_mode, instructor_id, amount, status, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid')");
+    $stmt->execute([$orderNumber, $userId, $customerName, $digits, $customerEmail, $customerAddress, $customerInstitution ?: '-', $classId, $classMode, $instructorId ?: null, $amount]);
+} else {
+    $stmt = $pdo->prepare("INSERT INTO orders (order_number, user_id, customer_name, customer_phone, customer_email, customer_address, customer_institution, class_id, instructor_id, amount, status, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid')");
+    $stmt->execute([$orderNumber, $userId, $customerName, $digits, $customerEmail, $customerAddress, $customerInstitution ?: '-', $classId, $instructorId ?: null, $amount]);
+}
 $orderId = (int)$pdo->lastInsertId();
 
 $res = pg_create_transaction($pdo, ['id' => $orderId, 'order_number' => $orderNumber, 'amount' => $amount], $class);

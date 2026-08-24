@@ -28,7 +28,23 @@
                                         </span>
                                     </div>
                                     <p class="text-muted small mb-3" style="min-height: 2.6em; line-height: 1.4;"><?php echo substr(strip_tags($c['description']), 0, 90); ?>...</p>
-                                    <h5 class="text-primary fw-bold mb-3" style="font-size: 1.1rem;">Rp <?php echo number_format($c['price'], 0, ',', '.'); ?></h5>
+                                    <?php
+                                    $pLegacy2 = (int)($c['price'] ?? 0);
+                                    $pOn2 = isset($c['price_online']) && (int)$c['price_online'] > 0 ? (int)$c['price_online'] : (int)round($pLegacy2 * 0.8);
+                                    $pOff2 = isset($c['price_offline']) && (int)$c['price_offline'] > 0 ? (int)$c['price_offline'] : $pLegacy2;
+                                    $ma2 = $c['mode_available'] ?? 'both';
+                                    if ($ma2 === 'online') {
+                                        echo '<h5 class="text-primary fw-bold mb-1" style="font-size:1.1rem;">Rp '.number_format($pOn2,0,',','.').'</h5><small class="text-muted d-block mb-3"><span class="badge bg-info bg-opacity-10 text-info" style="font-size:0.7rem;"><i class="fas fa-laptop me-1"></i>Online</span></small>';
+                                    } elseif ($ma2 === 'offline') {
+                                        echo '<h5 class="text-primary fw-bold mb-1" style="font-size:1.1rem;">Rp '.number_format($pOff2,0,',','.').'</h5><small class="text-muted d-block mb-3"><span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.7rem;"><i class="fas fa-chalkboard-teacher me-1"></i>Offline</span></small>';
+                                    } else {
+                                        if ($pOn2 !== $pOff2) {
+                                            echo '<div class="mb-3"><small class="text-muted d-block" style="font-size:0.72rem;">Mulai dari</small><h5 class="text-primary fw-bold mb-0" style="font-size:1.1rem;">Rp '.number_format(min($pOn2,$pOff2),0,',','.').'</h5><small class="text-muted" style="font-size:0.7rem;">Offline Rp '.number_format($pOff2,0,',','.').' &bull; Online Rp '.number_format($pOn2,0,',','.').'</small></div>';
+                                        } else {
+                                            echo '<h5 class="text-primary fw-bold mb-3" style="font-size:1.1rem;">Rp '.number_format($pLegacy2,0,',','.').'</h5>';
+                                        }
+                                    }
+                                    ?>
                                     
                                     <div class="mb-3">
                                         <?php foreach (array_slice($featuresArr, 0, 3) as $f): ?>

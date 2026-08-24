@@ -35,14 +35,19 @@
                         <p class="fw-medium text-dark mb-0" id="detailAlamat"></p>
                     </div>
                     <div class="col-12 border-top pt-3">
-                        <div class="bg-light p-3 rounded-3 d-flex justify-content-between align-items-center">
-                            <div>
-                                <label class="small text-muted d-block">Kelas Pilihan</label>
-                                <span class="fw-bold text-primary" id="detailKelas"></span>
+                        <div class="bg-light p-3 rounded-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <label class="small text-muted d-block">Kelas Pilihan</label>
+                                    <span class="fw-bold text-primary" id="detailKelas"></span>
+                                </div>
+                                <div class="text-end">
+                                    <label class="small text-muted d-block">Total Bayar</label>
+                                    <span class="fw-bold text-dark">Rp <span id="detailHarga"></span></span>
+                                </div>
                             </div>
-                            <div class="text-end">
-                                <label class="small text-muted d-block">Total Bayar</label>
-                                <span class="fw-bold text-dark">Rp <span id="detailHarga"></span></span>
+                            <div class="mt-2 text-center text-sm-start">
+                                <span class="badge bg-light border" id="detailMode" style="font-size: 0.72rem;"></span>
                             </div>
                         </div>
                     </div>

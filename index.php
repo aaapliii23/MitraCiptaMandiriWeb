@@ -20,15 +20,23 @@ try {
     $classItems = $stmt->fetchAll();
 } catch(PDOException $e) { $classItems = []; }
 
-// Prepare Class Details for JS
+// Prepare Class Details for JS (termasuk mode Online/Offline)
 $jsClassData = [];
 foreach($classItems as $c) {
+    $pLegacy = (int)($c['price'] ?? 0);
+    $pOn = isset($c['price_online']) && (int)$c['price_online'] > 0 ? (int)$c['price_online'] : (int)round($pLegacy * 0.8);
+    $pOff = isset($c['price_offline']) && (int)$c['price_offline'] > 0 ? (int)$c['price_offline'] : $pLegacy;
     $jsClassData[$c['id']] = [
         'id' => $c['id'],
         'name' => $c['name'],
         'category' => $c['category'],
         'description' => $c['description'],
-        'price' => $c['price'],
+        'description_online' => $c['description_online'] ?? $c['description'],
+        'description_offline' => $c['description_offline'] ?? $c['description'],
+        'price' => $pLegacy,
+        'price_online' => $pOn,
+        'price_offline' => $pOff,
+        'mode_available' => $c['mode_available'] ?? 'both',
         'image' => $c['image'],
         'features' => json_decode($c['features'], true) ?: []
     ];

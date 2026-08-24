@@ -19,6 +19,16 @@ try {
     }
     
     $featuresArr = json_decode($class['features'], true) ?: [];
+    // Fallback untuk DB yang belum migrasi atau nilai 0
+    $priceLegacy = (int)($class['price'] ?? 0);
+    $priceOnline = isset($class['price_online']) && (int)$class['price_online'] > 0 ? (int)$class['price_online'] : (int)round($priceLegacy * 0.8);
+    $priceOffline = isset($class['price_offline']) && (int)$class['price_offline'] > 0 ? (int)$class['price_offline'] : $priceLegacy;
+    $modeAvailable = $class['mode_available'] ?? 'both';
+    if (!in_array($modeAvailable, ['online','offline','both'], true)) $modeAvailable = 'both';
+    $descOnline = $class['description_online'] ?? $class['description'] ?? '';
+    $descOffline = $class['description_offline'] ?? $class['description'] ?? '';
+    // Default mode: offline jika both/offline, online jika hanya online
+    $defaultMode = $modeAvailable === 'online' ? 'online' : 'offline';
 } catch(PDOException $e) {
     header("Location: programs.php");
     exit;
@@ -86,9 +96,7 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
                 <!-- Content Sections -->
                 <div class="mb-5">
                     <h3 class="fw-bold mb-4" style="color: #0c4a6e;">Deskripsi Pelatihan</h3>
-                    <p class="text-secondary" style="line-height: 1.8;">
-                        <?php echo nl2br(htmlspecialchars($class['description'])); ?>
-                    </p>
+                    <p class="text-secondary" id="classDescription" style="line-height: 1.8; white-space: pre-line;"><?php echo htmlspecialchars($defaultMode === 'online' ? $descOnline : $descOffline); ?></p>
                 </div>
 
                 <div class="mb-5">
@@ -134,10 +142,29 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
                         </div>
                         <h3 class="fw-bold mb-2 text-dark text-center">Daftar Sekarang</h3>
                         <p class="text-muted small mb-4 text-center">Amankan kursi Anda sekarang dan mulai perjalanan karir profesional bersama MCM.</p>
-                        
+
+                        <?php if ($modeAvailable === 'both'): ?>
+                        <div class="text-start mb-3" id="modeSelectorWrap">
+                            <label class="small fw-bold text-secondary mb-2 d-block">Pilih Mode Pelatihan</label>
+                            <div class="d-flex p-1 bg-light rounded-pill" id="modeToggle">
+                                <button type="button" class="btn btn-sm flex-fill rounded-pill fw-bold mode-btn active" data-mode="offline" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: white; border: none;"><i class="fas fa-chalkboard-teacher me-1"></i> Offline</button>
+                                <button type="button" class="btn btn-sm flex-fill rounded-pill fw-bold mode-btn text-muted" data-mode="online" style="background: transparent; border: none;"><i class="fas fa-laptop me-1"></i> Online</button>
+                            </div>
+                            <div id="modeInfo" class="small mt-2 p-2 rounded-3" style="background: rgba(14,165,233,0.08); border: 1px solid rgba(14,165,233,0.15); color: #475569;"></div>
+                        </div>
+                        <?php elseif ($modeAvailable === 'online'): ?>
+                        <div class="mb-3"><span class="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill"><i class="fas fa-laptop me-1"></i> Mode Online</span><div class="small text-muted mt-2">Kelas ini tersedia khusus Online — fleksibel, materi dasar-menengah, akses dari mana saja.</div></div>
+                        <?php else: ?>
+                        <div class="mb-3"><span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill"><i class="fas fa-chalkboard-teacher me-1"></i> Mode Offline</span><div class="small text-muted mt-2">Kelas ini tersedia khusus Offline — praktik langsung & materi advance di lokasi.</div></div>
+                        <?php endif; ?>
+
+                        <div class="text-center mb-1">
+                            <span class="badge bg-primary bg-opacity-10 text-primary small px-2 py-1 rounded-pill" id="modeBadge">-</span>
+                        </div>
                         <div class="text-center mb-4 bg-light p-3 rounded-4 border border-light">
-                            <label class="small text-muted d-block mb-1">Investasi Pelatihan</label>
-                            <h4 class="fw-bold mb-0" style="color: #0c4a6e;">Rp <?php echo number_format($class['price'], 0, ',', '.'); ?></h4>
+                            <label class="small text-muted d-block mb-1">Investasi Pelatihan <span id="modeLabel" class="fw-bold text-primary"></span></label>
+                            <h4 class="fw-bold mb-0" style="color: #0c4a6e;" id="priceDisplay">Rp <?php echo number_format($priceOffline, 0, ',', '.'); ?></h4>
+                            <small class="text-muted d-block mt-1" id="priceNote" style="font-size: 0.72rem;"></small>
                         </div>
 
                         <?php if ($selectedInstructor): ?>
@@ -181,6 +208,7 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
                                 <form action="../payment/create_transaction.php" method="POST" onsubmit="return submitPayment(this);">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
                                     <input type="hidden" name="class_id" value="<?php echo $class['id']; ?>">
+                                    <input type="hidden" name="class_mode" value="<?php echo htmlspecialchars($defaultMode); ?>">
                                     <input type="hidden" name="customer_name" value="<?php echo htmlspecialchars($loggedUser['name'] ?? ''); ?>">
                                     <input type="hidden" name="customer_email" value="<?php echo htmlspecialchars($loggedUser['email'] ?? ''); ?>">
                                     <input type="hidden" name="customer_phone" value="<?php echo htmlspecialchars($loggedUser['phone'] ?? ''); ?>">
@@ -232,6 +260,7 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
                                     </div>
 
                                     <input type="hidden" name="class_id" value="<?php echo $class['id']; ?>">
+                                    <input type="hidden" name="class_mode" value="<?php echo htmlspecialchars($defaultMode); ?>">
                                     <?php if (!empty($instructorOptions)): ?>
                                     <div class="mb-4">
                                         <label class="form-label small fw-bold text-secondary mb-1 d-block">Pilih Asesor / Instruktur <span class="text-muted fw-normal">(opsional)</span></label>
@@ -286,5 +315,66 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
         </div>
     </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const priceOnline = <?php echo (int)$priceOnline; ?>;
+    const priceOffline = <?php echo (int)$priceOffline; ?>;
+    const modeAvailable = "<?php echo $modeAvailable; ?>";
+    let currentMode = "<?php echo $defaultMode; ?>";
+    const priceDisplay = document.getElementById('priceDisplay');
+    const modeLabel = document.getElementById('modeLabel');
+    const modeBadge = document.getElementById('modeBadge');
+    const modeInfo = document.getElementById('modeInfo');
+    const priceNote = document.getElementById('priceNote');
+    const descEl = document.getElementById('classDescription');
+    const descOnline = <?php echo json_encode($descOnline); ?>;
+    const descOffline = <?php echo json_encode($descOffline); ?>;
+    function formatRupiah(n){ return 'Rp ' + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+    function updateUI(mode){
+        currentMode = mode;
+        const isOnline = mode === 'online';
+        const price = isOnline ? priceOnline : priceOffline;
+        if (priceDisplay) priceDisplay.textContent = formatRupiah(price);
+        if (modeLabel) modeLabel.textContent = '(' + (isOnline ? 'Online' : 'Offline') + ')';
+        if (modeBadge) {
+            modeBadge.textContent = isOnline ? 'Online \u2022 Fleksibel & akses darimana saja' : 'Offline \u2022 Praktik langsung & pendampingan';
+            modeBadge.className = isOnline ? 'badge bg-info bg-opacity-10 text-info small px-2 py-1 rounded-pill' : 'badge bg-success bg-opacity-10 text-success small px-2 py-1 rounded-pill';
+        }
+        if (modeInfo) {
+            modeInfo.innerHTML = isOnline
+                ? '<i class="fas fa-laptop me-1 text-info"></i> <b>Online:</b> fleksibel, materi dasar-menengah, belajar dari rumah, hemat 20%.'
+                : '<i class="fas fa-chalkboard-teacher me-1 text-success"></i> <b>Offline:</b> praktik langsung, materi advance, pendampingan tatap muka di Bandung.';
+        }
+        if (priceNote) {
+            const diff = priceOffline - priceOnline;
+            if (modeAvailable === 'both' && diff > 0) {
+                priceNote.textContent = isOnline ? 'Hemat Rp ' + diff.toLocaleString('id-ID') + ' dibanding Offline' : 'Termasuk praktik & fasilitas lengkap';
+            } else priceNote.textContent = '';
+        }
+        document.querySelectorAll('input[name="class_mode"]').forEach(function(el){ el.value = mode; });
+        if (descEl) descEl.textContent = isOnline ? descOnline : descOffline;
+        document.querySelectorAll('.mode-btn').forEach(function(btn){
+            const m = btn.getAttribute('data-mode');
+            if (m === mode) {
+                btn.classList.add('active');
+                btn.style.background = 'linear-gradient(135deg, #0c4a6e, #0ea5e9)';
+                btn.style.color = 'white';
+                btn.classList.remove('text-muted');
+            } else {
+                btn.classList.remove('active');
+                btn.style.background = 'transparent';
+                btn.style.color = '';
+                btn.classList.add('text-muted');
+            }
+        });
+    }
+    document.querySelectorAll('.mode-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){ updateUI(this.getAttribute('data-mode')); });
+    });
+    updateUI(currentMode);
+    if (modeAvailable !== 'both') updateUI(modeAvailable);
+});
+</script>
 
 <?php include '../includes/footer.php'; ?>

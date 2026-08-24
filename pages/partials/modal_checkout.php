@@ -93,11 +93,20 @@
                                     <input type="hidden" name="customer_name"    value="<?php echo htmlspecialchars($checkoutUser['name']  ?? ''); ?>">
                                     <input type="hidden" name="customer_email"   value="<?php echo htmlspecialchars($checkoutUser['email'] ?? ''); ?>">
                                     <input type="hidden" name="customer_phone"   value="<?php echo htmlspecialchars($checkoutUser['phone'] ?? ''); ?>">
+                                    <input type="hidden" name="class_id" id="checkoutClassId">
+                                    <input type="hidden" name="class_mode" id="checkoutClassMode" value="offline">
+                                    <div class="mb-3" id="checkoutModeWrap">
+                                        <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.7rem;">Mode Pelatihan</label>
+                                        <div class="d-flex p-1 bg-light rounded-pill" id="checkoutModeToggle">
+                                            <button type="button" class="btn btn-sm flex-fill rounded-pill fw-bold mode-checkout-btn active" data-mode="offline" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; border: none;"><i class="fas fa-chalkboard-teacher me-1"></i> Offline</button>
+                                            <button type="button" class="btn btn-sm flex-fill rounded-pill fw-bold mode-checkout-btn text-muted" data-mode="online" style="background: transparent; border: none;"><i class="fas fa-laptop me-1"></i> Online</button>
+                                        </div>
+                                        <div id="checkoutModeInfo" class="small mt-1 p-2 rounded-3 d-none" style="background: rgba(14,165,233,0.08); font-size: 0.68rem;"></div>
+                                    </div>
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.7rem;">Alamat Lengkap *</label>
                                         <textarea class="form-control form-control-sm bg-light" name="customer_address" rows="2" required placeholder="Jl. Sudirman No. 123..."></textarea>
                                     </div>
-                                    <input type="hidden" name="class_id" id="checkoutClassId">
 
                                     <!-- Instructor dropdown populated by JS -->
                                     <div class="mb-3" id="checkoutInstructorWrap">
@@ -157,6 +166,15 @@
                                         <small style="font-size: 0.7rem; line-height: 1.2;">Akun LMS dibuat otomatis dari data ini (password di atas). Kosongkan password bila email Anda sudah terdaftar.</small>
                                     </div>
                                 
+                                    <div class="mb-3" id="checkoutModeWrap">
+                                        <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.7rem;">Mode Pelatihan</label>
+                                        <div class="d-flex p-1 bg-light rounded-pill" id="checkoutModeToggle">
+                                            <button type="button" class="btn btn-sm flex-fill rounded-pill fw-bold mode-checkout-btn active" data-mode="offline" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; border: none;"><i class="fas fa-chalkboard-teacher me-1"></i> Offline</button>
+                                            <button type="button" class="btn btn-sm flex-fill rounded-pill fw-bold mode-checkout-btn text-muted" data-mode="online" style="background: transparent; border: none;"><i class="fas fa-laptop me-1"></i> Online</button>
+                                        </div>
+                                        <div id="checkoutModeInfo" class="small mt-1 p-2 rounded-3 d-none" style="background: rgba(14,165,233,0.08); font-size: 0.68rem;"></div>
+                                    </div>
+
                                     <!-- Instructor dropdown populated by JS -->
                                     <div class="mb-3" id="checkoutInstructorWrap" style="display:none;">
                                         <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.7rem;">Pilih Asesor / Instruktur <span class="text-muted fw-normal">(opsional)</span></label>
@@ -166,6 +184,7 @@
                                     </div>
 
                                     <input type="hidden" name="class_id" id="checkoutClassId">
+                                    <input type="hidden" name="class_mode" id="checkoutClassMode" value="offline">
                                     <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill fw-bold shadow-sm" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border: none; font-size: 0.9rem;">
                                         <i class="fas fa-credit-card me-2"></i>Bayar Sekarang
                                     </button>

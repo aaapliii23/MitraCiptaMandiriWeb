@@ -29,8 +29,6 @@ function normalizePhone($phone)
 function validateFullName($name)
 {
     if (strlen($name) < 3 || strlen($name) > 100) return false;
-    $words = preg_split('/\s+/', trim($name));
-    if (count($words) < 2) return false;
     return preg_match('/^[\p{L}]+(?:[ -][\p{L}]+)*$/u', $name) === 1;
 }
 
@@ -47,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (empty($name) || empty($email) || empty($phone) || empty($password)) {
         $errorMessage = 'Semua kolom wajib diisi.';
     } elseif (!validateFullName($name)) {
-        $errorMessage = 'Nama harus Nama Asli: minimal 2 kata, hanya huruf, spasi, dan tanda hubung (tanpa angka atau simbol).';
+        $errorMessage = 'Nama hanya boleh berisi huruf, spasi, dan tanda hubung (tanpa angka atau simbol).';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errorMessage = 'Format email tidak valid.';
     } elseif (strlen($password) < 6) {
@@ -112,8 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Nama Asli Lengkap</label>
-                            <input type="text" class="form-control" name="name" required autocomplete="name" placeholder="Contoh: Budi Santoso" minlength="3" maxlength="100" pattern="[A-Za-z\u00C0-\u017F\s-]+">
-                            <small class="text-muted">Minimal 2 kata, hanya huruf, spasi, dan tanda hubung (tanpa angka atau simbol).</small>
+                            <input type="text" class="form-control" name="name" required autocomplete="name" minlength="3" maxlength="100" pattern="[A-Za-z\u00C0-\u017F\s-]+">
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Email</label>
@@ -125,11 +122,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Password</label>
-                            <input type="password" class="form-control" name="password" required minlength="6" autocomplete="new-password">
+                            <div class="input-group">
+                                <input type="password" class="form-control" name="password" id="password" required minlength="6" autocomplete="new-password">
+                                <button class="btn bg-white toggle-pass-btn" type="button" id="togglePassword" tabindex="-1" aria-label="Lihat password" style="border:1px solid #E2E8F0; border-left:0; border-top-right-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md); color:#94a3b8;"><i class="fas fa-eye"></i></button>
+                            </div>
                         </div>
                         <div class="mb-4">
                             <label class="form-label small fw-bold">Konfirmasi Password</label>
-                            <input type="password" class="form-control" name="password2" required minlength="6" autocomplete="new-password">
+                            <div class="input-group">
+                                <input type="password" class="form-control" name="password2" id="password2" required minlength="6" autocomplete="new-password">
+                                <button class="btn bg-white toggle-pass-btn" type="button" id="togglePassword2" tabindex="-1" aria-label="Lihat konfirmasi password" style="border:1px solid #E2E8F0; border-left:0; border-top-right-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md); color:#94a3b8;"><i class="fas fa-eye"></i></button>
+                            </div>
                         </div>
                         <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold py-2">Daftar</button>
                     </form>
@@ -141,5 +144,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 </section>
+
+<style>
+.toggle-pass-btn:hover { color: #0ea5e9 !important; }
+.toggle-pass-btn:focus { box-shadow: none; }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function setupToggle(btnId, inputId) {
+        var btn = document.getElementById(btnId);
+        var input = document.getElementById(inputId);
+        if (!btn || !input) return;
+        btn.addEventListener('click', function() {
+            var isPassword = input.getAttribute('type') === 'password';
+            input.setAttribute('type', isPassword ? 'text' : 'password');
+            var icon = this.querySelector('i');
+            icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash');
+        });
+    }
+    setupToggle('togglePassword', 'password');
+    setupToggle('togglePassword2', 'password2');
+});
+</script>
 
 <?php include '../includes/footer.php'; ?>

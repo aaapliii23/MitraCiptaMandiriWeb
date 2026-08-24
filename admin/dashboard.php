@@ -66,27 +66,32 @@ if ($page === 'dashboard' || $page === 'reports') {
     } catch (PDOException $e) {}
 }
 
-// Fetch Orders (Pesanan) with Search and Category
+// Fetch Orders (Pesanan) with Search and Mode filter
 $orders = [];
+$orderModeFilter = $_GET['mode'] ?? 'all';
 if ($page === 'orders') {
     $search = $_GET['search'] ?? '';
     try {
+        $hasModeCol = true;
+        try { $pdo->query("SELECT class_mode FROM orders LIMIT 1"); } catch (PDOException $e) { $hasModeCol = false; }
         $sql = "SELECT o.*, c.name as class_name, c.category as class_category, ins.name as instructor_name 
                 FROM orders o 
                 JOIN classes c ON o.class_id = c.id
                 LEFT JOIN instructors ins ON o.instructor_id = ins.id";
-        
+        $wheres = [];
+        $params = [];
         if (!empty($search)) {
-            $sql .= " WHERE o.customer_name LIKE :search 
-                      OR o.order_number LIKE :search 
-                      OR o.customer_phone LIKE :search";
-            $stmt = $pdo->prepare($sql . " ORDER BY o.created_at DESC");
-            $searchParam = "%$search%";
-            $stmt->bindParam(':search', $searchParam);
-            $stmt->execute();
-        } else {
-            $stmt = $pdo->query($sql . " ORDER BY o.created_at DESC");
+            $wheres[] = "(o.customer_name LIKE :search OR o.order_number LIKE :search OR o.customer_phone LIKE :search)";
+            $params[':search'] = "%$search%";
         }
+        if ($hasModeCol && in_array($orderModeFilter, ['online','offline'], true)) {
+            $wheres[] = "o.class_mode = :mode";
+            $params[':mode'] = $orderModeFilter;
+        }
+        if ($wheres) $sql .= " WHERE " . implode(" AND ", $wheres);
+        $sql .= " ORDER BY o.created_at DESC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
         $orders = $stmt->fetchAll();
     } catch (PDOException $e) {}
 }

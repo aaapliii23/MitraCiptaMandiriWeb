@@ -30,8 +30,31 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-medium">Harga (Rp)</label>
-                            <input type="number" class="form-control" name="price" id="classPrice" placeholder="Misal: 500000" required>
+                            <label class="form-label small fw-medium">Harga Offline (Rp)</label>
+                            <input type="number" class="form-control" name="price_offline" id="classPriceOffline" placeholder="Misal: 1200000" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-medium">Harga Online (Rp)</label>
+                            <input type="number" class="form-control" name="price_online" id="classPriceOnline" placeholder="Misal: 960000" required>
+                            <small class="text-muted" style="font-size: 0.7rem;">Online biasanya 20% lebih hemat (0,8× offline)</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-medium">Mode Tersedia</label>
+                            <select class="form-select" name="mode_available" id="classModeAvailable" required>
+                                <option value="both">Keduanya (Online & Offline)</option>
+                                <option value="offline">Hanya Offline</option>
+                                <option value="online">Hanya Online</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-medium">Harga Lama (legacy, otomatis)</label>
+                            <input type="number" class="form-control bg-light" name="price" id="classPrice" placeholder="Otomatis = Offline" readonly>
+                            <small class="text-muted" style="font-size: 0.7rem;">Diisi otomatis dari Harga Offline</small>
+                        </div>
+                        <div class="col-12" id="waGroupLinkWrap" style="display:none;">
+                            <label class="form-label small fw-medium">Link Grup WhatsApp (Offline) <span class="text-danger" id="waLinkRequiredMark" style="display:none;">*</span> <span class="text-muted fw-normal">(wajib jika mode mencakup Offline)</span></label>
+                            <input type="url" class="form-control" name="whatsapp_group_link" id="classWaLink" placeholder="https://chat.whatsapp.com/..." pattern="https://chat\.whatsapp\.com/.*">
+                            <small class="text-muted d-block mt-1">Harus diawali <code>https://chat.whatsapp.com/</code> — kosongkan jika belum ada, nanti bisa diisi admin.</small>
                         </div>
                         <div class="col-12">
                             <label class="form-label small fw-medium">Deskripsi</label>

@@ -79,7 +79,8 @@ if (!isset($classItems)) {
                 <?php $nav_sections = [['beranda', 'Beranda'], ['tentang', 'Tentang'], ['galeri', 'Galeri'], ['paket', 'Paket'], ['testimoni', 'Testimoni']]; ?>
                 <ul class="navbar-nav mx-auto align-items-center gap-2">
                     <?php foreach ($nav_sections as $ns): ?>
-                        <li class="nav-item"><a class="nav-link" href="<?php echo $is_home ? '#' . $ns[0] : $base_url . 'index.php#' . $ns[0]; ?>"><?php echo $ns[1]; ?></a></li>
+                        <?php $href = ($ns[0] === 'tentang') ? $base_url . 'pages/about.php' : ($is_home ? '#' . $ns[0] : $base_url . 'index.php#' . $ns[0]); ?>
+                        <li class="nav-item"><a class="nav-link" href="<?php echo $href; ?>"><?php echo $ns[1]; ?></a></li>
                     <?php endforeach; ?>
                 </ul>
                 <div class="my-4 d-lg-none" style="border-top: 1px solid #000000 !important; opacity: 0.15;"></div>
@@ -92,7 +93,7 @@ if (!isset($classItems)) {
                         <a href="<?php echo $base_url; ?>auth/user_logout.php" class="btn btn-outline-secondary rounded-pill fw-bold" style="padding: 8px 20px;">Keluar</a>
                     <?php else: ?>
                         <a href="<?php echo $base_url; ?>auth/user_login.php" class="btn btn-outline-primary rounded-pill fw-bold" style="padding: 8px 22px;">Masuk</a>
-                        <a href="<?php echo $base_url; ?>pages/programs.php" class="btn rounded-pill fw-bold btn-premium" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: white; border: none; padding: 10px 28px; box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.4); display: inline-block;">Daftar Sekarang</a>
+                        <a href="<?php echo $base_url; ?>auth/user_register.php" class="btn rounded-pill fw-bold btn-premium" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: white; border: none; padding: 10px 28px; box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.4); display: inline-block;">Daftar Sekarang</a>
                     <?php endif; ?>
                 </div>
             </div>

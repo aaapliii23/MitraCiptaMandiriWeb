@@ -11,6 +11,7 @@ require_once '../../config/database.php';
 
 $classId = (int)($_GET['class_id'] ?? 0);
 $year = $_GET['year'] ?? 'all';
+$mode = strtolower(trim($_GET['mode'] ?? 'all'));
 
 if ($classId <= 0) {
     echo json_encode(['status' => 'error', 'message' => 'ID Pelatihan tidak valid.']);
@@ -18,7 +19,10 @@ if ($classId <= 0) {
 }
 
 try {
-    $sql = "SELECT o.id, o.order_number, o.customer_name, o.customer_phone, o.customer_email, o.amount, o.status, o.payment_status, o.created_at, c.name as class_name
+    $hasMode = true;
+    try { $pdo->query("SELECT class_mode FROM orders LIMIT 1"); } catch (PDOException $e) { $hasMode = false; }
+    $modeSelect = $hasMode ? "o.class_mode," : " 'offline' as class_mode,";
+    $sql = "SELECT o.id, o.order_number, o.customer_name, o.customer_phone, o.customer_email, o.amount, o.status, o.payment_status, $modeSelect o.created_at, c.name as class_name
             FROM orders o
             JOIN classes c ON o.class_id = c.id
             WHERE o.class_id = :class_id";
@@ -27,6 +31,10 @@ try {
     if ($year !== 'all' && !empty($year)) {
         $sql .= " AND YEAR(o.created_at) = :year";
         $params[':year'] = (int)$year;
+    }
+    if ($hasMode && in_array($mode, ['online','offline'], true)) {
+        $sql .= " AND o.class_mode = :mode";
+        $params[':mode'] = $mode;
     }
 
     $sql .= " ORDER BY o.created_at DESC";

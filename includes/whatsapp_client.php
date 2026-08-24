@@ -105,9 +105,25 @@ function wa_intent_reply($pdo, $intent) {
                 }
                 if (strpos($dbReply, '{prices}') !== false) {
                     try {
-                        $rows = $pdo->query("SELECT name, price FROM classes ORDER BY id")->fetchAll();
+                        $hasNew = true; try { $pdo->query("SELECT price_online FROM classes LIMIT 1"); } catch (PDOException $e) { $hasNew = false; }
+                        $rows = $hasNew ? $pdo->query("SELECT name, price, price_online, price_offline, mode_available FROM classes ORDER BY id")->fetchAll() : $pdo->query("SELECT name, price FROM classes ORDER BY id")->fetchAll();
                         $out = [];
-                        foreach ($rows as $r) $out[] = $r['name'] . ' - Rp ' . number_format($r['price'], 0, ',', '.');
+                        foreach ($rows as $r) {
+                            if ($hasNew) {
+                                $p = (int)($r['price'] ?? 0);
+                                $po = isset($r['price_online']) && (int)$r['price_online'] > 0 ? (int)$r['price_online'] : (int)round($p*0.8);
+                                $pf = isset($r['price_offline']) && (int)$r['price_offline'] > 0 ? (int)$r['price_offline'] : $p;
+                                $ma = $r['mode_available'] ?? 'both';
+                                if ($ma === 'online') $out[] = $r['name'] . ' (Online) - Rp ' . number_format($po,0,',','.');
+                                elseif ($ma === 'offline') $out[] = $r['name'] . ' (Offline) - Rp ' . number_format($pf,0,',','.');
+                                else {
+                                    if ($po !== $pf) $out[] = $r['name'] . ' - Mulai Rp ' . number_format(min($po,$pf),0,',','.') . ' (Offline Rp '.number_format($pf,0,',','.').' / Online Rp '.number_format($po,0,',','.').')';
+                                    else $out[] = $r['name'] . ' - Rp ' . number_format($p,0,',','.');
+                                }
+                            } else {
+                                $out[] = $r['name'] . ' - Rp ' . number_format($r['price'], 0, ',', '.');
+                            }
+                        }
                         if ($out) $dbReply = str_replace('{prices}', implode("\n- ", $out), $dbReply);
                     } catch (PDOException $e) {}
                 }
@@ -124,9 +140,25 @@ function wa_intent_reply($pdo, $intent) {
     }
     if ($intent === 'harga') {
         try {
-            $rows = $pdo->query("SELECT name, price FROM classes ORDER BY id")->fetchAll();
+            $hasNew = true; try { $pdo->query("SELECT price_online FROM classes LIMIT 1"); } catch (PDOException $e) { $hasNew = false; }
+            $rows = $hasNew ? $pdo->query("SELECT name, price, price_online, price_offline, mode_available FROM classes ORDER BY id")->fetchAll() : $pdo->query("SELECT name, price FROM classes ORDER BY id")->fetchAll();
             $out = [];
-            foreach ($rows as $r) $out[] = $r['name'] . ' - Rp ' . number_format($r['price'], 0, ',', '.');
+            foreach ($rows as $r) {
+                if ($hasNew) {
+                    $p = (int)($r['price'] ?? 0);
+                    $po = isset($r['price_online']) && (int)$r['price_online'] > 0 ? (int)$r['price_online'] : (int)round($p*0.8);
+                    $pf = isset($r['price_offline']) && (int)$r['price_offline'] > 0 ? (int)$r['price_offline'] : $p;
+                    $ma = $r['mode_available'] ?? 'both';
+                    if ($ma === 'online') $out[] = $r['name'] . ' (Online) - Rp ' . number_format($po,0,',','.');
+                    elseif ($ma === 'offline') $out[] = $r['name'] . ' (Offline) - Rp ' . number_format($pf,0,',','.');
+                    else {
+                        if ($po !== $pf) $out[] = $r['name'] . ' - Mulai Rp ' . number_format(min($po,$pf),0,',','.') . ' (Offline Rp '.number_format($pf,0,',','.').' / Online Rp '.number_format($po,0,',','.').')';
+                        else $out[] = $r['name'] . ' - Rp ' . number_format($p,0,',','.');
+                    }
+                } else {
+                    $out[] = $r['name'] . ' - Rp ' . number_format($r['price'], 0, ',', '.');
+                }
+            }
             if ($out) return "Harga program MCM:\n- " . implode("\n- ", $out);
         } catch (PDOException $e) {}
         return "Harga program MCM bervariasi. Silakan cek halaman Program di website kami.";

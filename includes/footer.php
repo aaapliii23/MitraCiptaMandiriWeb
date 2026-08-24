@@ -34,7 +34,7 @@
                 <div class="col-md-4 text-start text-md-end">
                     <h5 class="fw-bold mb-4">Hubungi Kami</h5>
                     <p class="text-white-50 mb-1">
-                        <a href="https://www.google.com/maps/search/?api=1&query=Jl.+Khp+Hasan+Mustopa+No.57+Neglasari+Cibeunying+Kaler+Bandung" target="_blank" rel="noopener" class="text-white-50 text-decoration-none" style="line-height: 1.6;">
+                        <a href="https://maps.app.goo.gl/dGjhXJ9CXqNSDoSD7" target="_blank" rel="noopener" class="text-white-50 text-decoration-none" style="line-height: 1.6;">
                             <i class="fas fa-map-marker-alt me-2"></i>Jl. Khp Hasan Mustopa No.57, Neglasari, Kec. Cibeunying Kaler, Kota Bandung, Jawa Barat 40124
                         </a>
                     </p>

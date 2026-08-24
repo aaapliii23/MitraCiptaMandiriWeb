@@ -38,7 +38,8 @@ function editFacility(data) {
     resetFacilityForm();
     document.getElementById('facilityAction').value = 'update';
     document.getElementById('facilityId').value = data.id;
-    document.getElementById('facilityCategory').value = data.category;
+    const normCat = (data.category||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+    document.getElementById('facilityCategory').value = normCat || data.category;
     document.getElementById('facilityTitle').value = data.title;
     document.getElementById('facilityDescription').value = data.description || '';
     document.getElementById('facilityImageInput').required = false;

@@ -5,7 +5,18 @@ require_once '../config/database.php';
 $order_number = $_GET['order'] ?? null;
 if (!$order_number) die("Order tidak ditemukan.");
 
-$stmt = $pdo->prepare("SELECT o.*, c.name as class_name, c.price FROM orders o JOIN classes c ON o.class_id = c.id WHERE o.order_number = ?");
+// Cek kolom class_mode & whatsapp_group_link untuk backward compat
+$hasMode = true;
+try { $pdo->query("SELECT class_mode FROM orders LIMIT 1"); } catch (PDOException $e) { $hasMode = false; }
+$hasWaCol = true;
+try { $pdo->query("SELECT whatsapp_group_link FROM classes LIMIT 1"); } catch (PDOException $e) { $hasWaCol = false; }
+if ($hasMode && $hasWaCol) {
+    $stmt = $pdo->prepare("SELECT o.*, c.name as class_name, c.price, c.price_online, c.price_offline, c.mode_available, c.whatsapp_group_link FROM orders o JOIN classes c ON o.class_id = c.id WHERE o.order_number = ?");
+} elseif ($hasMode) {
+    $stmt = $pdo->prepare("SELECT o.*, c.name as class_name, c.price, c.price_online, c.price_offline, c.mode_available FROM orders o JOIN classes c ON o.class_id = c.id WHERE o.order_number = ?");
+} else {
+    $stmt = $pdo->prepare("SELECT o.*, c.name as class_name, c.price FROM orders o JOIN classes c ON o.class_id = c.id WHERE o.order_number = ?");
+}
 $stmt->execute([$order_number]);
 $order = $stmt->fetch();
 
@@ -14,6 +25,11 @@ if (!$order) die("Data pendaftaran tidak valid.");
 if ($order['payment_status'] !== 'paid') {
     header("Location: payment_status.php?order=" . urlencode($order['order_number']));
     exit;
+}
+// Keamanan: hanya pemilik order yang boleh lihat link WA (jika ada user_id)
+$isOwnerPdf = true;
+if (!empty($order['user_id']) && isset($_SESSION['user_id']) && (int)$order['user_id'] !== (int)$_SESSION['user_id']) {
+    $isOwnerPdf = false;
 }
 
 // Note: To truly generate a PDF on a server, we usually use libraries like Dompdf or FPDF.
@@ -143,7 +159,7 @@ if ($order['payment_status'] !== 'paid') {
                     <i class="fab fa-whatsapp me-2"></i> Konfirmasi ke WA
                 </a>
             <?php endif; ?>
-            <a href="../index.php" class="btn btn-light rounded-pill px-4 py-2 fw-bold shadow-sm flex-fill flex-md-grow-0 border" style="min-width: 120px;">
+            <a href="payment_status.php?order=<?php echo urlencode($order['order_number']); ?>" class="btn btn-light rounded-pill px-4 py-2 fw-bold shadow-sm flex-fill flex-md-grow-0 border" style="min-width: 120px;">
                 Kembali
             </a>
         </div>
@@ -199,13 +215,50 @@ if ($order['payment_status'] !== 'paid') {
                         <div class="info-label">Program Pelatihan</div>
                         <h5 class="fw-bold mb-0"><?php echo htmlspecialchars($order['class_name']); ?></h5>
                         <small class="text-muted">Standard Kurikulum Vokasi Nasional</small>
+                        <?php if ($hasMode): $cm = strtolower($order['class_mode'] ?? 'offline'); ?>
+                        <div class="mt-1"><span class="badge <?php echo $cm==='online' ? 'bg-info' : 'bg-success'; ?> bg-opacity-10 <?php echo $cm==='online' ? 'text-info' : 'text-success'; ?> border" style="font-size: 0.72rem;"><i class="fas <?php echo $cm==='online' ? 'fa-laptop' : 'fa-chalkboard-teacher'; ?> me-1"></i><?php echo $cm==='online' ? 'Mode Online' : 'Mode Offline'; ?></span></div>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <div class="text-end">
-                    <div class="info-label">Biaya</div>
-                    <h5 class="fw-bold mb-0 text-primary">Rp <?php echo number_format($order['price'], 0, ',', '.'); ?></h5>
+                    <div class="info-label">Biaya (<?php echo $hasMode ? htmlspecialchars(ucfirst($order['class_mode'] ?? 'offline')) : 'Offline'; ?>)</div>
+                    <h5 class="fw-bold mb-0 text-primary">Rp <?php echo number_format($order['amount'] ?? $order['price'], 0, ',', '.'); ?></h5>
+                    <?php if ($hasMode && isset($order['mode_available']) && $order['mode_available']==='both'): ?>
+                    <small class="text-muted" style="font-size: 0.7rem;">Termasuk sesuai mode terpilih</small>
+                    <?php endif; ?>
                 </div>
             </div>
+
+            <?php if ($hasMode && $hasWaCol && $isOwnerPdf): $cmPdf = strtolower($order['class_mode'] ?? 'offline'); $waPdf = $order['whatsapp_group_link'] ?? null; ?>
+            <?php if ($cmPdf === 'offline'): ?>
+            <div class="item-row" style="background: #f0fdf4; border-color: #bbf7d0;">
+                <div class="d-flex align-items-start">
+                    <div class="bg-success bg-opacity-10 text-success p-2 rounded-3 me-3"><i class="fab fa-whatsapp fs-5"></i></div>
+                    <div>
+                        <div class="info-label">Grup WhatsApp Kelas (Offline)</div>
+                        <?php if (!empty($waPdf) && strpos($waPdf, 'https://chat.whatsapp.com/')===0): ?>
+                        <div class="small mb-1"><a href="<?php echo htmlspecialchars($waPdf); ?>" target="_blank" class="text-success fw-bold text-decoration-none"><?php echo htmlspecialchars($waPdf); ?></a></div>
+                        <small class="text-muted">Silakan cek WhatsApp Anda untuk link grup kelas — klik link di atas untuk gabung.</small>
+                        <?php else: ?>
+                        <small class="text-muted">Silakan cek WhatsApp Anda untuk link grup kelas — admin akan menghubungi Anda secara manual untuk info grup & jadwal.</small>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+            <?php elseif ($hasMode && $hasWaCol && $isOwnerPdf === false): $cmPdf = strtolower($order['class_mode'] ?? 'offline'); ?>
+            <?php if ($cmPdf === 'offline'): ?>
+            <div class="item-row" style="background: #fef3c7; border-color: #fde68a;">
+                <div class="d-flex align-items-start">
+                    <div class="bg-warning bg-opacity-10 text-warning p-2 rounded-3 me-3"><i class="fas fa-lock fs-5"></i></div>
+                    <div>
+                        <div class="info-label">Grup WhatsApp Kelas</div>
+                        <small class="text-muted">Link grup hanya dapat dilihat oleh pemilik pesanan.</small>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+            <?php endif; ?>
 
             <div class="row align-items-end mt-5">
                 <div class="col-md-8">

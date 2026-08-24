@@ -54,9 +54,29 @@ try {
             $stmt->execute([$order['user_id'], $order['class_id'], $order['id']]);
         }
 
-        $stmt = $pdo->prepare("SELECT name FROM classes WHERE id = ?");
-        $stmt->execute([$order['class_id']]);
-        $className = (string)$stmt->fetchColumn();
+        // Ambil nama kelas & link WA (jika ada)
+        $className = '';
+        $waLink = null;
+        try {
+            $hasWaCol = true;
+            try { $pdo->query("SELECT whatsapp_group_link FROM classes LIMIT 1"); } catch (Exception $e) { $hasWaCol = false; }
+            if ($hasWaCol) {
+                $stmt = $pdo->prepare("SELECT name, whatsapp_group_link FROM classes WHERE id = ?");
+                $stmt->execute([$order['class_id']]);
+                $cls = $stmt->fetch();
+                $className = (string)($cls['name'] ?? '');
+                $waLink = $cls['whatsapp_group_link'] ?? null;
+            } else {
+                $stmt = $pdo->prepare("SELECT name FROM classes WHERE id = ?");
+                $stmt->execute([$order['class_id']]);
+                $className = (string)$stmt->fetchColumn();
+            }
+        } catch (Exception $e) {
+            $stmt = $pdo->prepare("SELECT name FROM classes WHERE id = ?");
+            $stmt->execute([$order['class_id']]);
+            $className = (string)$stmt->fetchColumn();
+        }
+        if ($className === '') $className = 'Kelas MCM';
 
         // Auto-record into finance_transactions
         try {
@@ -71,11 +91,37 @@ try {
             }
         } catch (Exception $fe) {}
 
-        $msg = "*PEMBAYARAN LUNAS - MCM*\n\n";
-        $msg .= "Halo " . $order['customer_name'] . ", pembayaran Anda untuk *" . $className . "* sudah kami terima. ✅\n";
-        $msg .= "No. Order: " . $orderNumber . "\n";
-        $msg .= "Silakan login ke LMS untuk mulai belajar: " . pg_base_url() . "/lms/dashboard.php";
-        wa_send_message($pdo, $order['customer_phone'], $msg, 'pembayaran');
+        // Kirim pesan sesuai mode: offline -> link WA grup, online -> LMS
+        $classMode = 'offline';
+        try { $classMode = strtolower($order['class_mode'] ?? 'offline'); } catch (Exception $e) {}
+        if (!in_array($classMode, ['online','offline'], true)) $classMode = 'offline';
+        if ($classMode === 'offline') {
+            if (!empty($waLink) && strpos($waLink, 'https://chat.whatsapp.com/') === 0) {
+                $msg = "*PEMBAYARAN LUNAS - MCM*\n\n";
+                $msg .= "Halo " . $order['customer_name'] . ", pembayaran Anda untuk *" . $className . "* (Offline) sudah kami terima. ✅\n";
+                $msg .= "No. Order: " . $orderNumber . "\n\n";
+                $msg .= "Silakan gabung ke grup WhatsApp kelas untuk info jadwal & lokasi pelatihan:\n" . $waLink;
+                wa_send_message($pdo, $order['customer_phone'], $msg, 'pembayaran');
+            } else {
+                $msg = "*PEMBAYARAN LUNAS - MCM*\n\n";
+                $msg .= "Halo " . $order['customer_name'] . ", pembayaran Anda untuk *" . $className . "* (Offline) sudah kami terima. ✅\n";
+                $msg .= "No. Order: " . $orderNumber . "\n\n";
+                $msg .= "Admin kami akan segera menghubungi Anda untuk info grup WhatsApp kelas & jadwal pelatihan.";
+                wa_send_message($pdo, $order['customer_phone'], $msg, 'pembayaran');
+                // Notifikasi ke admin karena link kosong
+                try {
+                    $adminNumber = '6285793935707';
+                    $adminMsg = "[NOTIF OFFLINE] Link WA kosong — Kelas: $className (ID {$order['class_id']}), Order: $orderNumber, Peserta: {$order['customer_name']} ({$order['customer_phone']}) — segera hubungi peserta.";
+                    wa_send_message($pdo, $adminNumber, $adminMsg, 'admin_notif');
+                } catch (Exception $ae) {}
+            }
+        } else {
+            $msg = "*PEMBAYARAN LUNAS - MCM*\n\n";
+            $msg .= "Halo " . $order['customer_name'] . ", pembayaran Anda untuk *" . $className . "* (Online) sudah kami terima. ✅\n";
+            $msg .= "No. Order: " . $orderNumber . "\n";
+            $msg .= "Silakan login ke LMS untuk mulai belajar: " . pg_base_url() . "/lms/dashboard.php";
+            wa_send_message($pdo, $order['customer_phone'], $msg, 'pembayaran');
+        }
     } else {
         $stmt = $pdo->prepare("UPDATE orders SET payment_status = ?, payment_method = ? WHERE id = ?");
         $stmt->execute([$newStatus, $method, $order['id']]);

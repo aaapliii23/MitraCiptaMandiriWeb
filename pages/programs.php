@@ -97,7 +97,23 @@ try {
                     <div class="paket-card-content p-4">
                         <h4 class="fw-bold mb-2"><?php echo htmlspecialchars($c['name']); ?></h4>
                         <p class="text-muted small mb-4" style="height: 4.5em; overflow: hidden;"><?php echo substr(strip_tags($c['description']), 0, 120); ?>...</p>
-                        <h5 class="text-primary fw-bold mb-4">Rp <?php echo number_format($c['price'], 0, ',', '.'); ?></h5>
+                        <?php
+                        $pLegacy = (int)($c['price'] ?? 0);
+                        $pOn = isset($c['price_online']) && (int)$c['price_online'] > 0 ? (int)$c['price_online'] : (int)round($pLegacy * 0.8);
+                        $pOff = isset($c['price_offline']) && (int)$c['price_offline'] > 0 ? (int)$c['price_offline'] : $pLegacy;
+                        $ma = $c['mode_available'] ?? 'both';
+                        if ($ma === 'online') {
+                            echo '<h5 class="text-primary fw-bold mb-1">Rp '.number_format($pOn,0,',','.').'</h5><small class="text-muted d-block mb-3"><span class="badge bg-info bg-opacity-10 text-info" style="font-size:0.7rem;"><i class="fas fa-laptop me-1"></i>Online</span></small>';
+                        } elseif ($ma === 'offline') {
+                            echo '<h5 class="text-primary fw-bold mb-1">Rp '.number_format($pOff,0,',','.').'</h5><small class="text-muted d-block mb-3"><span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.7rem;"><i class="fas fa-chalkboard-teacher me-1"></i>Offline</span></small>';
+                        } else {
+                            if ($pOn !== $pOff) {
+                                echo '<div class="mb-3"><small class="text-muted d-block" style="font-size:0.72rem;">Mulai dari</small><h5 class="text-primary fw-bold mb-0">Rp '.number_format(min($pOn,$pOff),0,',','.').'</h5><small class="text-muted" style="font-size:0.7rem;">Offline Rp '.number_format($pOff,0,',','.').' &bull; Online Rp '.number_format($pOn,0,',','.').'</small></div>';
+                            } else {
+                                echo '<h5 class="text-primary fw-bold mb-4">Rp '.number_format($pLegacy,0,',','.').'</h5>';
+                            }
+                        }
+                        ?>
                         
                         <div class="mb-4">
                             <?php foreach (array_slice($featuresArr, 0, 3) as $f): ?>

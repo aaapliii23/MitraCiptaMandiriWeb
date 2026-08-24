@@ -5,9 +5,14 @@
                 <p class="text-muted mb-0">Kelola pesanan dan status pembayaran pelanggan.</p>
             </div>
             <div class="col-md-6">
-                <form action="" method="GET" class="d-flex gap-2">
+                <form action="" method="GET" class="d-flex gap-2 align-items-center">
                     <input type="hidden" name="page" value="orders">
-                    <div class="input-group shadow-sm rounded-3 overflow-hidden">
+                    <select name="mode" class="form-select shadow-sm rounded-3" style="max-width: 150px;" onchange="this.form.submit()">
+                        <option value="all" <?php echo ($orderModeFilter ?? 'all') === 'all' ? 'selected' : ''; ?>>Semua Mode</option>
+                        <option value="online" <?php echo ($orderModeFilter ?? '') === 'online' ? 'selected' : ''; ?>>Online</option>
+                        <option value="offline" <?php echo ($orderModeFilter ?? '') === 'offline' ? 'selected' : ''; ?>>Offline</option>
+                    </select>
+                    <div class="input-group shadow-sm rounded-3 overflow-hidden flex-grow-1">
                         <span class="input-group-text bg-white border-end-0 text-muted ps-3"><i class="fas fa-search"></i></span>
                         <input type="text" name="search" class="form-control border-start-0 py-2" placeholder="Cari Pelanggan / No. Order..." value="<?php echo htmlspecialchars($search ?? ''); ?>">
                     </div>
@@ -25,6 +30,7 @@
                                 <th>Order ID</th>
                                 <th>Pelanggan</th>
                                 <th>Kategori & Kelas</th>
+                                <th class="text-center">Mode</th>
                                 <th>Instruktur</th>
                                 <th>Total</th>
                                 <th class="text-center">Pembayaran</th>
@@ -34,7 +40,7 @@
                         </thead>
                         <tbody>
                             <?php if (empty($orders)): ?>
-                                <tr><td colspan="8" class="text-center py-5 text-muted">Data tidak ditemukan.</td></tr>
+                                <tr><td colspan="9" class="text-center py-5 text-muted">Data tidak ditemukan.</td></tr>
                             <?php else: ?>
                                 <?php foreach ($orders as $o): ?>
                                     <tr>
@@ -49,6 +55,7 @@
                                             <div class="small text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;"><?php echo htmlspecialchars($o['class_category']); ?></div>
                                             <div class="fw-bold text-primary"><?php echo htmlspecialchars($o['class_name']); ?></div>
                                         </td>
+                                        <td class="text-center"><?php $cm = strtolower($o['class_mode'] ?? 'offline'); if ($cm === 'online') echo '<span class="badge bg-info bg-opacity-10 text-info"><i class="fas fa-laptop me-1"></i>Online</span>'; else echo '<span class="badge bg-success bg-opacity-10 text-success"><i class="fas fa-chalkboard-teacher me-1"></i>Offline</span>'; ?></td>
                                         <td class="small text-muted"><?php echo $o['instructor_name'] ? htmlspecialchars($o['instructor_name']) : '<span class="text-muted">-</span>'; ?></td>
                                         <td class="fw-bold text-dark">Rp <?php echo number_format($o['amount'], 0, ',', '.'); ?></td>
                                         <td class="text-center">
@@ -83,6 +90,7 @@
                                                     data-instansi="<?php echo htmlspecialchars(!empty($o['customer_institution']) ? $o['customer_institution'] : '-'); ?>"
                                                     data-alamat="<?php echo htmlspecialchars(!empty($o['customer_address']) ? $o['customer_address'] : '-'); ?>"
                                                     data-kelas="<?php echo htmlspecialchars($o['class_name']); ?>"
+                                                    data-mode="<?php echo htmlspecialchars(strtolower($o['class_mode'] ?? 'offline')); ?>"
                                                     data-harga="<?php echo number_format($o['amount'], 0, ',', '.'); ?>">
                                                     <i class="fas fa-eye"></i>
                                                 </button>

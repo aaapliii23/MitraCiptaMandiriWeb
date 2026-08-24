@@ -79,7 +79,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         <div class="mb-4">
                             <label class="form-label small fw-bold">Password</label>
-                            <input type="password" class="form-control" name="password" required autocomplete="current-password">
+                            <div class="input-group">
+                                <input type="password" class="form-control" name="password" id="password" required autocomplete="current-password">
+                                <button class="btn bg-white toggle-pass-btn" type="button" id="togglePassword" tabindex="-1" aria-label="Lihat password" style="border:1px solid #E2E8F0; border-left:0; border-top-right-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md); color:#94a3b8;"><i class="fas fa-eye"></i></button>
+                            </div>
                         </div>
                         <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold py-2">Masuk</button>
                     </form>
@@ -91,5 +94,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 </section>
+
+<style>
+.toggle-pass-btn:hover { color: #0ea5e9 !important; }
+.toggle-pass-btn:focus { box-shadow: none; }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var btn = document.getElementById('togglePassword');
+    var input = document.getElementById('password');
+    if (!btn || !input) return;
+    btn.addEventListener('click', function() {
+        var isPassword = input.getAttribute('type') === 'password';
+        input.setAttribute('type', isPassword ? 'text' : 'password');
+        var icon = this.querySelector('i');
+        icon.classList.toggle('fa-eye');
+        icon.classList.toggle('fa-eye-slash');
+    });
+});
+</script>
 
 <?php include '../includes/footer.php'; ?>

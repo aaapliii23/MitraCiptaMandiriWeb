@@ -72,12 +72,23 @@ async function loadContent(url, pushState = true) {
 }
 
 function updateActiveStates(page) {
-    document.querySelectorAll('.nav-link, .mcm-nav-item').forEach(el => {
+    document.querySelectorAll('.nav-link, .mcm-nav-item, .sidebar .nav-link').forEach(el => {
         const href = el.getAttribute('href');
-        if (href && href.includes(`page=${page}`)) {
-            el.classList.add('active');
-        } else {
-            el.classList.remove('active');
+        if (!href) return;
+        let hrefPage = null;
+        try {
+            const url = new URL(href, window.location.origin);
+            hrefPage = url.searchParams.get('page');
+        } catch(e) {
+            const m = href.match(/[?&]page=([^&]+)/);
+            hrefPage = m ? m[1] : null;
+        }
+        if (hrefPage !== null) {
+            if (hrefPage === page) {
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active');
+            }
         }
     });
 }

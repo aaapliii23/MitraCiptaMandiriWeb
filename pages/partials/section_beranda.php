@@ -9,7 +9,7 @@
             <div class="swiper-wrapper">
                 <?php foreach ($heroSlides as $gs): ?>
                 <div class="swiper-slide">
-                    <img src="<?php echo htmlspecialchars(asset_src($gs['image'])); ?>" alt="<?php echo htmlspecialchars($gs['title']); ?>">
+                    <img src="<?php echo htmlspecialchars(asset_src($gs['image'])); ?>" alt="<?php echo htmlspecialchars($gs['title']); ?>" onerror="this.onerror=null;this.src='<?php echo htmlspecialchars(asset_src('assets/img/hero-bg.jpg')); ?>';">
                 </div>
                 <?php endforeach; ?>
             </div>
@@ -81,7 +81,7 @@
                             <div class="swiper-wrapper">
                                 <?php foreach ($slideImages as $img): ?>
                                 <div class="swiper-slide">
-                                    <img src="<?php echo htmlspecialchars(asset_src($img)); ?>" alt="Kegiatan MCM" class="w-100 h-100" style="object-fit: cover;">
+                                    <img src="<?php echo htmlspecialchars(asset_src($img)); ?>" alt="Kegiatan MCM" class="w-100 h-100" style="object-fit: cover;" onerror="this.onerror=null;this.src='<?php echo htmlspecialchars(asset_src('assets/img/hero-bg.jpg')); ?>';">
                                 </div>
                                 <?php endforeach; ?>
                             </div>

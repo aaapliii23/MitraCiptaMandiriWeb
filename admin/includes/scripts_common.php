@@ -39,15 +39,58 @@ if (detailPesananModal) {
             const el = document.getElementById(id);
             if (el) el.textContent = btn.getAttribute(attr) || '-';
         }
+        // Mode khusus — badge Online/Offline
+        const modeEl = document.getElementById('detailMode');
+        if (modeEl) {
+            const m = (btn.getAttribute('data-mode') || 'offline').toLowerCase();
+            if (m === 'online') {
+                modeEl.innerHTML = '<i class="fas fa-laptop me-1"></i> Mode Online';
+                modeEl.className = 'badge bg-info bg-opacity-10 text-info';
+            } else {
+                modeEl.innerHTML = '<i class="fas fa-chalkboard-teacher me-1"></i> Mode Offline';
+                modeEl.className = 'badge bg-success bg-opacity-10 text-success';
+            }
+        }
     });
 }
 
+function toggleWaLinkVisibility() {
+    const ma = document.getElementById('classModeAvailable');
+    const wrap = document.getElementById('waGroupLinkWrap');
+    const input = document.getElementById('classWaLink');
+    const mark = document.getElementById('waLinkRequiredMark');
+    if (!ma || !wrap || !input) return;
+    const mode = ma.value;
+    const needsWa = (mode === 'offline' || mode === 'both');
+    wrap.style.display = needsWa ? '' : 'none';
+    if (needsWa) {
+        input.required = true;
+        if (mark) mark.style.display = '';
+        input.placeholder = 'https://chat.whatsapp.com/... (wajib jika offline)';
+    } else {
+        input.required = false;
+        if (mark) mark.style.display = 'none';
+        input.placeholder = 'https://chat.whatsapp.com/...';
+        input.value = '';
+    }
+}
 function resetClassForm() {
     document.getElementById('classForm').reset();
     document.getElementById('classAction').value = 'create';
     document.getElementById('classId').value = '';
     document.getElementById('classModalTitle').textContent = 'Tambah Kelas';
     document.getElementById('classImage').required = true;
+    const po = document.getElementById('classPriceOnline');
+    const pf = document.getElementById('classPriceOffline');
+    const pr = document.getElementById('classPrice');
+    const ma = document.getElementById('classModeAvailable');
+    const wa = document.getElementById('classWaLink');
+    if (po) po.value = '';
+    if (pf) pf.value = '';
+    if (pr) pr.value = '';
+    if (ma) ma.value = 'both';
+    if (wa) wa.value = '';
+    toggleWaLinkVisibility();
 }
 
 function editClass(data) {
@@ -57,8 +100,21 @@ function editClass(data) {
     document.getElementById('className').value = data.name;
     document.getElementById('classStartDate').value = data.start_date || '';
     document.getElementById('classCategory').value = data.category;
-    document.getElementById('classPrice').value = data.price || '';
+    const p = parseInt(data.price) || 0;
+    const poVal = data.price_online != null && parseInt(data.price_online) > 0 ? parseInt(data.price_online) : Math.round(p * 0.8);
+    const pfVal = data.price_offline != null && parseInt(data.price_offline) > 0 ? parseInt(data.price_offline) : p;
+    const elPo = document.getElementById('classPriceOnline');
+    const elPf = document.getElementById('classPriceOffline');
+    const elPr = document.getElementById('classPrice');
+    const elMa = document.getElementById('classModeAvailable');
+    const elWa = document.getElementById('classWaLink');
+    if (elPo) elPo.value = poVal || '';
+    if (elPf) elPf.value = pfVal || '';
+    if (elPr) elPr.value = pfVal || p || '';
+    if (elMa) elMa.value = data.mode_available || 'both';
+    if (elWa) elWa.value = data.whatsapp_group_link || '';
     document.getElementById('classDescription').value = data.description;
+    toggleWaLinkVisibility();
     
     // Parse features from JSON array
     try {
@@ -76,6 +132,15 @@ function editClass(data) {
     
     new bootstrap.Modal(document.getElementById('classModal')).show();
 }
+document.addEventListener('DOMContentLoaded', function(){
+    const pf = document.getElementById('classPriceOffline');
+    const po = document.getElementById('classPriceOnline');
+    const pr = document.getElementById('classPrice');
+    if (pf && pr) pf.addEventListener('input', function(){ pr.value = this.value; if (po && !po.value) po.value = Math.round(parseInt(this.value||0)*0.8); });
+    const ma = document.getElementById('classModeAvailable');
+    if (ma) ma.addEventListener('change', toggleWaLinkVisibility);
+    toggleWaLinkVisibility();
+});
 
 function editInstructor(data) {
     document.getElementById('instructorForm').reset();

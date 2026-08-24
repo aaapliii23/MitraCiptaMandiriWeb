@@ -119,7 +119,9 @@ if ($action === 'delete_category') {
 
 // ACTION: CREATE PHOTOS
 if ($action === 'create') {
-    $category = trim($_POST['category'] ?? '');
+    $categoryRaw = trim($_POST['category'] ?? '');
+    $category = strtolower(preg_replace('/[^a-z0-9]+/', '_', $categoryRaw));
+    $category = trim($category, '_');
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
 
@@ -193,7 +195,9 @@ if ($action === 'create') {
 // ACTION: UPDATE PHOTO
 if ($action === 'update') {
     $id = (int)($_POST['id'] ?? 0);
-    $category = trim($_POST['category'] ?? '');
+    $categoryRaw = trim($_POST['category'] ?? '');
+    $category = strtolower(preg_replace('/[^a-z0-9]+/', '_', $categoryRaw));
+    $category = trim($category, '_');
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
 

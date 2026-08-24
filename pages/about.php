@@ -29,7 +29,7 @@ include '../includes/header.php';
                 </div>
                 <div class="badge bg-primary bg-opacity-10 text-primary mb-3 p-2 px-3 rounded-pill fw-bold" style="background-color: rgba(12, 74, 110, 0.1) !important; color: #0c4a6e !important;">PROFIL LEMBAGA</div>
                 <h1 class="display-4 fw-bold mb-4" style="color: #0c4a6e;">Tentang <br><span style="color: #0ea5e9;">Mitra Cipta Mandiri</span></h1>
-                <p class="lead text-secondary mb-4">LPK Mitra Cipta Mandiri adalah lembaga pelatihan di bawahYayasanMITRA CIPTA MANDIRI, berlokasi di Jl. Terusan CiliwungNo. 30KotaBandung, Jawa Barat ,dengan ijin Kemenkumhamdansudahmemiliki legalitas sebagai LPK dari Disnaker Kota Bandung, DisnakerPropinsi Jawa Barat dan Kementrian KetenagakerjaanRI dansudahterakreditasi tahun 2023</p>
+                <p class="lead text-secondary mb-4">LPK Mitra Cipta Mandiri adalah lembaga pelatihan di bawah Yayasan Mitra Cipta Mandiri yang berlokasi di Jl. Khp Hasan Mustopa No.57, Neglasari, Kec. Cibeunying Kaler, Kota Bandung, Jawa Barat 40124. Lembaga ini telah memiliki izin dari Kemenkumham serta legalitas resmi sebagai LPK dari Disnaker Kota Bandung, Disnaker Provinsi Jawa Barat, dan Kementerian Ketenagakerjaan RI, serta telah terakreditasi pada tahun 2023.</p>
                 <div class="row g-4 mb-4">
                     <div class="col-6">
                         <div class="d-flex align-items-center">
@@ -361,9 +361,9 @@ include '../includes/header.php';
         <div class="row g-4 mb-5" id="facilityGrid">
             <?php if (!empty($facilityItems)): ?>
                 <?php foreach ($facilityItems as $idx => $item): ?>
-                    <div class="col-lg-4 col-md-6 facility-item" data-category="<?php echo htmlspecialchars($item['category']); ?>">
+                    <div class="col-lg-4 col-md-6 facility-item" data-category="<?php echo htmlspecialchars($item['category']); ?>" data-src="<?php echo htmlspecialchars(asset_src($item['src'])); ?>" data-title="<?php echo htmlspecialchars($item['title']); ?>" data-cat="<?php echo htmlspecialchars($item['cat_name']); ?>">
                         <div class="card border-0 shadow-sm rounded-5 overflow-hidden h-100 bg-white facility-card" style="transition: all 0.3s ease; border: 1px solid rgba(12, 74, 110, 0.08) !important;">
-                            <div class="position-relative overflow-hidden" style="height: 250px; cursor: pointer;" onclick="openFacilityModal('<?php echo htmlspecialchars(asset_src($item['src'])); ?>', '<?php echo htmlspecialchars($item['title']); ?>', '<?php echo htmlspecialchars($item['cat_name']); ?>')">
+                            <div class="position-relative overflow-hidden facility-thumb" style="height: 250px; cursor: pointer;">
                                 <img src="<?php echo htmlspecialchars(asset_src($item['src'])); ?>" alt="<?php echo htmlspecialchars($item['title']); ?>" class="w-100 h-100 facility-img" style="object-fit: cover; transition: transform 0.5s ease;" onerror="this.onerror=null;this.src='../assets/img/hero-bg.jpg';">
                                 <div class="facility-overlay position-absolute inset-0 d-flex align-items-center justify-content-center" style="background: rgba(12, 74, 110, 0.4); opacity: 0; transition: all 0.3s ease;">
                                     <span class="btn btn-light rounded-circle shadow-sm" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #0c4a6e;">
@@ -421,73 +421,360 @@ include '../includes/header.php';
             .facility-card:hover .facility-overlay {
                 opacity: 1 !important;
             }
+            /* === Gallery Lightbox Premium — konsisten dengan #galeri === */
+            .gallery-lightbox .modal-dialog {
+                transform: scale(0.92);
+                transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.22s ease;
+            }
+            .gallery-lightbox.show .modal-dialog { transform: scale(1); }
+            .gallery-lightbox .modal-content { background: transparent !important; }
+            .modal-backdrop.show {
+                background: rgba(6, 12, 24, 0.82) !important;
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                opacity: 1 !important;
+            }
+            .gallery-lb-wrapper { padding: 18px 14px 10px; }
+            .gallery-lb-frame {
+                border-radius: 1.25rem;
+                background: #0f172a;
+                box-shadow: 0 25px 60px rgba(0,0,0,0.45);
+            }
+            #facilityModalImg {
+                border-radius: 1.25rem;
+                transition: opacity 0.22s ease;
+                background: #0f172a;
+                display: block;
+            }
+            .gallery-lb-close {
+                position: absolute;
+                top: 0; right: 0;
+                z-index: 30;
+                width: 44px; height: 44px;
+                border: none; border-radius: 50%;
+                background: rgba(15, 23, 42, 0.58);
+                backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+                border: 1px solid rgba(255,255,255,0.22);
+                color: #fff;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 1.05rem;
+                transition: all 0.22s ease;
+                box-shadow: 0 8px 18px rgba(0,0,0,0.28);
+            }
+            .gallery-lb-close:hover {
+                background: rgba(15, 23, 42, 0.88);
+                transform: scale(1.08) rotate(90deg);
+                border-color: rgba(255,255,255,0.36);
+                color: #fff;
+            }
+            .gallery-lb-nav {
+                position: absolute;
+                top: 50%; transform: translateY(-50%);
+                z-index: 22;
+                width: 48px; height: 48px;
+                border: none; border-radius: 50%;
+                background: rgba(15, 23, 42, 0.52);
+                backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+                border: 1px solid rgba(255,255,255,0.18);
+                color: #fff;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 1.05rem;
+                transition: all 0.22s ease;
+                box-shadow: 0 8px 20px rgba(0,0,0,0.28);
+            }
+            .gallery-lb-nav:hover {
+                background: linear-gradient(135deg, #0c4a6e, #0ea5e9);
+                border-color: transparent;
+                transform: translateY(-50%) scale(1.08);
+            }
+            .gallery-lb-prev { left: 8px; }
+            .gallery-lb-next { right: 8px; }
+            @media (min-width: 992px) {
+                .gallery-lb-prev { left: -18px; }
+                .gallery-lb-next { right: -18px; }
+                .gallery-lb-wrapper { padding: 8px 32px 10px; }
+            }
+            .gallery-lb-caption {
+                position: absolute; left: 0; right: 0; bottom: 0;
+                padding: 54px 18px 16px;
+                background: linear-gradient(to top, rgba(0,0,0,0.84) 0%, rgba(0,0,0,0.52) 46%, transparent 100%);
+                display: flex; justify-content: space-between; align-items: flex-end; gap: 12px;
+                pointer-events: none;
+                border-bottom-left-radius: 1.25rem; border-bottom-right-radius: 1.25rem;
+            }
+            .gallery-lb-badge {
+                display: inline-flex; align-items: center;
+                background: rgba(14,165,233,0.92);
+                color: #fff;
+                font-size: 0.72rem; font-weight: 700;
+                padding: 4px 10px; border-radius: 999px;
+                margin-bottom: 6px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.22);
+            }
+            .gallery-lb-title {
+                color: #fff; font-weight: 600;
+                font-size: clamp(0.92rem, 2vw, 1.08rem); line-height: 1.35;
+                text-shadow: 0 2px 10px rgba(0,0,0,0.55);
+                margin: 0;
+            }
+            .gallery-lb-counter {
+                flex-shrink: 0;
+                background: rgba(255,255,255,0.16);
+                border: 1px solid rgba(255,255,255,0.22);
+                backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+                color: #fff; font-weight: 700; font-size: 0.78rem;
+                letter-spacing: 0.3px; padding: 7px 12px; border-radius: 999px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                white-space: nowrap;
+            }
+            .gallery-lb-thumbs {
+                display: flex; gap: 8px;
+                overflow-x: auto; overflow-y: hidden;
+                padding: 12px 2px 6px;
+                scrollbar-width: thin;
+                scrollbar-color: rgba(255,255,255,0.28) transparent;
+                scroll-behavior: smooth;
+                justify-content: flex-start;
+            }
+            @media (min-width: 768px) { .gallery-lb-thumbs { justify-content: center; } }
+            .gallery-lb-thumbs::-webkit-scrollbar { height: 6px; }
+            .gallery-lb-thumbs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.28); border-radius: 999px; }
+            .gallery-lb-thumb {
+                flex: 0 0 auto; width: 64px; height: 64px;
+                border-radius: 0.72rem; overflow: hidden;
+                border: 2px solid transparent; opacity: 0.62;
+                cursor: pointer; transition: all 0.22s ease;
+                background: #0f172a; padding: 0;
+            }
+            .gallery-lb-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+            .gallery-lb-thumb:hover { opacity: 1; transform: translateY(-2px); border-color: rgba(255,255,255,0.34); }
+            .gallery-lb-thumb.active {
+                opacity: 1; border-color: #0ea5e9;
+                box-shadow: 0 0 0 3px rgba(14,165,233,0.26), 0 8px 18px rgba(0,0,0,0.32);
+                transform: translateY(-1px);
+            }
+            @media (max-width: 576px) {
+                .gallery-lb-wrapper { padding: 46px 8px 8px; }
+                .gallery-lb-close { top: 2px; right: 2px; width: 40px; height: 40px; font-size: 1rem; }
+                .gallery-lb-nav { width: 42px; height: 42px; font-size: 0.96rem; }
+                .gallery-lb-prev { left: 6px; } .gallery-lb-next { right: 6px; }
+                .gallery-lb-caption { padding: 40px 14px 12px; }
+                .gallery-lb-thumb { width: 54px; height: 54px; }
+                #facilityModalImg { max-height: 62vh !important; }
+            }
         </style>
     </div>
 </section>
 
-<!-- Modal Preview Foto Tempat Pelatihan -->
-<div class="modal fade" id="facilityModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-5 overflow-hidden" style="background: #ffffff;">
-            <div class="modal-header border-0 pb-0 pe-4 pt-3 d-flex align-items-center justify-content-between">
-                <div>
-                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1 rounded-pill small mb-1" id="facilityModalCategory">Kategori</span>
-                    <h6 class="modal-title fw-bold text-dark mb-0" id="facilityModalTitle">Dokumentasi Tempat Pelatihan MCM</h6>
+<!-- Modal Preview Foto Tempat Pelatihan — Premium (konsisten dengan galeri) -->
+<div class="modal fade gallery-lightbox" id="facilityModal" tabindex="-1" aria-hidden="true" aria-labelledby="facilityModalTitle" data-bs-backdrop="true" data-bs-keyboard="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content bg-transparent border-0 shadow-none">
+            <div class="gallery-lb-wrapper position-relative mx-auto" style="max-width: 960px; width: 100%;">
+                <button type="button" class="gallery-lb-close" data-bs-dismiss="modal" aria-label="Tutup">
+                    <i class="fas fa-times"></i>
+                </button>
+                <button type="button" class="gallery-lb-nav gallery-lb-prev" id="facilityPrev" aria-label="Foto sebelumnya">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button type="button" class="gallery-lb-nav gallery-lb-next" id="facilityNext" aria-label="Foto berikutnya">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <div class="gallery-lb-frame rounded-4 overflow-hidden shadow-lg bg-dark position-relative">
+                    <img src="" id="facilityModalImg" class="w-100 d-block" style="max-height: 76vh; object-fit: contain; background: #0f172a;" alt="Dokumentasi Tempat Pelatihan">
+                    <div class="gallery-lb-caption">
+                        <div>
+                            <span id="facilityModalCategory" class="gallery-lb-badge"><i class="fas fa-tag me-1"></i> Kategori</span>
+                            <h5 id="facilityModalTitle" class="gallery-lb-title mb-0"></h5>
+                        </div>
+                        <span id="facilityModalCounter" class="gallery-lb-counter">1 / 1</span>
+                    </div>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4 text-center">
-                <img id="facilityModalImg" src="" alt="Dokumentasi Tempat Pelatihan" class="img-fluid rounded-4 shadow-sm w-100" style="max-height: 550px; object-fit: contain;">
+                <div class="gallery-lb-thumbs" id="facilityThumbs" aria-label="Thumbnail fasilitas"></div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Modal Opener
-    function openFacilityModal(imgSrc, title, category) {
-        document.getElementById('facilityModalImg').src = imgSrc;
-        document.getElementById('facilityModalTitle').textContent = title;
-        document.getElementById('facilityModalCategory').textContent = category;
-        const modal = new bootstrap.Modal(document.getElementById('facilityModal'));
-        modal.show();
-    }
+// Facility Lightbox Premium — konsisten dengan galleryLightbox di #galeri
+document.addEventListener('DOMContentLoaded', function() {
+    const filterBtns = document.querySelectorAll('.facility-filter-btn');
+    const items = document.querySelectorAll('.facility-item');
+    const grid = document.getElementById('facilityGrid');
+    const emptyNotice = document.getElementById('facilityEmptyNotice');
+    const emptyCatName = document.getElementById('emptyCatName');
 
-    // Category Filtering
-    document.addEventListener('DOMContentLoaded', function() {
-        const filterBtns = document.querySelectorAll('.facility-filter-btn');
-        const items = document.querySelectorAll('.facility-item');
-        const emptyNotice = document.getElementById('facilityEmptyNotice');
-        const emptyCatName = document.getElementById('emptyCatName');
+    const modalEl = document.getElementById('facilityModal');
+    const modal = modalEl ? new bootstrap.Modal(modalEl) : null;
+    const mImg = document.getElementById('facilityModalImg');
+    const mTitle = document.getElementById('facilityModalTitle');
+    const mCat = document.getElementById('facilityModalCategory');
+    const mCounter = document.getElementById('facilityModalCounter');
+    const mThumbs = document.getElementById('facilityThumbs');
+    const mPrev = document.getElementById('facilityPrev');
+    const mNext = document.getElementById('facilityNext');
+    const mFrame = modalEl ? modalEl.querySelector('.gallery-lb-frame') : null;
 
-        filterBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                filterBtns.forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
+    let facList = [];
+    let lbList = [];
+    let lbIndex = 0;
+    let currentFilter = 'all';
 
-                const filter = this.getAttribute('data-filter');
-                let visibleCount = 0;
-
-                items.forEach(item => {
-                    const itemCat = item.getAttribute('data-category');
-                    if (filter === 'all' || itemCat === filter) {
-                        item.style.display = '';
-                        item.style.animation = 'fadeIn 0.4s ease';
-                        visibleCount++;
-                    } else {
-                        item.style.display = 'none';
-                    }
-                });
-
-                if (visibleCount === 0) {
-                    emptyNotice.classList.remove('d-none');
-                    if (emptyCatName) emptyCatName.textContent = filter;
-                } else {
-                    emptyNotice.classList.add('d-none');
-                }
-            });
+    // Build master list from DOM data-attributes
+    items.forEach(function(el) {
+        facList.push({
+            el: el,
+            src: el.getAttribute('data-src') || (el.querySelector('img') ? el.querySelector('img').src : ''),
+            title: el.getAttribute('data-title') || 'Dokumentasi MCM',
+            cat: el.getAttribute('data-category') || '',
+            catName: el.getAttribute('data-cat') || ''
         });
     });
+
+    function rebuildLbList() {
+        if (currentFilter === 'all') lbList = facList.slice();
+        else lbList = facList.filter(function(o) { return o.cat === currentFilter; });
+    }
+
+    function buildThumbs() {
+        if (!mThumbs) return;
+        mThumbs.innerHTML = '';
+        lbList.forEach(function(it, i) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'gallery-lb-thumb' + (i === lbIndex ? ' active' : '');
+            btn.setAttribute('aria-label', 'Foto ' + (i+1) + ': ' + it.title);
+            const safeTitle = it.title.replace(/"/g, '&quot;');
+            btn.innerHTML = '<img src="' + it.src + '" alt="' + safeTitle + '" loading="lazy">';
+            btn.addEventListener('click', function() { showAt(i); });
+            mThumbs.appendChild(btn);
+        });
+        const ac = mThumbs.querySelector('.gallery-lb-thumb.active');
+        if (ac) ac.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+
+    function updateLb() {
+        if (!lbList.length) return;
+        const it = lbList[lbIndex];
+        if (mImg) {
+            mImg.style.opacity = '0.35';
+            const ns = it.src;
+            setTimeout(function() {
+                mImg.src = ns;
+                mImg.alt = it.title;
+                if (mImg.complete) mImg.style.opacity = '1';
+                else mImg.onload = function() { mImg.style.opacity = '1'; };
+            }, 110);
+        }
+        if (mTitle) mTitle.textContent = it.title;
+        if (mCat) mCat.innerHTML = '<i class="fas fa-tag me-1"></i> ' + it.catName;
+        if (mCounter) mCounter.textContent = (lbIndex + 1) + ' / ' + lbList.length;
+        const single = lbList.length <= 1;
+        if (mPrev) mPrev.style.display = single ? 'none' : '';
+        if (mNext) mNext.style.display = single ? 'none' : '';
+        if (mThumbs) {
+            mThumbs.querySelectorAll('.gallery-lb-thumb').forEach(function(el, i) { el.classList.toggle('active', i === lbIndex); });
+            const cur = mThumbs.querySelector('.gallery-lb-thumb.active');
+            if (cur) cur.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }
+
+    function showAt(i) {
+        if (!lbList.length) return;
+        lbIndex = (i + lbList.length) % lbList.length;
+        updateLb();
+    }
+
+    function openAt(i) {
+        lbIndex = i;
+        buildThumbs();
+        updateLb();
+        if (modal) modal.show();
+    }
+
+    // Legacy shim — tetap dukung onclick lama jika ada
+    window.openFacilityModal = function(imgSrc, title, category) {
+        const idx = facList.findIndex(function(o) { return o.src === imgSrc; });
+        if (idx >= 0) {
+            // cari idx di lbList (filter-aware)
+            const fIdx = lbList.findIndex(function(o) { return o.src === imgSrc; });
+            openAt(fIdx >= 0 ? fIdx : 0);
+        } else {
+            if (mImg) mImg.src = imgSrc;
+            if (mTitle) mTitle.textContent = title;
+            if (mCat) mCat.innerHTML = '<i class="fas fa-tag me-1"></i> ' + category;
+            if (modal) modal.show();
+        }
+    };
+
+    function applyFilter(filter) {
+        currentFilter = filter;
+        let visibleCount = 0;
+        items.forEach(function(item) {
+            const cat = item.getAttribute('data-category');
+            if (filter === 'all' || cat === filter) {
+                item.style.display = '';
+                item.style.animation = 'fadeIn 0.4s ease';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        if (visibleCount === 0) {
+            if (emptyNotice) emptyNotice.classList.remove('d-none');
+            if (emptyCatName) emptyCatName.textContent = filter;
+        } else {
+            if (emptyNotice) emptyNotice.classList.add('d-none');
+        }
+        rebuildLbList();
+    }
+
+    // Delegated click pada grid — konsisten dengan galeri utama
+    if (grid) {
+        grid.addEventListener('click', function(e) {
+            const item = e.target.closest('.facility-item');
+            if (!item) return;
+            const idx = lbList.findIndex(function(o) { return o.el === item; });
+            if (idx >= 0) openAt(idx);
+        });
+    }
+
+    if (mPrev) mPrev.addEventListener('click', function(e) { e.stopPropagation(); showAt(lbIndex - 1); });
+    if (mNext) mNext.addEventListener('click', function(e) { e.stopPropagation(); showAt(lbIndex + 1); });
+
+    function handleKey(e) {
+        if (!modalEl || !modalEl.classList.contains('show')) return;
+        if (e.key === 'ArrowLeft') { e.preventDefault(); showAt(lbIndex - 1); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); showAt(lbIndex + 1); }
+    }
+    if (modalEl) {
+        modalEl.addEventListener('shown.bs.modal', function() { document.addEventListener('keydown', handleKey); });
+        modalEl.addEventListener('hidden.bs.modal', function() { document.removeEventListener('keydown', handleKey); });
+        if (mFrame) {
+            let sx = 0;
+            mFrame.addEventListener('touchstart', function(e) { sx = e.touches[0].clientX; }, { passive: true });
+            mFrame.addEventListener('touchend', function(e) {
+                const dx = e.changedTouches[0].clientX - sx;
+                if (Math.abs(dx) > 48) {
+                    if (dx < 0) showAt(lbIndex + 1); else showAt(lbIndex - 1);
+                }
+            }, { passive: true });
+        }
+    }
+
+    filterBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            filterBtns.forEach(function(b) { b.classList.remove('active'); });
+            this.classList.add('active');
+            const f = this.getAttribute('data-filter');
+            applyFilter(f);
+        });
+    });
+
+    // Init
+    rebuildLbList();
+});
 </script>
 
 <?php include '../includes/footer.php'; ?>

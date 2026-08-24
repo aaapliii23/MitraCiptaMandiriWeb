@@ -41,6 +41,10 @@ if (!$order) {
                     <span class="fw-bold small"><?php echo htmlspecialchars($order['class_name']); ?></span>
                 </div>
                 <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted small">Mode</span>
+                    <span class="fw-bold small"><?php $cm = strtolower($order['class_mode'] ?? 'offline'); echo $cm==='online' ? '<span class="badge bg-info bg-opacity-10 text-info"><i class="fas fa-laptop me-1"></i>Online</span>' : '<span class="badge bg-success bg-opacity-10 text-success"><i class="fas fa-chalkboard-teacher me-1"></i>Offline</span>'; ?></span>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
                     <span class="text-muted small">Nama</span>
                     <span class="fw-bold small"><?php echo htmlspecialchars($order['customer_name']); ?></span>
                 </div>

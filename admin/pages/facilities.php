@@ -24,10 +24,13 @@ if (empty($facCatsMap)) {
     ];
 }
 
-// Count per category
+// Count per category (normalisasi slug: lowercase + underscore)
 $catCounts = [];
 foreach ($facilities as $fac) {
-    $c = $fac['category'] ?? 'kelas';
+    $raw = $fac['category'] ?? 'kelas';
+    $c = strtolower(preg_replace('/[^a-z0-9]+/', '_', trim($raw)));
+    $c = trim($c, '_');
+    if ($c === '') $c = 'kelas';
     $catCounts[$c] = ($catCounts[$c] ?? 0) + 1;
 }
 ?>
@@ -48,14 +51,15 @@ foreach ($facilities as $fac) {
 </div>
 
 <!-- Category Filter Pills -->
-<div class="d-flex flex-wrap gap-2 mb-4">
+<div class="d-flex flex-wrap gap-2 mb-4" style="position: relative; z-index: 1;">
     <button class="btn btn-sm rounded-pill px-3 py-2 fw-bold admin-fac-filter active" data-filter="all" style="transition: all 0.3s ease;">
         Semua <span class="badge bg-white text-dark ms-1 rounded-pill"><?php echo count($facilities); ?></span>
     </button>
     <?php foreach ($facCatsMap as $slug => $meta): ?>
-        <button class="btn btn-sm rounded-pill px-3 py-2 fw-bold admin-fac-filter" data-filter="<?php echo $slug; ?>" style="transition: all 0.3s ease;">
+        <?php $normSlug = strtolower(preg_replace('/[^a-z0-9]+/', '_', trim($slug))); $normSlug = trim($normSlug, '_'); ?>
+        <button class="btn btn-sm rounded-pill px-3 py-2 fw-bold admin-fac-filter" data-filter="<?php echo htmlspecialchars($normSlug); ?>" style="transition: all 0.3s ease;">
             <i class="fas <?php echo $meta['icon']; ?> me-1"></i> <?php echo htmlspecialchars($meta['name']); ?>
-            <span class="badge bg-light text-secondary ms-1 rounded-pill"><?php echo $catCounts[$slug] ?? 0; ?></span>
+            <span class="badge bg-light text-secondary ms-1 rounded-pill"><?php echo $catCounts[$normSlug] ?? $catCounts[$slug] ?? 0; ?></span>
         </button>
     <?php endforeach; ?>
 </div>
@@ -63,14 +67,15 @@ foreach ($facilities as $fac) {
 <div class="row g-4" id="adminFacilityGrid">
     <?php if (!empty($facilities)): ?>
         <?php foreach ($facilities as $fac): ?>
-            <div class="col-lg-3 col-md-4 col-sm-6 admin-fac-card" data-category="<?php echo htmlspecialchars($fac['category']); ?>">
+            <?php $normCat = strtolower(preg_replace('/[^a-z0-9]+/', '_', trim($fac['category']))); $normCat = trim($normCat, '_'); if ($normCat === '') $normCat = 'kelas'; ?>
+            <div class="col-lg-3 col-md-4 col-sm-6 admin-fac-card" data-category="<?php echo htmlspecialchars($normCat); ?>">
                 <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden bg-white" style="border: 1px solid rgba(0,0,0,0.05) !important;">
                     <div class="position-relative" style="height: 190px;">
                         <img src="<?php echo htmlspecialchars(getImgSrc($fac['image'])); ?>" class="w-100 h-100" style="object-fit: cover;" alt="<?php echo htmlspecialchars($fac['title']); ?>" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
                         <div class="position-absolute top-0 start-0 m-2">
                             <span class="badge px-2 py-1 rounded-pill shadow-sm" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); font-size: 0.7rem;">
-                                <i class="fas <?php echo $facCatsMap[$fac['category']]['icon'] ?? 'fa-building'; ?> me-1"></i>
-                                <?php echo htmlspecialchars($facCatsMap[$fac['category']]['name'] ?? ucfirst($fac['category'])); ?>
+                                <i class="fas <?php echo $facCatsMap[$normCat]['icon'] ?? $facCatsMap[$fac['category']]['icon'] ?? 'fa-building'; ?> me-1"></i>
+                                <?php echo htmlspecialchars($facCatsMap[$normCat]['name'] ?? $facCatsMap[$fac['category']]['name'] ?? ucfirst(str_replace('_',' ', $normCat))); ?>
                             </span>
                         </div>
                     </div>
@@ -132,19 +137,25 @@ foreach ($facilities as $fac) {
 </style>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+(function(){
+    function normFac(v){ return (v||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
+    function initFacilityFilter(){
         const filterBtns = document.querySelectorAll('.admin-fac-filter');
         const cards = document.querySelectorAll('.admin-fac-card');
-
+        if (!filterBtns.length) return;
         filterBtns.forEach(btn => {
+            if (btn.dataset.facBound) return;
+            btn.dataset.facBound = '1';
             btn.addEventListener('click', function() {
-                filterBtns.forEach(b => b.classList.remove('active'));
+                const allBtns = document.querySelectorAll('.admin-fac-filter');
+                const allCards = document.querySelectorAll('.admin-fac-card');
+                allBtns.forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
-
-                const filter = this.getAttribute('data-filter');
-                cards.forEach(card => {
-                    const cardCat = card.getAttribute('data-category');
-                    if (filter === 'all' || cardCat === filter) {
+                const filter = normFac(this.getAttribute('data-filter'));
+                const isAll = filter === 'all';
+                allCards.forEach(card => {
+                    const cardCat = normFac(card.getAttribute('data-category'));
+                    if (isAll || cardCat === filter) {
                         card.style.display = '';
                     } else {
                         card.style.display = 'none';
@@ -152,5 +163,14 @@ foreach ($facilities as $fac) {
                 });
             });
         });
-    });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initFacilityFilter);
+    } else {
+        initFacilityFilter();
+    }
+    window.initFacilityFilter = initFacilityFilter;
+    // re-init after AJAX navigation (in case script executed before new DOM)
+    document.addEventListener('ajaxFacilityReload', initFacilityFilter);
+})();
 </script>

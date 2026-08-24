@@ -70,6 +70,13 @@ if ($testimonialType === 'testimonial') {
             $testimonialMessage = 'Terjadi kesalahan sistem.';
         }
     }
+    if (strpos($testimonialMessage, 'berhasil') !== false) {
+        $_SESSION['flash_success'] = $testimonialMessage;
+    } else {
+        $_SESSION['flash_error'] = $testimonialMessage;
+    }
+    header('Location: dashboard.php');
+    exit;
 }
 
 if ($testimonialType !== 'testimonial' && $_SERVER['REQUEST_METHOD'] === 'POST') {
