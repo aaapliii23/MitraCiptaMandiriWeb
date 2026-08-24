@@ -67,7 +67,14 @@ if ($action === 'delete') {
         $stmt->execute([$id]);
         echo json_encode(['status' => 'success', 'message' => 'Kategori berhasil dihapus']);
     } catch (PDOException $e) {
-        echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus kategori']);
+        if ($e->getCode() == 23000) { // Integrity constraint violation
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Kategori tidak bisa dihapus karena masih memiliki data terkait. Pindahkan kelas ke kategori lain terlebih dahulu.'
+            ]);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus kategori: ' . $e->getMessage()]);
+        }
     }
     exit;
 }

@@ -44,18 +44,33 @@
                                 $po = isset($c['price_online']) && (int)$c['price_online'] > 0 ? (int)$c['price_online'] : (int)round($p * 0.8);
                                 $pf = isset($c['price_offline']) && (int)$c['price_offline'] > 0 ? (int)$c['price_offline'] : $p;
                                 $ma = $c['mode_available'] ?? 'both';
-                                if ($ma === 'online') {
-                                    echo '<div class="mb-2"><span class="badge bg-info bg-opacity-10 text-info small me-1"><i class="fas fa-laptop me-1"></i>Online</span><span class="text-primary fw-bold">Rp '.number_format($po,0,',','.').'</span></div>';
-                                } elseif ($ma === 'offline') {
-                                    echo '<div class="mb-2"><span class="badge bg-success bg-opacity-10 text-success small me-1"><i class="fas fa-chalkboard-teacher me-1"></i>Offline</span><span class="text-primary fw-bold">Rp '.number_format($pf,0,',','.').'</span></div>';
-                                } else {
-                                    if ($po !== $pf) {
-                                        echo '<div class="small text-muted">Mulai dari</div><div class="text-primary fw-bold fs-5 mb-1">Rp '.number_format(min($po,$pf),0,',','.').'</div><div class="small text-muted"><span class="badge bg-light border small">Offline Rp '.number_format($pf,0,',','.').'</span> <span class="badge bg-light border small">Online Rp '.number_format($po,0,',','.').'</span></div>';
-                                    } else {
-                                        echo '<div class="text-primary fw-bold fs-5 mb-3">Rp '.number_format($p,0,',','.').' <small class="text-muted" style="font-size:0.7rem;">(Online & Offline)</small></div>';
-                                    }
-                                }
                                 ?>
+                                <?php if ($ma === 'online'): ?>
+                                    <div class="mb-2">
+                                        <span class="badge bg-info bg-opacity-10 text-info small me-1"><i class="fas fa-laptop me-1"></i>Online</span>
+                                        <span class="text-primary fw-bold">Rp <?php echo number_format($po,0,',','.'); ?></span>
+                                    </div>
+                                <?php elseif ($ma === 'offline'): ?>
+                                    <div class="mb-2">
+                                        <span class="badge bg-success bg-opacity-10 text-success small me-1"><i class="fas fa-chalkboard-teacher me-1"></i>Offline</span>
+                                        <span class="text-primary fw-bold">Rp <?php echo number_format($pf,0,',','.'); ?></span>
+                                    </div>
+                                <?php else: ?>
+                                    <?php if ($po !== $pf): ?>
+                                        <div class="small text-muted">Mulai dari</div>
+                                        <div class="text-primary fw-bold fs-5 mb-1">Rp <?php echo number_format(min($po,$pf),0,',','.'); ?></div>
+                                        <div class="d-flex flex-wrap gap-1 align-items-center mb-2">
+                                            <span class="badge bg-light border border-secondary text-dark small fw-semibold px-2 py-1">
+                                                <i class="fas fa-chalkboard-teacher me-1 text-success"></i>Offline Rp <?php echo number_format($pf,0,',','.'); ?>
+                                            </span>
+                                            <span class="badge bg-light border border-secondary text-dark small fw-semibold px-2 py-1">
+                                                <i class="fas fa-laptop me-1 text-info"></i>Online Rp <?php echo number_format($po,0,',','.'); ?>
+                                            </span>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="text-primary fw-bold fs-5 mb-3">Rp <?php echo number_format($p,0,',','.'); ?> <small class="text-muted" style="font-size:0.7rem;">(Online &amp; Offline)</small></div>
+                                    <?php endif; ?>
+                                <?php endif; ?>
                                 <p class="text-muted small mb-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"><?php echo htmlspecialchars($c['description'] ?? 'Tidak ada deskripsi.'); ?></p>
                                 <?php if (!empty($c['whatsapp_group_link'])): ?>
                                 <div class="small mb-3"><a href="<?php echo htmlspecialchars($c['whatsapp_group_link']); ?>" target="_blank" class="badge bg-success bg-opacity-10 text-success border text-decoration-none"><i class="fab fa-whatsapp me-1"></i>Grup WA Offline</a> <small class="text-muted d-block mt-1 text-truncate" style="max-width: 220px; font-size:0.68rem;"><?php echo htmlspecialchars($c['whatsapp_group_link']); ?></small></div>

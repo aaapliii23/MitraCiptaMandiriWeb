@@ -68,9 +68,22 @@ if ($action === 'create') {
     echo json_encode(['status' => 'success', 'message' => 'Data instruktur diperbarui.']);
 } elseif ($action === 'delete') {
     $id = $_POST['id'] ?? null;
-    if ($id) {
+    if (!$id) {
+        echo json_encode(['status' => 'error', 'message' => 'ID tidak valid.']);
+        exit;
+    }
+    try {
         $stmt = $pdo->prepare("DELETE FROM instructors WHERE id = ?");
         $stmt->execute([$id]);
         echo json_encode(['status' => 'success', 'message' => 'Data instruktur dihapus.']);
+    } catch (PDOException $e) {
+        if ($e->getCode() == 23000) { // Integrity constraint violation
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Instruktur ini tidak bisa dihapus karena masih dipakai oleh data lain (mis. pesanan kelas). Ganti instruktur pada kelas/pesanan terkait terlebih dahulu.'
+            ]);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus instruktur: ' . $e->getMessage()]);
+        }
     }
 }
