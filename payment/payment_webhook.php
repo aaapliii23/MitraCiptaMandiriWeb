@@ -50,11 +50,23 @@ try {
         $stmt->execute([$method, $gatewayRef, $order['id']]);
 
         if ($order['user_id']) {
-            // ponytail: UNIQUE(user_id,class_id) membuat INSERT IGNORE diam-diam skip saat user
-            // membeli ulang kelas sama dengan mode berbeda; upsert order_id agar mode terakhir menang.
-            $stmt = $pdo->prepare("INSERT INTO enrollments (user_id, class_id, order_id) VALUES (?, ?, ?)
-                                   ON DUPLICATE KEY UPDATE order_id = VALUES(order_id)");
-            $stmt->execute([$order['user_id'], $order['class_id'], $order['id']]);
+            // Unique key kini (user_id, class_id, class_mode): pembelian mode berbeda
+            // untuk kelas sama menghasilkan enrollment terpisah, tidak lagi saling menggantikan.
+            $orderMode = 'offline';
+            try { $orderMode = strtolower($order['class_mode'] ?? 'offline'); } catch (Exception $e2m) {}
+            if (!in_array($orderMode, ['online','offline'], true)) $orderMode = 'offline';
+            try {
+                $stmt = $pdo->prepare("INSERT INTO enrollments (user_id, class_id, class_mode, order_id) VALUES (?, ?, ?, ?)
+                                       ON DUPLICATE KEY UPDATE order_id = VALUES(order_id)");
+                $stmt->execute([$order['user_id'], $order['class_id'], $orderMode, $order['id']]);
+            } catch (PDOException $eOld) {
+                if ($eOld->getCode() === '42S22') { // kolom class_mode belum ada (DB lama, migrasi belum jalan)
+                    $stmt = $pdo->prepare("INSERT IGNORE INTO enrollments (user_id, class_id, order_id) VALUES (?, ?, ?)");
+                    $stmt->execute([$order['user_id'], $order['class_id'], $order['id']]);
+                } else {
+                    throw $eOld;
+                }
+            }
         }
 
         // Ambil nama kelas & link WA (jika ada)
