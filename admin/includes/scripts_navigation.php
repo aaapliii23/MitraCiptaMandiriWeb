@@ -62,6 +62,11 @@ async function loadContent(url, pushState = true) {
             if (pageName === 'reports' && typeof initReportsChart === 'function') {
                 initReportsChart('weekly');
             }
+
+            // (b) AJAX nav: init chart keuangan setelah konten finance ter-inject
+            if (pageName === 'finance' && typeof initGrafikArusKas === 'function') {
+                initGrafikArusKas();
+            }
             
             window.scrollTo(0, 0);
         }

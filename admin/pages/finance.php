@@ -413,13 +413,21 @@ function syncPaidOrders() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('financeMonthlyChart').getContext('2d');
+// Dipanggil ulang kapan saja: full page load maupun setelah AJAX nav meng-inject konten.
+// Data chart di-inject PHP di atas (bukan fetch) -> tidak ada race condition data.
+function initGrafikArusKas() {
+    const canvasEl = document.getElementById('financeMonthlyChart');
+    if (!canvasEl || typeof Chart === 'undefined') return;
+    // Hancurkan instance lama pada canvas yang sama agar tidak "Canvas is already in use"
+    if (window._cashflowChart) {
+        window._cashflowChart.destroy();
+        window._cashflowChart = null;
+    }
     const monthLabels = <?php echo json_encode($monthLabels); ?>;
     const chartIn = <?php echo json_encode($chartIn); ?>;
     const chartOut = <?php echo json_encode($chartOut); ?>;
 
-    new Chart(ctx, {
+    window._cashflowChart = new Chart(canvasEl.getContext('2d'), {
         type: 'bar',
         data: {
             labels: monthLabels,
@@ -467,5 +475,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-});
+}
+
+// (a) Full page load / refresh: script berada SETELAH <canvas> di dokumen,
+//     jadi elemen sudah ada — panggil langsung tanpa menunggu DOMContentLoaded.
+initGrafikArusKas();
 </script>
