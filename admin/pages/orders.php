@@ -5,7 +5,7 @@
                 <p class="text-muted mb-0">Kelola pesanan dan status pembayaran pelanggan.</p>
             </div>
             <div class="col-md-6">
-                <form action="" method="GET" class="d-flex gap-2 align-items-center">
+                <form id="orderSearchForm" action="" method="GET" class="d-flex gap-2 align-items-center">
                     <input type="hidden" name="page" value="orders">
                     <select name="mode" class="form-select shadow-sm rounded-3" style="max-width: 150px;" onchange="this.form.submit()">
                         <option value="all" <?php echo ($orderModeFilter ?? 'all') === 'all' ? 'selected' : ''; ?>>Semua Mode</option>
@@ -14,7 +14,8 @@
                     </select>
                     <div class="input-group shadow-sm rounded-3 overflow-hidden flex-grow-1">
                         <span class="input-group-text bg-white border-end-0 text-muted ps-3"><i class="fas fa-search"></i></span>
-                        <input type="text" name="search" class="form-control border-start-0 py-2" placeholder="Cari Pelanggan / No. Order..." value="<?php echo htmlspecialchars($search ?? ''); ?>">
+                        <input type="text" id="orderSearchInput" name="search" class="form-control border-start-0 py-2" placeholder="Cari Pelanggan / No. Order..." value="<?php echo htmlspecialchars($search ?? ''); ?>" autocomplete="off">
+                        <span id="orderSearchSpinner" class="input-group-text bg-white border-start-0 d-none"><span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span></span>
                     </div>
                     <button type="submit" class="btn btn-primary px-4 shadow-sm">Cari</button>
                 </form>
@@ -47,7 +48,7 @@
                                 <th class="text-end">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="ordersTableBody">
                             <?php if (empty($orders)): ?>
                                 <tr><td colspan="9" class="text-center py-5 text-muted">Data tidak ditemukan.</td></tr>
                             <?php else: ?>
@@ -119,3 +120,43 @@
                 </div>
             </div>
         </div>
+<script>
+(function(){
+  var input = document.getElementById('orderSearchInput');
+  var tbody = document.getElementById('ordersTableBody');
+  var spinner = document.getElementById('orderSearchSpinner');
+  if (!input || !tbody) return;
+  var phpStatus = '<?php echo htmlspecialchars($orderStatus ?? ''); ?>';
+  var ctrl = null;
+  function setLoading(v){
+    if (spinner) spinner.classList.toggle('d-none', !v);
+    tbody.style.opacity = v ? '0.6' : '';
+  }
+  function doSearch(q){
+    if (ctrl) ctrl.abort();
+    ctrl = new AbortController();
+    setLoading(true);
+    var mode = (document.querySelector('select[name="mode"]') || {}).value || 'all';
+    var url = '?page=orders&search=' + encodeURIComponent(q)
+            + '&mode=' + encodeURIComponent(mode)
+            + '&status=' + encodeURIComponent(phpStatus)
+            + '&ajax=1';
+    fetch(url, { signal: ctrl.signal, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function(res){ if (!res.ok) throw new Error('network'); return res.text(); })
+      .then(function(html){
+        if (ctrl.signal.aborted) return;
+        tbody.innerHTML = html;
+        history.replaceState(null, '', url.replace('&ajax=1',''));
+      })
+      .catch(function(e){ if (e.name !== 'AbortError') console.error(e); })
+      .finally(function(){ setLoading(false); });
+  }
+  // Realtime: debounce 400ms via util global
+  input.addEventListener('input', window.debounce(function(){ doSearch(input.value.trim()); }, 400));
+  // Tombol Cari / ganti mode select: langsung, tanpa reload penuh
+  document.getElementById('orderSearchForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    doSearch(input.value.trim());
+  });
+})();
+</script>

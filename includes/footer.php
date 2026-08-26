@@ -33,17 +33,32 @@
                 </div>
                 <div class="col-md-4 text-start text-md-end">
                     <h5 class="fw-bold mb-4">Hubungi Kami</h5>
+                    <?php
+                    // Data dinamis dari Pengaturan Web (tabel settings) — fallback ke nilai lama
+                    $fAddress = mcm_setting('admin_address', 'Jl. Khp Hasan Mustopa No.57, Neglasari, Kec. Cibeunying Kaler, Kota Bandung, Jawa Barat 40124');
+                    $fWa      = preg_replace('/\D/', '', mcm_setting('admin_whatsapp', '6285793935707'));
+                    $fEmail   = mcm_setting('admin_email', '');
+                    $fIg      = trim(mcm_setting('social_ig', ''));
+                    $fFb      = trim(mcm_setting('social_fb', ''));
+                    $fTt      = trim(mcm_setting('social_tt', ''));
+                    $fMaps    = trim(mcm_setting('maps_url', ''));
+                    ?>
+                    <?php if ($fAddress !== ''): ?>
                     <p class="text-white-50 mb-1">
-                        <a href="https://maps.app.goo.gl/dGjhXJ9CXqNSDoSD7" target="_blank" rel="noopener" class="text-white-50 text-decoration-none" style="line-height: 1.6;">
-                            <i class="fas fa-map-marker-alt me-2"></i>Jl. Khp Hasan Mustopa No.57, Neglasari, Kec. Cibeunying Kaler, Kota Bandung, Jawa Barat 40124
+                        <a href="<?php echo $fMaps !== '' ? htmlspecialchars($fMaps) : 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode($fAddress); ?>" target="_blank" rel="noopener" class="text-white-50 text-decoration-none" style="line-height: 1.6;">
+                            <i class="fas fa-map-marker-alt me-2"></i><?php echo htmlspecialchars($fAddress); ?>
                         </a>
                     </p>
-                    <p class="text-white-50 mb-3"><i class="fas fa-phone-alt me-2"></i> +62 857-9393-5707</p>
+                    <?php endif; ?>
+                    <p class="text-white-50 mb-3"><i class="fas fa-phone-alt me-2"></i> +<?php echo htmlspecialchars($fWa); ?></p>
+                    <?php if ($fEmail !== ''): ?>
+                    <p class="text-white-50 mb-3"><i class="fas fa-envelope me-2"></i> <?php echo htmlspecialchars($fEmail); ?></p>
+                    <?php endif; ?>
                     <div class="d-flex justify-content-md-end gap-3">
-                        <a href="https://www.instagram.com/lpkmitraciptamandiri?utm_source=qr&igsh=MWpjaTY3dHh0NnY3Yg==" target="_blank" rel="noopener" class="text-white fs-4" title="Instagram"><i class="fab fa-instagram"></i></a>
-                        <a href="https://www.facebook.com/p/LPK-Mitra-Cipta-Mandiri-100083627607564/" target="_blank" rel="noopener" class="text-white fs-4" title="Facebook"><i class="fab fa-facebook"></i></a>
-                        <a href="https://www.tiktok.com/" target="_blank" rel="noopener" class="text-white fs-4" title="TikTok"><i class="fab fa-tiktok"></i></a>
-                        <a href="#" class="text-white fs-4" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                        <?php if ($fIg !== '' && $fIg !== '#'): ?><a href="<?php echo htmlspecialchars($fIg); ?>" target="_blank" rel="noopener" class="text-white fs-4" title="Instagram"><i class="fab fa-instagram"></i></a><?php endif; ?>
+                        <?php if ($fFb !== '' && $fFb !== '#'): ?><a href="<?php echo htmlspecialchars($fFb); ?>" target="_blank" rel="noopener" class="text-white fs-4" title="Facebook"><i class="fab fa-facebook"></i></a><?php endif; ?>
+                        <?php if ($fTt !== '' && $fTt !== '#'): ?><a href="<?php echo htmlspecialchars($fTt); ?>" target="_blank" rel="noopener" class="text-white fs-4" title="TikTok"><i class="fab fa-tiktok"></i></a><?php endif; ?>
+                        <a href="https://wa.me/<?php echo htmlspecialchars($fWa); ?>" target="_blank" rel="noopener" class="text-white fs-4" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                     </div>
                 </div>
             </div>

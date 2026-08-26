@@ -355,7 +355,7 @@ if ($filterClassId > 0) {
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                     <div class="input-group" style="max-width: 320px;">
                         <span class="input-group-text bg-white border-end-0 rounded-start-pill"><i class="fas fa-search text-muted"></i></span>
-                        <input type="text" id="searchParticipantInput" class="form-control border-start-0 rounded-end-pill" placeholder="Cari nama, WA, atau no order..." onkeyup="filterParticipantsTable()">
+                        <input type="text" id="searchParticipantInput" class="form-control border-start-0 rounded-end-pill" placeholder="Cari nama, WA, atau no order..." autocomplete="off">
                     </div>
                     <div id="participantCountBadge"></div>
                 </div>
@@ -415,6 +415,12 @@ if ($filterClassId > 0) {
         document.getElementById('classParticipantsModalTitle').textContent = `Daftar Peserta: ${className}`;
         document.getElementById('classParticipantsModalSubtitle').textContent = `Periode ${currentYear === 'all' ? 'Semua Tahun' : 'Tahun ' + currentYear}`;
         document.getElementById('searchParticipantInput').value = '';
+        // Debounce 300ms: filter jalan setelah user berhenti mengetik (util global di scripts_common.php)
+        const spInput = document.getElementById('searchParticipantInput');
+        if (spInput && !spInput.dataset.debounced) {
+            spInput.dataset.debounced = '1';
+            spInput.addEventListener('input', window.debounce(filterParticipantsTable, 300));
+        }
         
         const tbody = document.getElementById('participantsTableBody');
         tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data peserta...</td></tr>`;

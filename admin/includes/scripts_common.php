@@ -309,4 +309,15 @@ async function submitAjaxForm(formId) {
         }
     });
 }
+
+// Debounce util: tunda eksekusi fn sampai user berhenti memicu selama `ms` ms.
+// Pemakaian: input.addEventListener('input', window.debounce(function(){...}, 400));
+window.debounce = function(fn, ms) {
+    let t = null;
+    return function() {
+        const self = this, args = arguments;
+        clearTimeout(t);
+        t = setTimeout(function() { fn.apply(self, args); }, ms || 400);
+    };
+};
 </script>

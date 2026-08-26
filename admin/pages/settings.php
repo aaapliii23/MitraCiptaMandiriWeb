@@ -22,36 +22,40 @@
                                     <label class="form-label small fw-bold text-muted text-uppercase">WhatsApp Bisnis</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light border-0"><i class="fab fa-whatsapp text-success"></i></span>
-                                        <input type="text" class="form-control bg-light border-0 py-2" name="admin_whatsapp" value="6285793935707">
+                                        <input type="text" class="form-control bg-light border-0 py-2" name="admin_whatsapp" value="<?php echo htmlspecialchars(mcm_setting('admin_whatsapp', '6285793935707')); ?>">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label small fw-bold text-muted text-uppercase">Email Official</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light border-0"><i class="fas fa-envelope text-primary"></i></span>
-                                        <input type="email" class="form-control bg-light border-0 py-2" name="admin_email" value="info@mcm.com">
+                                        <input type="email" class="form-control bg-light border-0 py-2" name="admin_email" value="<?php echo htmlspecialchars(mcm_setting('admin_email', 'info@mcm.com')); ?>">
                                     </div>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label small fw-bold text-muted text-uppercase">Alamat Operasional</label>
-                                    <textarea class="form-control bg-light border-0 py-2" name="admin_address" rows="3">Kota Sukabumi, Jawa Barat</textarea>
+                                    <textarea class="form-control bg-light border-0 py-2" name="admin_address" rows="3"><?php echo htmlspecialchars(mcm_setting('admin_address', '')); ?></textarea>
                                 </div>
                                 <div class="col-12">
                                     <h6 class="fw-bold text-dark mt-3 mb-3">Tautan Media Sosial</h6>
                                     <div class="row g-3">
                                         <div class="col-md-4">
                                             <label class="form-label small fw-bold text-muted">Instagram</label>
-                                            <input type="text" class="form-control bg-light border-0" name="social_ig" value="#">
+                                            <input type="text" class="form-control bg-light border-0" name="social_ig" value="<?php echo htmlspecialchars(mcm_setting('social_ig', '#')); ?>">
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label small fw-bold text-muted">Facebook</label>
-                                            <input type="text" class="form-control bg-light border-0" name="social_fb" value="#">
+                                            <input type="text" class="form-control bg-light border-0" name="social_fb" value="<?php echo htmlspecialchars(mcm_setting('social_fb', '#')); ?>">
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label small fw-bold text-muted">TikTok</label>
-                                            <input type="text" class="form-control bg-light border-0" name="social_tt" value="#">
+                                            <input type="text" class="form-control bg-light border-0" name="social_tt" value="<?php echo htmlspecialchars(mcm_setting('social_tt', '#')); ?>">
                                         </div>
                                     </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small fw-bold text-muted text-uppercase">Link Google Maps (opsional — paste link Share dari Google Maps agar pin persis lokasi)</label>
+                                    <input type="url" class="form-control bg-light border-0 py-2" name="maps_url" value="<?php echo htmlspecialchars(mcm_setting('maps_url', '')); ?>" placeholder="https://maps.app.goo.gl/... atau https://www.google.com/maps?q=-6.9,107.6">
                                 </div>
                             </div>
                             <div class="mt-5 pt-4 border-top text-end">
