@@ -88,6 +88,12 @@ if ($page === 'orders') {
             $wheres[] = "o.class_mode = :mode";
             $params[':mode'] = $orderModeFilter;
         }
+        // Filter status dari kartu dashboard: paid | waiting (=unpaid+pending) | failed (=failed+expired)
+        $orderStatus = $_GET['status'] ?? '';
+        if ($orderStatus === 'paid') { $wheres[] = "o.payment_status = 'paid'"; }
+        elseif ($orderStatus === 'waiting') { $wheres[] = "o.payment_status IN ('unpaid','pending')"; }
+        elseif ($orderStatus === 'failed') { $wheres[] = "o.payment_status IN ('failed','expired')"; }
+        else { $orderStatus = ''; }
         if ($wheres) $sql .= " WHERE " . implode(" AND ", $wheres);
         $sql .= " ORDER BY o.created_at DESC";
         $stmt = $pdo->prepare($sql);

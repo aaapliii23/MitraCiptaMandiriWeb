@@ -72,6 +72,17 @@
             opacity: 0.18;
             transform: rotate(-8deg) scale(1.08);
         }
+        /* Kartu statistik bisa diklik (anchor) */
+        a.stat-card {
+            cursor: pointer;
+            color: #fff;
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+        a.stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 14px 28px -10px rgba(0, 0, 0, 0.28);
+            color: #fff;
+        }
 
         /* Modern Table */
         .table-responsive { 

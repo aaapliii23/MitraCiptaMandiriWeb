@@ -21,6 +21,15 @@
             </div>
         </div>
 
+        <?php if (!empty($orderStatus)): ?>
+        <div class="mb-3">
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-3 py-2">
+                <i class="fas fa-filter me-1"></i>Status: <b class="text-capitalize"><?php echo htmlspecialchars($orderStatus === 'waiting' ? 'menunggu bayar' : ($orderStatus === 'failed' ? 'gagal/kadaluarsa' : $orderStatus)); ?></b>
+                <a href="?page=orders" class="text-danger ms-2 text-decoration-none" title="Hapus filter"><i class="fas fa-times-circle"></i></a>
+            </span>
+        </div>
+        <?php endif; ?>
+
         <div class="card border-0 shadow-sm">
             <div class="card-body p-0">
                 <div class="table-responsive">
