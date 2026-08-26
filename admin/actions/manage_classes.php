@@ -179,20 +179,28 @@ if ($action === 'create' || $action === 'update') {
         echo json_encode(['status' => 'error', 'message' => 'ID tidak valid.']);
         exit;
     }
-    
+
     // Get image to delete from disk
     $stmt = $pdo->prepare("SELECT image FROM classes WHERE id=?");
     $stmt->execute([$id]);
     $class = $stmt->fetch();
-    
-    $del = $pdo->prepare("DELETE FROM classes WHERE id=?");
-    if ($del->execute([$id])) {
+
+    try {
+        $del = $pdo->prepare("DELETE FROM classes WHERE id=?");
+        $del->execute([$id]);
         if ($class && strpos($class['image'], 'http') !== 0 && file_exists('../../' . $class['image'])) {
             unlink('../../' . $class['image']);
         }
         echo json_encode(['status' => 'success', 'message' => 'Kelas berhasil dihapus.']);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus kelas.']);
+    } catch (PDOException $e) {
+        if ($e->getCode() == 23000) { // Integrity constraint violation
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Kelas ini tidak bisa dihapus karena masih memiliki data terkait (pesanan/testimoni/enrollment). Nonaktifkan atau arsipkan kelas ini alih-alih menghapusnya, atau hapus dulu data pesanan/testimoni terkait.'
+            ]);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus kelas: ' . $e->getMessage()]);
+        }
     }
 } else {
     echo json_encode(['status' => 'error', 'message' => 'Aksi tidak valid.']);

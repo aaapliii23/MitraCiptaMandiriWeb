@@ -388,6 +388,7 @@ function editQuizQuestion(data) {
 }
 
 function renderQuizList(questions) {
+    window._quizCache = questions || [];
     const container = document.getElementById('quizList');
     document.getElementById('quizCount').textContent = questions.length + ' soal';
     if (!questions.length) {
@@ -406,23 +407,35 @@ function renderQuizList(questions) {
                 <div class="mt-1"><span class="badge ${isEssay ? 'bg-info bg-opacity-10 text-info' : 'bg-success bg-opacity-10 text-success'} small">${isEssay ? 'Essay' : 'Kunci: ' + (q.correct_option || '').toUpperCase()}</span></div>
             </div>
             <div class="d-inline-flex gap-2 flex-shrink-0">
-                <button class="btn btn-action btn-soft-primary" title="Edit" onclick="editQuizQuestion(${JSON.stringify(q).replace(/</g, '\\u003c')})"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-action btn-soft-danger" title="Hapus" onclick="deleteItem('quiz', ${q.id})"><i class="fas fa-trash"></i></button>
+                <button type="button" class="btn btn-action btn-soft-primary btn-edit-soal" data-soal-id="${q.id}" title="Edit"><i class="fas fa-edit"></i></button>
+                <button type="button" class="btn btn-action btn-soft-danger btn-delete-soal" data-soal-id="${q.id}" title="Hapus"><i class="fas fa-trash"></i></button>
             </div>
         </div>`;
     });
     container.innerHTML = html;
 }
 
-function openQuizManager(materialId, materialTitle) {
+// Event delegation: tombol edit/hapus dirender dinamis via innerHTML,
+// listener dipasang SEKALI di modal statis (#quizModal) agar tetap berlaku untuk konten baru.
+(function(){
+    const modal = document.getElementById('quizModal');
+    if (!modal || modal.dataset.soalDelegated) return;
+    modal.dataset.soalDelegated = 'true';
+    modal.addEventListener('click', function(e) {
+        const editBtn = e.target.closest('.btn-edit-soal');
+        const delBtn = e.target.closest('.btn-delete-soal');
+        if (editBtn) {
+            const q = (window._quizCache || []).find(x => String(x.id) === editBtn.dataset.soalId);
+            if (q) editQuizQuestion(q);
+        } else if (delBtn) {
+            deleteQuizQuestion(delBtn.dataset.soalId);
+        }
+    });
+})();
+
+function fetchQuizList() {
     const adminBase = '<?php echo $adminBase; ?>';
-    document.getElementById('quizMaterialId').value = materialId;
-    document.getElementById('quizMaterialInput').value = materialId;
-    document.getElementById('quizModalTitle').textContent = 'Kelola Quiz';
-    document.getElementById('quizModalSubtitle').textContent = materialTitle;
-    document.getElementById('quizList').innerHTML = '<div class="text-center text-muted py-4 small">Memuat soal...</div>';
-    resetQuizQuestionForm();
-    new bootstrap.Modal(document.getElementById('quizModal')).show();
+    const materialId = document.getElementById('quizMaterialId').value;
     fetch(adminBase + '/actions/manage_quiz.php?action=list&material_id=' + materialId)
     .then(res => res.json())
     .then(data => {
@@ -434,6 +447,46 @@ function openQuizManager(materialId, materialTitle) {
     })
     .catch(() => {
         document.getElementById('quizList').innerHTML = '<div class="text-center text-danger py-4 small">Terjadi kesalahan sistem.</div>';
+    });
+}
+
+function openQuizManager(materialId, materialTitle) {
+    document.getElementById('quizMaterialId').value = materialId;
+    document.getElementById('quizMaterialInput').value = materialId;
+    document.getElementById('quizModalTitle').textContent = 'Kelola Quiz';
+    document.getElementById('quizModalSubtitle').textContent = materialTitle;
+    document.getElementById('quizList').innerHTML = '<div class="text-center text-muted py-4 small">Memuat soal...</div>';
+    resetQuizQuestionForm();
+    new bootstrap.Modal(document.getElementById('quizModal')).show();
+    fetchQuizList();
+}
+
+function deleteQuizQuestion(id) {
+    Swal.fire({
+        title: 'Hapus soal ini?',
+        text: "Soal yang dihapus tidak dapat dikembalikan!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+        const adminBase = '<?php echo $adminBase; ?>';
+        const fd = new FormData();
+        fd.append('action', 'delete');
+        fd.append('id', id);
+        fetch(adminBase + '/actions/manage_quiz.php', { method: 'POST', body: fd })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                fetchQuizList();
+            } else {
+                Swal.fire('Gagal!', data.message || 'Gagal menghapus soal.', 'error');
+            }
+        })
+        .catch(() => Swal.fire('Gagal!', 'Terjadi kesalahan sistem.', 'error'));
     });
 }
 

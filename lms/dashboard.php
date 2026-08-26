@@ -5,9 +5,11 @@ require_once '../config/database.php';
 $userId = (int)$_SESSION['user_id'];
 
 try {
+    // Identitas card = (class_id, class_mode) dari baris enrollment itu sendiri,
+    // sehingga kelas sama yang dibeli di 2 mode tampil sebagai 2 card terpisah.
     $stmt = $pdo->prepare("
         SELECT e.id AS enrollment_id, e.enrolled_at, e.order_id, c.*,
-               o.class_mode,
+               COALESCE(e.class_mode, o.class_mode, 'offline') AS class_mode,
                c.whatsapp_group_link,
                c.description_offline,
                (SELECT COUNT(*) FROM materials m WHERE m.class_id = c.id) AS total_materials,
@@ -21,7 +23,26 @@ try {
     $stmt->execute([$userId, $userId]);
     $enrolled = $stmt->fetchAll();
 } catch (PDOException $e) {
-    $enrolled = [];
+    // Fallback DB lama: kolom e.class_mode belum ada (migrasi belum dijalankan)
+    try {
+        $stmt = $pdo->prepare("
+            SELECT e.id AS enrollment_id, e.enrolled_at, e.order_id, c.*,
+                   COALESCE(o.class_mode, 'offline') AS class_mode,
+                   c.whatsapp_group_link,
+                   c.description_offline,
+                   (SELECT COUNT(*) FROM materials m WHERE m.class_id = c.id) AS total_materials,
+                   (SELECT COUNT(*) FROM material_progress mp JOIN materials m ON mp.material_id = m.id WHERE mp.user_id = ? AND m.class_id = c.id AND mp.completed = 1) AS done_materials
+            FROM enrollments e
+            JOIN classes c ON e.class_id = c.id
+            LEFT JOIN orders o ON e.order_id = o.id
+            WHERE e.user_id = ?
+            ORDER BY e.enrolled_at DESC
+        ");
+        $stmt->execute([$userId, $userId]);
+        $enrolled = $stmt->fetchAll();
+    } catch (PDOException $e2) {
+        $enrolled = [];
+    }
 }
 ?>
 <!DOCTYPE html>

@@ -1,5 +1,8 @@
 <style id="printPageSize">
-    @page { size: <?php echo $orientation; ?>; margin: 0; }
+    @page {
+        size: <?php echo $orientation === 'landscape' ? '297mm 210mm' : '210mm 297mm'; ?>;
+        margin: 0;
+    }
 </style>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cinzel:wght@600;700;800&display=swap');
@@ -216,6 +219,7 @@
         .cert-page {
             box-shadow: none !important;
             margin: 0 !important;
+            overflow: hidden !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
         }
@@ -230,6 +234,20 @@
             height: 297mm !important;
             max-width: 210mm !important;
             max-height: 297mm !important;
+        }
+        /* Pengaman portrait: padatkan tabel unit agar pasti muat 1 halaman A4 */
+        .cert-wrapper.orientation-portrait .cert-border {
+            padding: 18px 20px !important;
+        }
+        .cert-wrapper.orientation-portrait .units-table {
+            font-size: 0.72rem !important;
+        }
+        .cert-wrapper.orientation-portrait .units-table th {
+            padding: 5px 8px !important;
+            font-size: 0.62rem !important;
+        }
+        .cert-wrapper.orientation-portrait .units-table td {
+            padding: 4px 8px !important;
         }
         .cert-page.page-front {
             page-break-after: always !important;
