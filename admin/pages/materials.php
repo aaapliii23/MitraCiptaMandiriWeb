@@ -30,17 +30,17 @@
             </div>
         <?php else: ?>
         <div class="accordion" id="materialsAccordion">
-            <?php $first = true; foreach ($groupedMaterials as $className => $items): ?>
+            <?php foreach ($groupedMaterials as $className => $items): ?>
             <?php $accId = 'matAcc' . md5($className); ?>
             <div class="accordion-item border-0 shadow-sm rounded-4 overflow-hidden mb-3 material-group" data-class="<?php echo htmlspecialchars($className); ?>">
                 <h2 class="accordion-header">
-                    <button class="accordion-button fw-bold text-dark<?php echo $first ? '' : ' collapsed'; ?>" type="button"
+                    <button class="accordion-button fw-bold text-dark collapsed" type="button"
                             data-bs-toggle="collapse" data-bs-target="#<?php echo $accId; ?>">
                         <i class="fas fa-graduation-cap me-2 text-primary"></i><?php echo htmlspecialchars($className); ?>
                         <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill ms-2"><?php echo count($items); ?> materi</span>
                     </button>
                 </h2>
-                <div id="<?php echo $accId; ?>" class="accordion-collapse collapse<?php echo $first ? ' show' : ''; ?>"
+                <div id="<?php echo $accId; ?>" class="accordion-collapse collapse"
                      data-bs-parent="#materialsAccordion">
                     <div class="accordion-body p-0">
                         <div class="table-responsive">
@@ -79,7 +79,7 @@
                     </div>
                 </div>
             </div>
-            <?php $first = false; endforeach; ?>
+            <?php endforeach; ?>
         </div>
 
         <script>

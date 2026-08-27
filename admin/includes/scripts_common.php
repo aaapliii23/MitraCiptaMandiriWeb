@@ -320,4 +320,34 @@ window.debounce = function(fn, ms) {
         t = setTimeout(function() { fn.apply(self, args); }, ms || 400);
     };
 };
+
+// Search client-side untuk tabel yang datanya sudah full render.
+// Filter baris tbody berdasarkan teks seluruh sel; tampilkan baris "tidak ditemukan" bila kosong.
+window.attachTableSearch = function(inputId, tbodyId, colCount) {
+    const input = document.getElementById(inputId);
+    const tbody = document.getElementById(tbodyId);
+    if (!input || !tbody) return;
+    const apply = function() {
+        const q = (input.value || '').toLowerCase().trim();
+        let visible = 0;
+        tbody.querySelectorAll('tr:not(.table-search-empty)').forEach(function(tr) {
+            const ok = !q || tr.textContent.toLowerCase().indexOf(q) !== -1;
+            tr.style.display = ok ? '' : 'none';
+            if (ok) visible++;
+        });
+        let emptyRow = tbody.querySelector('tr.table-search-empty');
+        if (q && visible === 0) {
+            if (!emptyRow) {
+                emptyRow = document.createElement('tr');
+                emptyRow.className = 'table-search-empty';
+                tbody.appendChild(emptyRow);
+            }
+            emptyRow.innerHTML = '<td colspan="' + colCount + '" class="text-center py-5 text-muted">Tidak ada hasil untuk "<b>' + q.replace(/</g,'&lt;') + '</b>".</td>';
+            emptyRow.style.display = '';
+        } else if (emptyRow) {
+            emptyRow.style.display = 'none';
+        }
+    };
+    input.addEventListener('input', window.debounce(apply, 300));
+};
 </script>

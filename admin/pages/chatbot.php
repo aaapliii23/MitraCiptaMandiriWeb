@@ -4,7 +4,11 @@
                 <h2 class="fw-bold mb-1 text-dark">Chatbot & Balasan Otomatis</h2>
                 <p class="text-muted mb-0">Kelola intent dan balasan otomatis chatbot WhatsApp & widget chat website.</p>
             </div>
-            <div class="col-md-6 text-md-end">
+            <div class="col-md-6 text-md-end d-flex justify-content-md-end gap-2 align-items-center flex-wrap">
+                <div class="input-group shadow-sm rounded-3 overflow-hidden" style="max-width: 280px;">
+                    <span class="input-group-text bg-white border-end-0 text-muted ps-3"><i class="fas fa-search"></i></span>
+                    <input type="text" id="intentSearch" class="form-control border-start-0 py-2" placeholder="Cari intent / kata kunci / balasan..." autocomplete="off">
+                </div>
                 <button class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" onclick="resetChatbotIntentForm()">
                     <i class="fas fa-plus me-2"></i>Tambah Intent
                 </button>
@@ -29,7 +33,7 @@
                                 <th class="text-end pe-4">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="intentTableBody">
                             <?php if (empty($chatbotIntents)): ?>
                                 <tr><td colspan="5" class="text-center py-5 text-muted">Belum ada data intent.</td></tr>
                             <?php else: ?>
@@ -65,3 +69,4 @@
                 </div>
             </div>
         </div>
+<script>attachTableSearch('intentSearch', 'intentTableBody', 5);</script>
