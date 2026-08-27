@@ -9,6 +9,7 @@ $input = json_decode(file_get_contents('php://input'), true);
 $materialId = (int)($input['material_id'] ?? 0);
 $csrf = $input['csrf_token'] ?? '';
 $answers = is_array($input['answers'] ?? null) ? $input['answers'] : [];
+$isRetry = !empty($input['is_retry']);
 
 if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
     echo json_encode(['status' => 'error', 'message' => 'Sesi tidak valid. Muat ulang halaman.']);
@@ -50,6 +51,30 @@ try {
         }
     }
 
+    try { $pdo->exec("ALTER TABLE quiz_questions ADD COLUMN explanation TEXT NULL AFTER essay_answer"); } catch (PDOException $e) {}
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `quiz_progress` (
+          `id` INT NOT NULL AUTO_INCREMENT,
+          `user_id` INT NOT NULL,
+          `question_id` INT NOT NULL,
+          `is_correct` TINYINT(1) NOT NULL DEFAULT 0,
+          `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          PRIMARY KEY (`id`),
+          UNIQUE KEY `uq_user_question` (`user_id`,`question_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    } catch (PDOException $e) {}
+    try { $pdo->exec("CREATE TABLE IF NOT EXISTS `quiz_attempts` (
+      `id` int(11) NOT NULL AUTO_INCREMENT,
+      `user_id` int(11) NOT NULL,
+      `material_id` int(11) NOT NULL,
+      `score` int(11) NOT NULL,
+      `total` int(11) NOT NULL,
+      `passed` tinyint(1) NOT NULL DEFAULT 0,
+      `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`),
+      KEY `user_material` (`user_id`, `material_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"); } catch (PDOException $e) {}
+
     $stmt = $pdo->prepare("SELECT * FROM quiz_questions WHERE material_id = ? ORDER BY sort_order ASC, id ASC");
     $stmt->execute([$materialId]);
     $questions = $stmt->fetchAll();
@@ -66,75 +91,116 @@ try {
         exit;
     }
 
-    $correct = 0;
-    $total = count($questions);
-    $submitted = [];
-    $essayAnswers = [];
+    $totalAll = count($questions);
+    $qMap = [];
+    foreach ($questions as $qq) $qMap[(int)$qq['id']] = $qq;
+
+    $submittedMcq = [];
+    $submittedEssay = [];
     foreach ($answers as $qid => $val) {
         $qid = (int)$qid;
-        if (!$qid) continue;
-        $q = null;
-        foreach ($questions as $qq) { if ((int)$qq['id'] === $qid) { $q = $qq; break; } }
-        if (!$q) continue;
+        if (!$qid || !isset($qMap[$qid])) continue;
+        $q = $qMap[$qid];
         if ($q['question_type'] === 'essay') {
-            $essayAnswers[$qid] = trim((string)$val);
+            $submittedEssay[$qid] = trim((string)$val);
         } else {
             $opt = strtolower(trim((string)$val));
-            if (in_array($opt, ['a', 'b', 'c', 'd'])) {
-                $submitted[$qid] = $opt;
-            }
+            if (in_array($opt, ['a','b','c','d'])) $submittedMcq[$qid] = $opt;
+            else $submittedMcq[$qid] = $opt;
         }
     }
 
-    foreach ($questions as $q) {
-        $qid = (int)$q['id'];
+    $details = [];
+    $upsert = $pdo->prepare("INSERT INTO quiz_progress (user_id, question_id, is_correct) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE is_correct = VALUES(is_correct), updated_at = NOW()");
+
+    foreach ($qMap as $qid => $q) {
+        if (!isset($submittedMcq[$qid]) && !array_key_exists($qid, $submittedEssay)) continue;
+        $isCorrect = 0;
+        $yourAnswerRaw = '';
+        $correctAnswer = '';
+        $correctText = '';
+        $explanation = $q['explanation'] ?? null;
+
         if ($q['question_type'] === 'essay') {
-            $answer = isset($essayAnswers[$qid]) ? mb_strtolower($essayAnswers[$qid]) : '';
-            if ($answer === '') continue;
-            $reference = mb_strtolower(trim($q['essay_answer'] ?? ''));
-            if ($reference === '') {
-                $correct++;
-                continue;
-            }
-            $keywords = preg_split('/[\s,.;:!?()\-]+/', $reference);
-            $keywords = array_filter($keywords, function ($k) { return mb_strlen($k) >= 4; });
-            if (empty($keywords)) {
-                $correct++;
+            $yourAnswerRaw = $submittedEssay[$qid] ?? '';
+            $referenceRaw = trim($q['essay_answer'] ?? '');
+            $correctAnswer = $referenceRaw;
+            $correctText = $referenceRaw;
+            $ansLower = mb_strtolower($yourAnswerRaw);
+            $refLower = mb_strtolower($referenceRaw);
+            if ($ansLower === '' ) {
+                $isCorrect = 0;
+            } elseif ($refLower === '') {
+                $isCorrect = 1;
             } else {
-                $matched = 0;
-                foreach ($keywords as $k) {
-                    if (strpos($answer, $k) !== false) $matched++;
+                $keywords = preg_split('/[\s,.;:!?()\-]+/', $refLower);
+                $keywords = array_filter($keywords, function($k){ return mb_strlen($k) >= 4; });
+                if (empty($keywords)) $isCorrect = 1;
+                else {
+                    $matched = 0;
+                    foreach ($keywords as $k) if (strpos($ansLower, $k) !== false) $matched++;
+                    if ($matched >= ceil(count($keywords)/2)) $isCorrect = 1;
                 }
-                if ($matched >= ceil(count($keywords) / 2)) $correct++;
             }
-        } elseif (isset($submitted[$qid]) && $submitted[$qid] === $q['correct_option']) {
-            $correct++;
+        } else {
+            $yourAnswerRaw = $submittedMcq[$qid] ?? '';
+            $correctAnswer = $q['correct_option'] ?? '';
+            $optKey = $correctAnswer;
+            if ($optKey && isset($q['option_'.$optKey])) $correctText = $q['option_'.$optKey];
+            else $correctText = '';
+            if (isset($submittedMcq[$qid]) && $submittedMcq[$qid] === $correctAnswer) $isCorrect = 1;
         }
+
+        $upsert->execute([$userId, $qid, $isCorrect]);
+
+        $details[] = [
+            'question_id' => $qid,
+            'question' => $q['question'],
+            'question_type' => $q['question_type'],
+            'is_correct' => (bool)$isCorrect,
+            'your_answer' => $yourAnswerRaw,
+            'correct_answer' => $correctAnswer,
+            'correct_option_text' => $correctText,
+            'explanation' => $explanation,
+            'your_answer_text' => $q['question_type'] === 'mcq' && $yourAnswerRaw && isset($q['option_'.$yourAnswerRaw]) ? $q['option_'.$yourAnswerRaw] : $yourAnswerRaw,
+        ];
     }
 
-    $pct = $total > 0 ? (int)round(($correct / $total) * 100) : 0;
-    $passed = $pct >= 70 ? 1 : 0;
+    if (empty($details)) {
+        echo json_encode(['status' => 'error', 'message' => 'Tidak ada jawaban yang dikirim.']);
+        exit;
+    }
 
-    $stmt = $pdo->prepare("INSERT INTO quiz_attempts (user_id, material_id, score, total, passed) VALUES (?, ?, ?, ?, ?)");
-    $stmt->execute([$userId, $materialId, $correct, $total, $passed]);
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM quiz_questions WHERE material_id = ? AND id NOT IN (SELECT question_id FROM quiz_progress WHERE user_id = ? AND is_correct = 1)");
+    $stmt->execute([$materialId, $userId]);
+    $remaining = (int)$stmt->fetchColumn();
+    $allCompleted = $remaining === 0;
 
-    if ($passed) {
+    $sessionCorrect = 0;
+    foreach ($details as $d) if ($d['is_correct']) $sessionCorrect++;
+
+    $passed = $allCompleted ? 1 : 0;
+    $nextMaterialId = null;
+    if ($idx !== false && $idx < count($ids) - 1) $nextMaterialId = (int)$ids[$idx+1];
+
+    if ($allCompleted) {
+        $stmt = $pdo->prepare("INSERT INTO quiz_attempts (user_id, material_id, score, total, passed) VALUES (?, ?, ?, ?, 1)");
+        $stmt->execute([$userId, $materialId, $totalAll, $totalAll]);
         $stmt = $pdo->prepare("INSERT INTO material_progress (user_id, material_id, completed, completed_at) VALUES (?, ?, 1, NOW()) ON DUPLICATE KEY UPDATE completed = 1, completed_at = NOW()");
         $stmt->execute([$userId, $materialId]);
     }
 
-    $nextMaterialId = null;
-    if ($idx !== false && $idx < count($ids) - 1) {
-        $nextMaterialId = (int)$ids[$idx + 1];
-    }
-
     echo json_encode([
         'status' => 'success',
-        'correct' => $correct,
-        'total' => $total,
-        'pct' => $pct,
-        'passed' => (bool)$passed,
-        'next_material_id' => $nextMaterialId
+        'details' => $details,
+        'all_completed' => $allCompleted,
+        'passed' => (bool)$allCompleted,
+        'correct' => $sessionCorrect,
+        'total' => count($details),
+        'total_all' => $totalAll,
+        'remaining' => $remaining,
+        'pct' => count($details) ? (int)round(($sessionCorrect/count($details))*100) : 0,
+        'next_material_id' => $allCompleted ? $nextMaterialId : null
     ]);
 } catch (PDOException $e) {
     echo json_encode(['status' => 'error', 'message' => 'Terjadi kesalahan sistem.']);

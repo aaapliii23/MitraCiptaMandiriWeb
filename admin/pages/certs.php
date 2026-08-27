@@ -34,7 +34,7 @@
                                 </div>
                             </div>
                             <div class="d-grid">
-                                <a href="<?php echo htmlspecialchars($ct['image']); ?>" target="_blank" class="btn btn-light rounded-pill fw-bold small">Lihat Dokumen Lengkap</a>
+                                <a href="<?php echo htmlspecialchars(getImgSrc($ct['image'])); ?>" target="_blank" class="btn btn-light rounded-pill fw-bold small">Lihat Dokumen Lengkap</a>
                             </div>
                         </div>
                     </div>

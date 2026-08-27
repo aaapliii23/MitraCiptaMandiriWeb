@@ -29,7 +29,7 @@ include '../includes/header.php';
                 </div>
                 <div class="badge bg-primary bg-opacity-10 text-primary mb-3 p-2 px-3 rounded-pill fw-bold" style="background-color: rgba(12, 74, 110, 0.1) !important; color: #0c4a6e !important;">PROFIL LEMBAGA</div>
                 <h1 class="display-4 fw-bold mb-4" style="color: #0c4a6e;">Tentang <br><span style="color: #0ea5e9;">Mitra Cipta Mandiri</span></h1>
-                <p class="lead text-secondary mb-4">LPK Mitra Cipta Mandiri adalah lembaga pelatihan di bawah Yayasan Mitra Cipta Mandiri yang berlokasi di Jl. Khp Hasan Mustopa No.57, Neglasari, Kec. Cibeunying Kaler, Kota Bandung, Jawa Barat 40124. Lembaga ini telah memiliki izin dari Kemenkumham serta legalitas resmi sebagai LPK dari Disnaker Kota Bandung, Disnaker Provinsi Jawa Barat, dan Kementerian Ketenagakerjaan RI, serta telah terakreditasi pada tahun 2023.</p>
+                <p class="lead text-secondary mb-4">LPK Mitra Cipta Mandiri adalah lembaga pelatihan di bawah Yayasan Mitra Cipta Mandiri yang berlokasi di <?php echo htmlspecialchars(mcm_setting('admin_address', 'Jl. Khp Hasan Mustopa No.57, Neglasari, Kec. Cibeunying Kaler, Kota Bandung, Jawa Barat 40124')); ?>. Lembaga ini telah memiliki izin dari Kemenkumham serta legalitas resmi sebagai LPK dari Disnaker Kota Bandung, Disnaker Provinsi Jawa Barat, dan Kementerian Ketenagakerjaan RI, serta telah terakreditasi pada tahun 2023.</p>
                 <div class="row g-4 mb-4">
                     <div class="col-6">
                         <div class="d-flex align-items-center">

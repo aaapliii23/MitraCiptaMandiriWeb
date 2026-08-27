@@ -26,7 +26,13 @@ if (empty($threadNumber)) {
                 <h2 class="fw-bold mb-1 text-dark">Chat WhatsApp</h2>
                 <p class="text-muted mb-0">Pantau percakapan chatbot dan balas pertanyaan peserta.</p>
             </div>
-            <div class="col-md-6 text-md-end">
+            <div class="col-md-6 text-md-end d-flex justify-content-md-end gap-2 align-items-center flex-wrap">
+                <?php if (empty($threadNumber)): ?>
+                <div class="input-group shadow-sm rounded-3 overflow-hidden" style="max-width: 280px;">
+                    <span class="input-group-text bg-white border-end-0 text-muted ps-3"><i class="fas fa-search"></i></span>
+                    <input type="text" id="chatThreadSearch" class="form-control border-start-0 py-2" placeholder="Cari nomor / pesan..." autocomplete="off">
+                </div>
+                <?php endif; ?>
                 <?php if (!empty($threadNumber)): ?>
                     <a href="?page=chat" class="btn btn-light border rounded-pill px-4 fw-bold"><i class="fas fa-arrow-left me-2"></i>Semua Percakapan</a>
                 <?php endif; ?>
@@ -46,7 +52,7 @@ if (empty($threadNumber)) {
                                     <th class="text-end pe-4">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="conversationTableBody">
                                 <?php if (empty($conversations)): ?>
                                     <tr><td colspan="4" class="text-center py-5 text-muted">Belum ada percakapan.</td></tr>
                                 <?php else: ?>
@@ -84,6 +90,7 @@ if (empty($threadNumber)) {
                     </div>
                 </div>
             </div>
+            <script>attachTableSearch('chatThreadSearch', 'conversationTableBody', 4);</script>
         <?php else: ?>
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 <div class="card-header bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between">

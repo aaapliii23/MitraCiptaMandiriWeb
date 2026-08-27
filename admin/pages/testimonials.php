@@ -4,7 +4,11 @@
                 <h2 class="fw-bold mb-1 text-dark">Testimoni</h2>
                 <p class="text-muted mb-0">Kelola ulasan peserta. Setujui sebelum ditampilkan di website.</p>
             </div>
-            <div class="col-md-6 text-md-end">
+            <div class="col-md-6 text-md-end d-flex justify-content-md-end gap-2 align-items-center flex-wrap">
+                <div class="input-group shadow-sm rounded-3 overflow-hidden" style="max-width: 280px;">
+                    <span class="input-group-text bg-white border-end-0 text-muted ps-3"><i class="fas fa-search"></i></span>
+                    <input type="text" id="testimonialSearch" class="form-control border-start-0 py-2" placeholder="Cari peserta / ulasan..." autocomplete="off">
+                </div>
                 <span class="badge bg-light text-dark border px-3 py-2 rounded-pill shadow-sm">
                     <i class="fas fa-star text-warning me-1"></i>Rata-rata: <?php echo number_format($avgRating, 1, ',', '.'); ?>
                 </span>
@@ -26,7 +30,7 @@
                                 <th class="text-end pe-4">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="testimonialTableBody">
                             <?php if (empty($testimonials)): ?>
                                 <tr><td colspan="7" class="text-center py-5 text-muted">Belum ada testimoni.</td></tr>
                             <?php else: ?>
@@ -79,3 +83,4 @@
                 </div>
             </div>
         </div>
+<script>attachTableSearch('testimonialSearch', 'testimonialTableBody', 7);</script>

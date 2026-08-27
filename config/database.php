@@ -2,7 +2,7 @@
 $host = 'localhost';
 $dbname = 'mcm_db';
 $username = 'root';
-$password = 'password';
+$password = '';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
@@ -14,8 +14,7 @@ try {
     die("Connection failed: " . $e->getMessage());
 }
 
-function asset_src($path, $prefix = null) {
-    if ($prefix === null) {
+function asset_src($path, $prefix = null) {    if ($prefix === null) {
         $script_file = str_replace('\\', '/', $_SERVER['SCRIPT_FILENAME'] ?? '');
         $app_root = str_replace('\\', '/', dirname(__DIR__));
         if ($script_file !== '' && strpos($script_file, $app_root) === 0) {
@@ -31,4 +30,23 @@ function asset_src($path, $prefix = null) {
     }
     return $prefix . ltrim($path, '/');
 }
-?>
+// Ambil nilai pengaturan platform (tabel settings key/value, diisi dari admin ?page=settings).
+// Cache statis per-request; fallback ke $default jika belum pernah disimpan.
+function mcm_setting($key, $default = '') {
+    static $cache = null;
+    if ($cache === null) {
+        global $pdo;
+        $cache = [];
+        try {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS `settings` (
+              `key` varchar(100) NOT NULL,
+              `value` text NULL,
+              PRIMARY KEY (`key`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            foreach ($pdo->query("SELECT `key`, `value` FROM settings") as $r) {
+                $cache[$r['key']] = $r['value'];
+            }
+        } catch (PDOException $e) {}
+    }
+    return (isset($cache[$key]) && $cache[$key] !== '') ? $cache[$key] : $default;
+}

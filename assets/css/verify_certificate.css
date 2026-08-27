@@ -1,0 +1,271 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cinzel:wght@600;700;800&display=swap');
+
+:root {
+    --vc-navy: #0c4a6e;
+    --vc-gold: #d4af37;
+    --vc-navy-light: #e0f2fe;
+}
+
+body.verify-body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.verify-wrapper {
+    min-height: 70vh;
+    padding: 40px 16px 60px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.verify-card {
+    width: 100%;
+    max-width: 880px;
+    background: #fff;
+    border-radius: 1.25rem;
+    box-shadow: 0 18px 48px rgba(12,74,110,0.12), 0 4px 16px rgba(0,0,0,0.06);
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.verify-header {
+    background: linear-gradient(135deg, #0c4a6e 0%, #135a84 55%, #0ea5e9 100%);
+    color: #fff;
+    padding: 28px 28px 22px;
+    position: relative;
+    overflow: hidden;
+}
+.verify-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 200'%3E%3Cg fill='none' stroke='rgba(255,255,255,0.08)' stroke-width='1'%3E%3Cpath d='M -20 40 Q 100 0 200 40 T 420 40'/%3E%3Cpath d='M -20 80 Q 100 40 200 80 T 420 80'/%3E%3Cpath d='M -20 120 Q 100 80 200 120 T 420 120'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 400px 200px;
+    opacity: 0.6;
+    pointer-events: none;
+}
+.verify-header > * { position: relative; z-index: 1; }
+.verify-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+.verify-brand img {
+    height: 40px;
+    filter: brightness(0) invert(1);
+}
+.verify-brand-text {
+    border-left: 2px solid rgba(255,255,255,0.5);
+    padding-left: 10px;
+    height: 34px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.verify-brand-text strong {
+    font-family: 'Cinzel', serif;
+    font-size: 0.82rem;
+    letter-spacing: 1.4px;
+    line-height: 1;
+}
+.verify-brand-text span {
+    font-size: 0.58rem;
+    letter-spacing: 1.4px;
+    opacity: 0.85;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.verify-title {
+    font-family: 'Cinzel', serif;
+    font-weight: 800;
+    font-size: 1.35rem;
+    letter-spacing: 1.8px;
+    margin: 0;
+    line-height: 1.2;
+}
+.verify-subtitle {
+    font-size: 0.82rem;
+    opacity: 0.9;
+    margin-top: 6px;
+    line-height: 1.5;
+    max-width: 640px;
+}
+
+.verify-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #16a34a;
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.78rem;
+    letter-spacing: 0.8px;
+    padding: 9px 18px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 14px rgba(22,163,74,0.35);
+}
+.verify-badge.invalid {
+    background: #dc2626;
+    box-shadow: 0 4px 14px rgba(220,38,38,0.28);
+}
+.verify-badge i { font-size: 0.95rem; }
+
+.verify-body-inner {
+    padding: 24px 28px 28px;
+}
+
+.verify-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 24px;
+}
+@media (max-width: 700px) {
+    .verify-grid { grid-template-columns: 1fr; }
+}
+
+.verify-field label {
+    display: block;
+    font-size: 0.65rem;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #94a3b8;
+    margin-bottom: 4px;
+}
+.verify-field .val {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.4;
+    word-break: break-word;
+}
+.verify-field .val.muted { color: #475569; font-weight: 600; }
+.verify-field .val.navy { color: var(--vc-navy); }
+.verify-field .val.mono {
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.86rem;
+    letter-spacing: 0.4px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.verify-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #15803d;
+    font-weight: 800;
+    font-size: 0.72rem;
+    letter-spacing: 0.8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    text-transform: uppercase;
+}
+
+.verify-units {
+    margin-top: 22px;
+}
+.verify-units h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 0.92rem;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    color: var(--vc-navy);
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.verify-units h3 i { color: var(--vc-gold); }
+
+.verify-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+.verify-table th {
+    background: var(--vc-navy);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.70rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 10px 12px;
+    text-align: left;
+}
+.verify-table th.center, .verify-table td.center { text-align: center; }
+.verify-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #334155;
+}
+.verify-table tbody tr:nth-child(even) td { background: #f8fafc; }
+.verify-table tbody tr:last-child td { border-bottom: none; }
+.verify-table .ok { color: #15803d; font-weight: 800; }
+
+.verify-note {
+    margin-top: 20px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 0.76rem;
+    color: #64748b;
+    line-height: 1.6;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+.verify-note i { color: var(--vc-navy); margin-top: 2px; }
+
+.verify-actions {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.verify-actions .btn {
+    border-radius: 999px;
+    font-weight: 700;
+    padding: 10px 20px;
+    font-size: 0.82rem;
+}
+
+.verify-invalid-card {
+    text-align: center;
+    padding: 48px 28px 36px;
+}
+.verify-invalid-card i.main-icon {
+    font-size: 3rem;
+    color: #dc2626;
+    opacity: 0.9;
+    margin-bottom: 14px;
+    display: block;
+}
+.verify-invalid-card h2 {
+    font-family: 'Cinzel', serif;
+    font-weight: 800;
+    color: #0f172a;
+    font-size: 1.25rem;
+    letter-spacing: 0.8px;
+}
+.verify-invalid-card p {
+    color: #64748b;
+    font-size: 0.88rem;
+    max-width: 520px;
+    margin: 8px auto 0;
+    line-height: 1.6;
+}

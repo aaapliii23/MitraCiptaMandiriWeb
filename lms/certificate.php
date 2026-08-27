@@ -35,6 +35,17 @@ try {
 
         $certData = null;
         if ($eligible) {
+            // Ensure verify_token column exists (auto-migrate if missing) + backfill before UNIQUE
+            try {
+                $pdo->exec("ALTER TABLE certificates ADD COLUMN verify_token VARCHAR(64) NOT NULL DEFAULT '' AFTER cert_number");
+            } catch (PDOException $e) {}
+            try {
+                $pdo->exec("UPDATE certificates SET verify_token = LEFT(SHA2(CONCAT(UUID(), RAND(), id), 256), 40) WHERE verify_token = '' OR verify_token IS NULL");
+            } catch (PDOException $e) {}
+            try {
+                $pdo->exec("ALTER TABLE certificates ADD UNIQUE KEY uq_cert_verify_token (verify_token)");
+            } catch (PDOException $e) {}
+
             $stmt = $pdo->prepare("SELECT * FROM certificates WHERE user_id = ? AND class_id = ? LIMIT 1");
             $stmt->execute([$userId, $classId]);
             $certData = $stmt->fetch();
@@ -46,14 +57,50 @@ try {
                     $stmt->execute(["MCM-$year-%"]);
                     $seq = (int)$stmt->fetchColumn() + 1;
                     $certNumber = sprintf("MCM-%s-%04d", $year, $seq);
-                    $stmt = $pdo->prepare("INSERT IGNORE INTO certificates (user_id, class_id, cert_number) VALUES (?, ?, ?)");
-                    $stmt->execute([$userId, $classId, $certNumber]);
+                    $verifyToken = bin2hex(random_bytes(20));
+                    try {
+                        $stmt = $pdo->prepare("INSERT IGNORE INTO certificates (user_id, class_id, cert_number, verify_token) VALUES (?, ?, ?, ?)");
+                        $stmt->execute([$userId, $classId, $certNumber, $verifyToken]);
+                    } catch (PDOException $e) {
+                        // Fallback if column not yet migrated (col missing)
+                        $stmt = $pdo->prepare("INSERT IGNORE INTO certificates (user_id, class_id, cert_number) VALUES (?, ?, ?)");
+                        $stmt->execute([$userId, $classId, $certNumber]);
+                    }
                     if ($stmt->rowCount() > 0) {
-                        $certData = ['cert_number' => $certNumber, 'issued_at' => date('Y-m-d H:i:s')];
+                        $certData = ['cert_number' => $certNumber, 'verify_token' => $verifyToken, 'issued_at' => date('Y-m-d H:i:s')];
                         break;
                     }
                 }
+                if (!$certData) {
+                    $stmt = $pdo->prepare("SELECT * FROM certificates WHERE user_id = ? AND class_id = ? LIMIT 1");
+                    $stmt->execute([$userId, $classId]);
+                    $certData = $stmt->fetch();
+                }
             }
+            // Fallback for legacy certificates without token
+            if ($certData && empty($certData['verify_token'])) {
+                $verifyToken = bin2hex(random_bytes(20));
+                try {
+                    $upd = $pdo->prepare("UPDATE certificates SET verify_token = ? WHERE user_id = ? AND class_id = ? AND (verify_token = '' OR verify_token IS NULL)");
+                    $upd->execute([$verifyToken, $userId, $classId]);
+                    $certData['verify_token'] = $verifyToken;
+                } catch (PDOException $e) {}
+            }
+        }
+
+        // Absolute verify URL base for QR (scheme://host + app prefix)
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+        $appBase = '';
+        if ($scriptDir !== '/' && $scriptDir !== '.' && $scriptDir !== '') {
+            $appBase = rtrim(str_replace('\\', '/', dirname($scriptDir)), '/');
+            if ($appBase === '/' || $appBase === '.' || $appBase === '\\') $appBase = '';
+        }
+        $verifyBaseUrl = $scheme . '://' . $host . ($appBase ? $appBase : '');
+        $verifyUrl = '';
+        if (!empty($certData['verify_token'])) {
+            $verifyUrl = $verifyBaseUrl . '/pages/verify_certificate.php?token=' . urlencode($certData['verify_token']);
         }
 
         // Fetch User

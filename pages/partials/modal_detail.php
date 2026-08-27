@@ -163,7 +163,7 @@
                                         <i class="fab fa-whatsapp fs-3 text-success me-3"></i>
                                         <div>
                                             <p class="small fw-bold mb-0">Hubungi Admin</p>
-                                            <a href="https://wa.me/6285793935707" target="_blank" class="small text-decoration-none text-primary">Tanya lewat WA</a>
+                                            <a href="<?php echo "https://wa.me/" . preg_replace("/\D/", "", mcm_setting("admin_whatsapp", "6285793935707")); ?>" target="_blank" class="small text-decoration-none text-primary">Tanya lewat WA</a>
                                         </div>
                                     </div>
                                 </div>

@@ -88,12 +88,55 @@ if ($page === 'orders') {
             $wheres[] = "o.class_mode = :mode";
             $params[':mode'] = $orderModeFilter;
         }
+        // Filter status dari kartu dashboard: paid | waiting (=unpaid+pending) | failed (=failed+expired)
+        $orderStatus = $_GET['status'] ?? '';
+        if ($orderStatus === 'paid') { $wheres[] = "o.payment_status = 'paid'"; }
+        elseif ($orderStatus === 'waiting') { $wheres[] = "o.payment_status IN ('unpaid','pending')"; }
+        elseif ($orderStatus === 'failed') { $wheres[] = "o.payment_status IN ('failed','expired')"; }
+        else { $orderStatus = ''; }
         if ($wheres) $sql .= " WHERE " . implode(" AND ", $wheres);
         $sql .= " ORDER BY o.created_at DESC";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $orders = $stmt->fetchAll();
     } catch (PDOException $e) {}
+    // AJAX realtime search: kirim hanya <tr> tbody (partial HTML), tanpa reload
+    if (isset($_GET['ajax'])) {
+        header('Content-Type: text/html; charset=utf-8');
+        if (empty($orders)) {
+            echo '<tr><td colspan="9" class="text-center py-5 text-muted">Data tidak ditemukan.</td></tr>';
+        } else {
+            foreach ($orders as $o) {
+                echo '<tr>';
+                echo '<td class="text-secondary fw-bold small">' . htmlspecialchars($o['order_number']) . '</td>';
+                echo '<td><div class="fw-bold text-dark">' . htmlspecialchars($o['customer_name']) . '</div><div class="small text-muted d-flex align-items-center mt-1"><i class="fab fa-whatsapp me-1 text-success"></i>' . htmlspecialchars($o['customer_phone']) . '</div></td>';
+                echo '<td><div class="small text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">' . htmlspecialchars($o['class_category']) . '</div><div class="fw-bold text-primary">' . htmlspecialchars($o['class_name']) . '</div></td>';
+                $cm = strtolower($o['class_mode'] ?? 'offline');
+                echo '<td class="text-center">' . ($cm === 'online' ? '<span class="badge bg-info bg-opacity-10 text-info"><i class="fas fa-laptop me-1"></i>Online</span>' : '<span class="badge bg-success bg-opacity-10 text-success"><i class="fas fa-chalkboard-teacher me-1"></i>Offline</span>') . '</td>';
+                echo '<td class="small text-muted">' . ($o['instructor_name'] ? htmlspecialchars($o['instructor_name']) : '<span class="text-muted">-</span>') . '</td>';
+                echo '<td class="fw-bold text-dark">Rp ' . number_format($o['amount'], 0, ',', '.') . '</td>';
+                $pay = $o['payment_status'] ?? 'unpaid';
+                $payBadge = [
+                    'paid' => ['badge-soft-success', 'fas fa-check-circle', 'Lunas'],
+                    'unpaid' => ['badge-soft-secondary', 'fas fa-hourglass-half', 'Belum Bayar'],
+                    'pending' => ['badge-soft-warning', 'fas fa-clock', 'Proses'],
+                    'failed' => ['badge-soft-danger', 'fas fa-times-circle', 'Gagal'],
+                    'expired' => ['badge-soft-danger', 'fas fa-clock', 'Kedaluwarsa'],
+                ][$pay] ?? ['badge-soft-secondary', 'fas fa-circle', $pay];
+                echo '<td class="text-center"><span class="badge ' . $payBadge[0] . '"><i class="' . $payBadge[1] . ' me-1"></i>' . $payBadge[2] . '</span></td>';
+                if ($o['status'] === 'pending') { $stBadge = '<span class="badge badge-soft-warning"><i class="fas fa-clock me-1"></i>Pending</span>'; }
+                elseif ($o['status'] === 'confirmed') { $stBadge = '<span class="badge badge-soft-success"><i class="fas fa-check-circle me-1"></i>Lunas</span>'; }
+                else { $stBadge = '<span class="badge badge-soft-danger"><i class="fas fa-times-circle me-1"></i>Batal</span>'; }
+                echo '<td class="text-center">' . $stBadge . '</td>';
+                echo '<td class="text-end"><div class="d-flex justify-content-end gap-2">';
+                echo '<button class="btn btn-action btn-soft-primary" data-bs-toggle="modal" data-bs-target="#detailPesananModal" data-order="' . htmlspecialchars($o['order_number']) . '" data-name="' . htmlspecialchars($o['customer_name']) . '" data-phone="' . htmlspecialchars($o['customer_phone']) . '" data-email="' . htmlspecialchars(!empty($o['customer_email']) ? $o['customer_email'] : '-') . '" data-instansi="' . htmlspecialchars(!empty($o['customer_institution']) ? $o['customer_institution'] : '-') . '" data-alamat="' . htmlspecialchars(!empty($o['customer_address']) ? $o['customer_address'] : '-') . '" data-kelas="' . htmlspecialchars($o['class_name']) . '" data-mode="' . htmlspecialchars(strtolower($o['class_mode'] ?? 'offline')) . '" data-harga="' . number_format($o['amount'], 0, ',', '.') . '"><i class="fas fa-eye"></i></button>';
+                echo '<button class="btn btn-action btn-soft-primary" data-bs-toggle="modal" data-bs-target="#updateStatusModal" data-id="' . (int)$o['id'] . '" data-name="' . htmlspecialchars($o['customer_name']) . '" data-status="' . htmlspecialchars($o['status']) . '"><i class="fas fa-edit"></i></button>';
+                echo '<button class="btn btn-action btn-soft-danger" onclick="deleteItem(\'orders\',' . (int)$o['id'] . ')"><i class="fas fa-trash"></i></button>';
+                echo '</div></td></tr>';
+            }
+        }
+        exit;
+    }
 }
 
 // Fetch Classes
