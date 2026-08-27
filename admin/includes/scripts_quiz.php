@@ -7,6 +7,8 @@ function resetQuizQuestionForm() {
     document.getElementById('quizQuestion').value = '';
     document.getElementById('quizFormTitle').textContent = 'Tambah Soal';
     document.getElementById('quizSubmitBtn').textContent = 'Simpan Soal';
+    const expEl = document.getElementById('quizExplanation');
+    if (expEl) expEl.value = '';
 }
 
 function editQuizQuestion(data) {
@@ -20,6 +22,8 @@ function editQuizQuestion(data) {
     document.getElementById('quizOptionD').value = data.option_d;
     document.getElementById('quizCorrect').value = data.correct_option;
     document.getElementById('quizSort').value = data.sort_order;
+    const expEl = document.getElementById('quizExplanation');
+    if (expEl) expEl.value = data.explanation || '';
     document.getElementById('quizFormTitle').textContent = 'Edit Soal';
     document.getElementById('quizSubmitBtn').textContent = 'Simpan Perubahan';
     document.getElementById('quizForm').scrollIntoView({ behavior: 'smooth', block: 'center' });

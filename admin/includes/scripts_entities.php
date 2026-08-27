@@ -363,6 +363,8 @@ function resetQuizQuestionForm() {
     document.getElementById('quizQuestion').value = '';
     document.getElementById('quizType').value = 'mcq';
     quizTypeChanged('mcq');
+    const expEl = document.getElementById('quizExplanation');
+    if (expEl) expEl.value = '';
     document.getElementById('quizFormTitle').textContent = 'Tambah Soal';
     document.getElementById('quizSubmitBtn').textContent = 'Simpan Soal';
 }
@@ -381,6 +383,8 @@ function editQuizQuestion(data) {
     document.getElementById('quizOptionD').value = data.option_d || '';
     document.getElementById('quizCorrect').value = data.correct_option || 'a';
     document.getElementById('quizEssayAnswer').value = data.essay_answer || '';
+    const expEl = document.getElementById('quizExplanation');
+    if (expEl) expEl.value = data.explanation || '';
     document.getElementById('quizSort').value = data.sort_order;
     document.getElementById('quizFormTitle').textContent = 'Edit Soal';
     document.getElementById('quizSubmitBtn').textContent = 'Simpan Perubahan';

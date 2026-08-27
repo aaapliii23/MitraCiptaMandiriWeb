@@ -174,10 +174,10 @@ $csrf = $_SESSION['csrf_token'] ?? '';
                 </div>
 
                 <?php if ($quizQuestions): ?>
-                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4" id="quizCard">
                         <div class="card-body p-4">
                             <h5 class="fw-bold text-dark mb-1"><i class="fas fa-question-circle text-primary me-2"></i>Ujian Akhir Modul</h5>
-                            <p class="text-muted small mb-3">Jawab semua soal di bawah ini. Nilai minimal untuk lulus adalah <b>70%</b>. Anda dapat mengulang ujian jika belum lulus.</p>
+                            <p class="text-muted small mb-3" id="quizDesc">Jawab semua soal di bawah ini. Anda harus menjawab <b>100% benar</b> untuk lulus. Jika ada yang salah, sistem akan menampilkan pembahasan dan Anda hanya perlu memperbaiki soal yang salah sampai semua benar.</p>
 
                             <?php if ($quizPassed): ?>
                                 <div class="alert alert-success rounded-3 mb-3">
@@ -189,45 +189,50 @@ $csrf = $_SESSION['csrf_token'] ?? '';
                                         <p class="fw-semibold text-dark mb-1"><?php echo htmlspecialchars($q['question']); ?></p>
                                         <?php if ($q['question_type'] === 'essay'): ?>
                                             <p class="text-info small mb-0"><i class="fas fa-align-left me-1"></i>Soal Essay — Referensi jawaban: <?php echo htmlspecialchars($q['essay_answer'] ?? '-'); ?></p>
+                                            <?php if (!empty($q['explanation'])): ?><p class="text-muted small mb-0"><i class="fas fa-comment-dots me-1"></i>Pembahasan: <?php echo htmlspecialchars($q['explanation']); ?></p><?php endif; ?>
                                         <?php else: ?>
-                                            <p class="text-success small mb-0"><i class="fas fa-check me-1"></i>Kunci jawaban: <?php echo strtoupper($q['correct_option']); ?>.</p>
+                                            <p class="text-success small mb-0"><i class="fas fa-check me-1"></i>Kunci jawaban: <?php echo strtoupper($q['correct_option']); ?>. <?php echo htmlspecialchars($q['option_' . $q['correct_option']] ?? ''); ?></p>
+                                            <?php if (!empty($q['explanation'])): ?><p class="text-muted small mb-0"><i class="fas fa-comment-dots me-1"></i>Pembahasan: <?php echo htmlspecialchars($q['explanation']); ?></p><?php endif; ?>
                                         <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <?php if ($quizLastAttempt): ?>
-                                    <div class="alert alert-danger rounded-3 mb-3">
-                                        <i class="fas fa-times-circle me-2"></i><b>Belum lulus.</b>
-                                        Nilai terakhir Anda <?php echo (int)$quizLastAttempt['score']; ?>/<?php echo (int)$quizLastAttempt['total']; ?>. Silakan pelajari ulang modul lalu coba lagi.
+                                    <div class="alert alert-warning rounded-3 mb-3">
+                                        <i class="fas fa-exclamation-triangle me-2"></i><b>Progres tersimpan.</b> Nilai terakhir <?php echo (int)$quizLastAttempt['score']; ?>/<?php echo (int)$quizLastAttempt['total']; ?>. Lanjutkan kuis sampai 100% benar untuk membuka modul berikutnya.
                                     </div>
                                 <?php endif; ?>
-                                <form id="quizForm">
-                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf); ?>">
-                                    <input type="hidden" name="material_id" value="<?php echo (int)$materialId; ?>">
-                                    <?php foreach ($quizQuestions as $q): ?>
-                                        <div class="mb-4">
-                                            <p class="fw-semibold text-dark mb-2">
-                                                <?php echo htmlspecialchars($q['question']); ?>
+                                <div id="quizContainer">
+                                    <form id="quizForm">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf); ?>">
+                                        <input type="hidden" name="material_id" value="<?php echo (int)$materialId; ?>">
+                                        <?php foreach ($quizQuestions as $q): ?>
+                                            <div class="mb-4 quiz-q" data-qid="<?php echo (int)$q['id']; ?>">
+                                                <p class="fw-semibold text-dark mb-2">
+                                                    <?php echo htmlspecialchars($q['question']); ?>
+                                                    <?php if ($q['question_type'] === 'essay'): ?>
+                                                        <span class="badge bg-info bg-opacity-10 text-info ms-1">Essay</span>
+                                                    <?php endif; ?>
+                                                </p>
                                                 <?php if ($q['question_type'] === 'essay'): ?>
-                                                    <span class="badge bg-info bg-opacity-10 text-info ms-1">Essay</span>
+                                                    <textarea class="form-control" name="answer[<?php echo (int)$q['id']; ?>]" rows="4" required placeholder="Tulis jawaban Anda..."></textarea>
+                                                <?php else: ?>
+                                                    <?php foreach (['a' => $q['option_a'], 'b' => $q['option_b'], 'c' => $q['option_c'], 'd' => $q['option_d']] as $key => $opt): ?>
+                                                        <div class="form-check ps-0 mb-1">
+                                                            <label class="d-block rounded-3 border px-3 py-2 quiz-option" style="cursor:pointer;">
+                                                                <input class="form-check-input me-2" type="radio" name="answer[<?php echo (int)$q['id']; ?>]" value="<?php echo $key; ?>" required>
+                                                                <span class="fw-semibold"><?php echo strtoupper($key); ?>.</span> <?php echo htmlspecialchars($opt); ?>
+                                                            </label>
+                                                        </div>
+                                                    <?php endforeach; ?>
                                                 <?php endif; ?>
-                                            </p>
-                                            <?php if ($q['question_type'] === 'essay'): ?>
-                                                <textarea class="form-control" name="answer[<?php echo (int)$q['id']; ?>]" rows="4" required placeholder="Tulis jawaban Anda..."></textarea>
-                                            <?php else: ?>
-                                                <?php foreach (['a' => $q['option_a'], 'b' => $q['option_b'], 'c' => $q['option_c'], 'd' => $q['option_d']] as $key => $opt): ?>
-                                                    <div class="form-check ps-0 mb-1">
-                                                        <label class="d-block rounded-3 border px-3 py-2 quiz-option">
-                                                            <input class="form-check-input me-2" type="radio" name="answer[<?php echo (int)$q['id']; ?>]" value="<?php echo $key; ?>" required>
-                                                            <span class="fw-semibold"><?php echo strtoupper($key); ?>.</span> <?php echo htmlspecialchars($opt); ?>
-                                                        </label>
-                                                    </div>
-                                                <?php endforeach; ?>
-                                            <?php endif; ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                    <button type="submit" class="btn btn-primary rounded-pill fw-bold px-4"><i class="fas fa-paper-plane me-2"></i>Kumpulkan Jawaban</button>
-                                </form>
+                                            </div>
+                                        <?php endforeach; ?>
+                                        <button type="submit" class="btn btn-primary rounded-pill fw-bold px-4"><i class="fas fa-paper-plane me-2"></i>Kumpulkan Jawaban</button>
+                                    </form>
+                                    <div id="quizReview" style="display:none;"></div>
+                                    <div id="quizRetryBox" class="mt-3" style="display:none;"></div>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -240,7 +245,7 @@ $csrf = $_SESSION['csrf_token'] ?? '';
                         <span></span>
                     <?php endif; ?>
                     <?php if (!$isDone && $quizQuestions): ?>
-                        <button class="btn btn-outline-secondary rounded-pill fw-bold px-4 disabled"><i class="fas fa-lock me-2"></i>Lulus ujian untuk lanjut</button>
+                        <button class="btn btn-outline-secondary rounded-pill fw-bold px-4 disabled"><i class="fas fa-lock me-2"></i>Lulus ujian 100% untuk lanjut</button>
                     <?php elseif (!$isDone): ?>
                         <button class="btn btn-outline-secondary rounded-pill fw-bold px-4 disabled"><i class="fas fa-lock me-2"></i>Selesaikan modul ini dulu</button>
                     <?php elseif ($nextId): ?>
@@ -259,6 +264,7 @@ $csrf = $_SESSION['csrf_token'] ?? '';
     <script>
         const CSRF_TOKEN = <?php echo json_encode($csrf); ?>;
         const MATERIAL_ID = <?php echo (int)$materialId; ?>;
+        const QUIZ_QUESTIONS = <?php echo json_encode($quizQuestions, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>;
 
         const markDone = document.getElementById('markDone');
         if (markDone) {
@@ -281,6 +287,125 @@ $csrf = $_SESSION['csrf_token'] ?? '';
         }
 
         const quizForm = document.getElementById('quizForm');
+        const quizReview = document.getElementById('quizReview');
+        const quizRetryBox = document.getElementById('quizRetryBox');
+        const quizContainer = document.getElementById('quizContainer');
+        let retryData = null;
+
+        function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+        function shuffleArray(a){
+            const arr = a.slice();
+            for(let i=arr.length-1;i>0;i--){
+                const j=Math.floor(Math.random()*(i+1));
+                const tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp;
+            }
+            return arr;
+        }
+
+        function renderReview(details){
+            if(!details || !details.length){ quizReview.innerHTML=''; return; }
+            let html = '<div class="mt-2"><h6 class="fw-bold mb-3"><i class="fas fa-comments me-2 text-primary"></i>Pembahasan</h6>';
+            details.forEach(d=>{
+                const ok = d.is_correct;
+                const border = ok ? 'border-success' : 'border-danger';
+                const badge = ok ? '<span class="badge bg-success bg-opacity-10 text-success"><i class="fas fa-check me-1"></i>Benar</span>' : (d.question_type==='essay' ? '<span class="badge bg-warning bg-opacity-10 text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Perlu Diperbaiki</span>' : '<span class="badge bg-danger bg-opacity-10 text-danger"><i class="fas fa-times me-1"></i>Salah</span>');
+                html += `<div class="card border ${border} rounded-3 mb-3"><div class="card-body p-3">`;
+                html += `<div class="d-flex justify-content-between align-items-start gap-2 mb-2"><div class="fw-semibold text-dark" style="flex:1;">${esc(d.question)}</div>${badge}</div>`;
+                if(d.question_type === 'essay'){
+                    html += `<div class="small mb-1"><span class="text-muted">Jawaban Anda:</span> <span class="text-dark">${esc(d.your_answer || '- belum dijawab -')}</span></div>`;
+                    html += `<div class="small mb-1"><span class="text-muted">Jawaban Referensi:</span> <span class="text-dark">${esc(d.correct_answer || '-')}</span></div>`;
+                } else {
+                    const yourText = d.your_answer_text ? `${d.your_answer.toUpperCase()}. ${esc(d.your_answer_text)}` : (d.your_answer ? d.your_answer.toUpperCase() : '-');
+                    const correctText = d.correct_option_text ? `${d.correct_answer.toUpperCase()}. ${esc(d.correct_option_text)}` : d.correct_answer.toUpperCase();
+                    html += `<div class="small mb-1"><span class="text-muted">Jawaban Anda:</span> <span class="${ok?'text-success fw-semibold':'text-danger fw-semibold'}">${esc(yourText)}</span></div>`;
+                    if(!ok){
+                        html += `<div class="small mb-1"><span class="text-muted">Jawaban Benar:</span> <span class="text-success fw-semibold">${esc(correctText)}</span></div>`;
+                    }
+                }
+                if(!ok && d.explanation){
+                    html += `<div class="alert alert-light border small mb-0 mt-2 py-2"><i class="fas fa-comment-dots text-primary me-1"></i><b>Pembahasan:</b> ${esc(d.explanation)}</div>`;
+                } else if(!ok && !d.explanation && d.question_type==='mcq'){
+                    html += ``;
+                }
+                html += `</div></div>`;
+            });
+            html += `</div>`;
+            quizReview.innerHTML = html;
+        }
+
+        function renderRetryForm(wrongDetails){
+            const wrongIds = wrongDetails.map(d=>d.question_id);
+            let qs = QUIZ_QUESTIONS.filter(q => wrongIds.includes(parseInt(q.id)));
+            qs = shuffleArray(qs);
+            let html = `<form id="retryForm"><input type="hidden" name="csrf_token" value="${esc(CSRF_TOKEN)}"><input type="hidden" name="material_id" value="${MATERIAL_ID}">`;
+            html += `<div class="alert alert-warning rounded-3 py-2 small"><i class="fas fa-redo me-2"></i>Perbaikan Soal — tersisa <b>${qs.length}</b> soal yang perlu diperbaiki. Urutan soal & pilihan diacak.</div>`;
+            qs.forEach(q=>{
+                const qid = parseInt(q.id);
+                html += `<div class="mb-4"><p class="fw-semibold text-dark mb-2">${esc(q.question)}${q.question_type==='essay'? ' <span class="badge bg-info bg-opacity-10 text-info ms-1">Essay</span>':''}</p>`;
+                if(q.question_type==='essay'){
+                    html += `<textarea class="form-control" name="answer[${qid}]" rows="4" required placeholder="Tulis jawaban Anda..."></textarea>`;
+                } else {
+                    let opts = [{k:'a', t:q.option_a},{k:'b', t:q.option_b},{k:'c', t:q.option_c},{k:'d', t:q.option_d}];
+                    opts = shuffleArray(opts);
+                    const labels = ['A','B','C','D'];
+                    opts.forEach((o, idx)=>{
+                        html += `<div class="form-check ps-0 mb-1"><label class="d-block rounded-3 border px-3 py-2" style="cursor:pointer;"><input class="form-check-input me-2" type="radio" name="answer[${qid}]" value="${o.k}" required> <span class="fw-semibold">${labels[idx]}.</span> ${esc(o.t)}</label></div>`;
+                    });
+                }
+                html += `</div>`;
+            });
+            html += `<button type="submit" class="btn btn-primary rounded-pill fw-bold px-4"><i class="fas fa-paper-plane me-2"></i>Kumpulkan Perbaikan</button></form>`;
+            if(quizForm) quizForm.style.display='none';
+            quizReview.style.display='block';
+            quizRetryBox.innerHTML = '';
+            const retryContainer = document.createElement('div');
+            retryContainer.id = 'retryFormContainer';
+            retryContainer.innerHTML = html;
+            quizContainer.appendChild(retryContainer);
+            retryContainer.querySelector('#retryForm').addEventListener('submit', handleRetrySubmit);
+        }
+
+        function handleRetrySubmit(e){
+            e.preventDefault();
+            const form = e.target;
+            const btn = form.querySelector('button[type=submit]');
+            btn.disabled = true;
+            const answers = {};
+            new FormData(form).forEach((v,k)=>{
+                const m = k.match(/^answer\[(\d+)\]$/);
+                if(m) answers[m[1]] = v;
+            });
+            fetch('quiz.php',{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({material_id:MATERIAL_ID, answers:answers, csrf_token:CSRF_TOKEN, is_retry:true})
+            })
+            .then(res=>res.json())
+            .then(data=>{
+                btn.disabled=false;
+                if(data.status==='success'){
+                    const existingRetry = document.getElementById('retryFormContainer');
+                    if(existingRetry) existingRetry.remove();
+                    quizForm.style.display='none';
+                    renderReview(data.details);
+                    quizReview.style.display='block';
+                    if(data.all_completed){
+                        quizRetryBox.style.display='none';
+                        Swal.fire({icon:'success', title:'Lulus 100%!', html:'Semua soal sudah benar. Modul selesai.', confirmButtonText:'Lanjut'}).then(()=>window.location.reload());
+                    } else {
+                        const wrong = (data.details||[]).filter(d=>!d.is_correct);
+                        quizRetryBox.style.display='block';
+                        quizRetryBox.innerHTML = `<button class="btn btn-warning rounded-pill fw-bold px-4" id="retryBtn"><i class="fas fa-redo me-2"></i>Perbaiki Soal yang Salah (${wrong.length} soal)</button>`;
+                        document.getElementById('retryBtn').onclick = ()=>{ quizReview.style.display='none'; quizRetryBox.style.display='none'; renderRetryForm(wrong); };
+                    }
+                } else {
+                    Swal.fire('Gagal', data.message, 'error');
+                }
+            })
+            .catch(()=>{ btn.disabled=false; Swal.fire('Error','Terjadi kesalahan sistem.','error'); });
+        }
+
         if (quizForm) {
             quizForm.addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -304,12 +429,20 @@ $csrf = $_SESSION['csrf_token'] ?? '';
                 .then(data => {
                     btn.disabled = false;
                     if (data.status === 'success') {
-                        Swal.fire({
-                            icon: data.passed ? 'success' : 'warning',
-                            title: data.passed ? 'Lulus!' : 'Belum Lulus',
-                            html: 'Nilai Anda <b>' + data.correct + '/' + data.total + '</b> (' + data.pct + '%).' + (data.passed ? '' : '<br>Silakan pelajari ulang modul lalu coba lagi.'),
-                            confirmButtonText: 'OK'
-                        }).then(() => { if (data.passed) window.location.reload(); });
+                        quizForm.style.display='none';
+                        renderReview(data.details);
+                        quizReview.style.display='block';
+                        if(data.all_completed){
+                            quizRetryBox.style.display='none';
+                            Swal.fire({icon:'success', title:'Lulus 100%!', html:'Semua soal sudah benar. Modul selesai.', confirmButtonText:'Lanjut'}).then(()=>window.location.reload());
+                        } else {
+                            const wrong = (data.details||[]).filter(d=>!d.is_correct);
+                            if(wrong.length){
+                                quizRetryBox.style.display='block';
+                                quizRetryBox.innerHTML = `<button class="btn btn-warning rounded-pill fw-bold px-4" id="retryBtn"><i class="fas fa-redo me-2"></i>Perbaiki Soal yang Salah (${wrong.length} soal)</button>`;
+                                document.getElementById('retryBtn').onclick = ()=>{ quizReview.style.display='none'; quizRetryBox.style.display='none'; renderRetryForm(wrong); };
+                            }
+                        }
                     } else {
                         Swal.fire('Gagal', data.message, 'error');
                     }

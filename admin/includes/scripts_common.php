@@ -214,7 +214,8 @@ async function submitAjaxForm(formId) {
                     try {
                         data = JSON.parse(text);
                     } catch(e) {
-                        data = { status: 'error', message: 'Respon server tidak valid' };
+                        console.error('Gagal parse JSON response untuk', files[i].name, '- Raw response:', text);
+                        data = { status: 'error', message: 'Respon server tidak valid (server mungkin timeout atau error internal, cek console/log server).' };
                     }
 
                     if (data.status === 'success') {

@@ -12,7 +12,7 @@
             <div class="modal-body p-4">
                 <input type="hidden" id="quizMaterialId">
                 <div class="alert alert-info rounded-3 py-2 px-3 small mb-3">
-                    <i class="fas fa-info-circle me-2"></i>Jika materi memiliki soal quiz, peserta wajib lulus quiz (nilai &ge; 70%) untuk menandai modul selesai.
+                    <i class="fas fa-info-circle me-2"></i>Peserta wajib menjawab benar 100% (semua soal). Jawaban salah akan dibahas dan diminta perbaiki sampai benar semua.
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -77,6 +77,10 @@
                             <textarea class="form-control" name="essay_answer" id="quizEssayAnswer" rows="3" placeholder="Tulis poin-poin jawaban yang diharapkan sebagai acuan penilaian..."></textarea>
                             <small class="text-muted">Jawaban peserta dinilai otomatis berdasarkan kata kunci pada referensi ini.</small>
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">Pembahasan / Penjelasan <span class="text-muted fw-normal">(opsional, tampil saat jawaban salah)</span></label>
+                        <textarea class="form-control" name="explanation" id="quizExplanation" rows="2" placeholder="Jelaskan mengapa jawaban benar demikian..."></textarea>
                     </div>
                     <div class="row g-3">
                         <div class="col-md-6">

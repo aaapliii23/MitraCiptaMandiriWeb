@@ -17,6 +17,7 @@ try {
       `option_d` varchar(255) NOT NULL,
       `correct_option` ENUM('a','b','c','d') DEFAULT NULL,
       `essay_answer` text DEFAULT NULL,
+      `explanation` text DEFAULT NULL,
       `sort_order` int(11) NOT NULL DEFAULT 0,
       PRIMARY KEY (`id`),
       KEY `material_id` (`material_id`)
@@ -28,6 +29,16 @@ try {
         $pdo->exec("ALTER TABLE quiz_questions MODIFY correct_option ENUM('a','b','c','d') DEFAULT NULL");
         $pdo->exec("ALTER TABLE quiz_questions ADD COLUMN essay_answer text DEFAULT NULL AFTER correct_option");
     }
+    try { $pdo->query("SELECT explanation FROM quiz_questions LIMIT 1"); } catch (PDOException $e) { try { $pdo->exec("ALTER TABLE quiz_questions ADD COLUMN explanation TEXT NULL AFTER essay_answer"); } catch (PDOException $ee) {} }
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `quiz_progress` (
+      `id` INT NOT NULL AUTO_INCREMENT,
+      `user_id` INT NOT NULL,
+      `question_id` INT NOT NULL,
+      `is_correct` TINYINT(1) NOT NULL DEFAULT 0,
+      `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`),
+      UNIQUE KEY `uq_user_question` (`user_id`,`question_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
     $pdo->exec("CREATE TABLE IF NOT EXISTS `quiz_attempts` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `user_id` int(11) NOT NULL,
@@ -62,6 +73,7 @@ if ($action === 'list') {
     $optionD = trim($_POST['option_d'] ?? '');
     $correct = $_POST['correct_option'] ?? '';
     $essayAnswer = trim($_POST['essay_answer'] ?? '');
+    $explanation = trim($_POST['explanation'] ?? '');
     $sortOrder = (int)($_POST['sort_order'] ?? 0);
 
     if (!$materialId || empty($question)) {
@@ -80,8 +92,8 @@ if ($action === 'list') {
         exit;
     }
 
-    $stmt = $pdo->prepare("INSERT INTO quiz_questions (material_id, question_type, question, option_a, option_b, option_c, option_d, correct_option, essay_answer, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$materialId, $questionType, $question, $optionA, $optionB, $optionC, $optionD, $questionType === 'mcq' ? $correct : null, $questionType === 'essay' ? $essayAnswer : null, $sortOrder]);
+    $stmt = $pdo->prepare("INSERT INTO quiz_questions (material_id, question_type, question, option_a, option_b, option_c, option_d, correct_option, essay_answer, explanation, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$materialId, $questionType, $question, $optionA, $optionB, $optionC, $optionD, $questionType === 'mcq' ? $correct : null, $questionType === 'essay' ? $essayAnswer : null, $explanation !== '' ? $explanation : null, $sortOrder]);
     echo json_encode(['status' => 'success', 'message' => 'Soal quiz berhasil ditambahkan.']);
 } elseif ($action === 'update') {
     $id = (int)($_POST['id'] ?? 0);
@@ -93,6 +105,7 @@ if ($action === 'list') {
     $optionD = trim($_POST['option_d'] ?? '');
     $correct = $_POST['correct_option'] ?? '';
     $essayAnswer = trim($_POST['essay_answer'] ?? '');
+    $explanation = trim($_POST['explanation'] ?? '');
     $sortOrder = (int)($_POST['sort_order'] ?? 0);
 
     if (!$id || empty($question)) {
@@ -104,8 +117,8 @@ if ($action === 'list') {
         exit;
     }
 
-    $stmt = $pdo->prepare("UPDATE quiz_questions SET question_type = ?, question = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_option = ?, essay_answer = ?, sort_order = ? WHERE id = ?");
-    $stmt->execute([$questionType, $question, $optionA, $optionB, $optionC, $optionD, $questionType === 'mcq' ? $correct : null, $questionType === 'essay' ? $essayAnswer : null, $sortOrder, $id]);
+    $stmt = $pdo->prepare("UPDATE quiz_questions SET question_type = ?, question = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_option = ?, essay_answer = ?, explanation = ?, sort_order = ? WHERE id = ?");
+    $stmt->execute([$questionType, $question, $optionA, $optionB, $optionC, $optionD, $questionType === 'mcq' ? $correct : null, $questionType === 'essay' ? $essayAnswer : null, $explanation !== '' ? $explanation : null, $sortOrder, $id]);
     echo json_encode(['status' => 'success', 'message' => 'Soal quiz diperbarui.']);
 } elseif ($action === 'delete') {
     $id = (int)($_POST['id'] ?? 0);

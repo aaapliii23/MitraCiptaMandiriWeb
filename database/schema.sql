@@ -55,18 +55,20 @@ CREATE TABLE IF NOT EXISTS `certificates` (
   `user_id` int NOT NULL,
   `class_id` int NOT NULL,
   `cert_number` varchar(50) NOT NULL,
+  `verify_token` varchar(64) NOT NULL DEFAULT '',
   `issued_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `cert_number` (`cert_number`),
-  UNIQUE KEY `uq_cert_user_class` (`user_id`,`class_id`)
+  UNIQUE KEY `uq_cert_user_class` (`user_id`,`class_id`),
+  UNIQUE KEY `uq_cert_verify_token` (`verify_token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data untuk tabel `certificates`
 --
 
-INSERT IGNORE INTO `certificates` (`id`, `user_id`, `class_id`, `cert_number`, `issued_at`) VALUES
-(2, 5, 1, 'MCM-2026-0001', '2026-08-17 12:29:43');
+INSERT IGNORE INTO `certificates` (`id`, `user_id`, `class_id`, `cert_number`, `verify_token`, `issued_at`) VALUES
+(2, 5, 1, 'MCM-2026-0001', 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0', '2026-08-17 12:29:43');
 
 -- --------------------------------------------------------
 
@@ -520,9 +522,20 @@ CREATE TABLE IF NOT EXISTS `quiz_questions` (
   `option_d` varchar(255) NOT NULL,
   `correct_option` enum('a','b','c','d') DEFAULT NULL,
   `essay_answer` text,
+  `explanation` text,
   `sort_order` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `material_id` (`material_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `quiz_progress` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `user_id` INT NOT NULL,
+  `question_id` INT NOT NULL,
+  `is_correct` TINYINT(1) NOT NULL DEFAULT 0,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_user_question` (`user_id`,`question_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
