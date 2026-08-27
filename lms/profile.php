@@ -1,6 +1,7 @@
 <?php
 require_once '../includes/auth_user.php';
 require_once '../config/database.php';
+require_once '../includes/cloudinary.php';
 
 $userId = (int)$_SESSION['user_id'];
 
@@ -42,19 +43,16 @@ if ($testimonialType === 'testimonial') {
         $testimonialMessage = 'Ulasan wajib diisi.';
     } else {
         $image = null;
-        if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-            $allowed = ['jpg', 'jpeg', 'png', 'webp'];
-            $ext = strtolower(pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION));
-            if (in_array($ext, $allowed)) {
-                $dir = dirname(__DIR__) . '/uploads/testimonials/';
-                if (!is_dir($dir)) mkdir($dir, 0775, true);
-                $dest = $dir . uniqid() . '.' . $ext;
-                if (move_uploaded_file($_FILES['photo']['tmp_name'], $dest)) {
-                    $image = 'uploads/testimonials/' . basename($dest);
-                }
-            }
+        $uploadErr = null;
+        if (isset($_FILES['photo']) && $_FILES['photo']['error'] !== UPLOAD_ERR_NO_FILE) {
+            $res = uploadImageToCloudinary($_FILES['photo'], 'mcm/testimonials');
+            if (!$res['ok']) { $uploadErr = $res['error']; $testimonialMessage = $res['error']; }
+            else $image = $res['url'];
         }
 
+        if ($uploadErr) {
+            // tetap tampilkan pesan error upload, skip insert
+        } else {
         try {
             $stmtName = $pdo->prepare("SELECT name FROM users WHERE id = ? LIMIT 1");
             $stmtName->execute([$userId]);
@@ -68,6 +66,7 @@ if ($testimonialType === 'testimonial') {
             }
         } catch (PDOException $e) {
             $testimonialMessage = 'Terjadi kesalahan sistem.';
+        }
         }
     }
     if (strpos($testimonialMessage, 'berhasil') !== false) {

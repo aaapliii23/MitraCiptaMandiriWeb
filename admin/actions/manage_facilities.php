@@ -8,6 +8,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 }
 
 require_once '../../config/database.php';
+require_once '../../includes/cloudinary.php';
 
 // Auto-create tables
 try {
@@ -149,7 +150,6 @@ if ($action === 'create') {
         mkdir($uploadDir, 0777, true);
     }
 
-    $allowed = ['jpg', 'jpeg', 'png', 'webp', 'heic'];
     $successCount = 0;
     $totalFiles = count($_FILES['images']['name']);
     $errors = [];
@@ -157,28 +157,18 @@ if ($action === 'create') {
     for ($i = 0; $i < $totalFiles; $i++) {
         $filename = $_FILES['images']['name'][$i];
         $errCode = $_FILES['images']['error'][$i];
-
         if ($errCode !== UPLOAD_ERR_OK) {
             $errors[] = "'$filename' gagal terupload (error $errCode).";
             continue;
         }
-
-        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        if (!in_array($ext, $allowed)) {
-            $errors[] = "'$filename' format tidak didukung (hanya jpg, jpeg, png, webp).";
-            continue;
-        }
-
-        $newFilename = uniqid('fac_') . '_' . $i . '.' . ($ext === 'heic' ? 'jpg' : $ext);
-        $destination = 'uploads/facilities/' . $newFilename;
-        $fullPath = '../../' . $destination;
-
-        if (move_uploaded_file($_FILES['images']['tmp_name'][$i], $fullPath)) {
-            $itemTitle = ($totalFiles > 1) ? ($title . ' (' . ($i + 1) . ')') : $title;
-            $stmt = $pdo->prepare("INSERT INTO facility_locations (category, title, image, description) VALUES (?, ?, ?, ?)");
-            if ($stmt->execute([$category, $itemTitle, $destination, $description])) {
-                $successCount++;
-            }
+        $file = ['name'=>$filename,'type'=>$_FILES['images']['type'][$i],'tmp_name'=>$_FILES['images']['tmp_name'][$i],'error'=>$errCode,'size'=>$_FILES['images']['size'][$i]];
+        $res = uploadImageToCloudinary($file, 'mcm/facilities');
+        if (!$res['ok']) { $errors[] = "'$filename' ".$res['error']; continue; }
+        $destination = $res['url'];
+        $itemTitle = ($totalFiles > 1) ? ($title . ' (' . ($i + 1) . ')') : $title;
+        $stmt = $pdo->prepare("INSERT INTO facility_locations (category, title, image, description) VALUES (?, ?, ?, ?)");
+        if ($stmt->execute([$category, $itemTitle, $destination, $description])) {
+            $successCount++;
         }
     }
 
@@ -207,19 +197,11 @@ if ($action === 'update') {
     }
 
     $imagePath = null;
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $allowed = ['jpg', 'jpeg', 'png', 'webp'];
-        $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
-        if (in_array($ext, $allowed)) {
-            $uploadDir = '../../uploads/facilities';
-            if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
-
-            $newFilename = uniqid('fac_') . '.' . $ext;
-            $destination = 'uploads/facilities/' . $newFilename;
-            if (move_uploaded_file($_FILES['image']['tmp_name'], '../../' . $destination)) {
-                $imagePath = $destination;
-            }
-        }
+    if (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        if ($_FILES['image']['error'] !== UPLOAD_ERR_OK) { echo json_encode(['status'=>'error','message'=>'Upload gagal.']); exit; }
+        $res = uploadImageToCloudinary($_FILES['image'], 'mcm/facilities');
+        if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
+        $imagePath = $res['url'];
     }
 
     if ($imagePath) {

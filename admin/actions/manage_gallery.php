@@ -46,6 +46,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 }
 
 require_once '../../config/database.php';
+require_once '../../includes/cloudinary.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['action'])) {
     $maxPost = parseIniSize(ini_get('post_max_size'));
@@ -108,23 +109,17 @@ if ($action === 'create') {
                 continue;
             }
 
-            $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-            
-            if (in_array($ext, $allowed)) {
-                $newFilename = uniqid() . '_' . $i . '.' . $ext;
-                $destination = 'uploads/gallery/' . $newFilename;
-                
-                if (move_uploaded_file($_FILES['images']['tmp_name'][$i], '../../' . $destination)) {
-                    $itemTitle = ($totalFiles > 1) ? ($title . ' (' . ($i + 1) . ')') : $title;
-                    $stmt = $pdo->prepare("INSERT INTO gallery (category, title, image, show_on_home) VALUES (?, ?, ?, ?)");
-                    if ($stmt->execute([$category, $itemTitle, $destination, $showOnHome])) {
-                        $successCount++;
-                    }
-                } else {
-                    $errors[] = "'$filename' gagal disimpan (cek permission folder uploads/gallery).";
+            $file = ['name'=>$_FILES['images']['name'][$i],'type'=>$_FILES['images']['type'][$i],'tmp_name'=>$_FILES['images']['tmp_name'][$i],'error'=>$_FILES['images']['error'][$i],'size'=>$_FILES['images']['size'][$i]];
+            $res = uploadImageToCloudinary($file, 'mcm/gallery');
+            if ($res['ok']) {
+                $destination = $res['url'];
+                $itemTitle = ($totalFiles > 1) ? ($title . ' (' . ($i + 1) . ')') : $title;
+                $stmt = $pdo->prepare("INSERT INTO gallery (category, title, image, show_on_home) VALUES (?, ?, ?, ?)");
+                if ($stmt->execute([$category, $itemTitle, $destination, $showOnHome])) {
+                    $successCount++;
                 }
             } else {
-                $errors[] = "'$filename' format tidak didukung (hanya jpg/jpeg/png/webp).";
+                $errors[] = "'$filename' " . $res['error'];
             }
         }
 
@@ -173,23 +168,12 @@ if ($action === 'create') {
                 respondJson(['status' => 'error', 'message' => 'File gagal terupload, coba lagi.']);
             }
 
-            $allowed = ['jpg', 'jpeg', 'png', 'webp'];
-            $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-
-            if (!in_array($ext, $allowed)) {
-                respondJson(['status' => 'error', 'message' => 'Format gambar tidak didukung (hanya jpg/jpeg/png/webp).']);
-            }
-
-            $newFilename = uniqid() . '_0.' . $ext;
-            $destination = 'uploads/gallery/' . $newFilename;
-
-            if (move_uploaded_file($_FILES['images']['tmp_name'][0], '../../' . $destination)) {
-                if (strpos($photo['image'], 'http') !== 0 && file_exists('../../' . $photo['image'])) {
-                    unlink('../../' . $photo['image']);
-                }
-                $image = $destination;
+            $file = ['name'=>$_FILES['images']['name'][0],'type'=>$_FILES['images']['type'][0],'tmp_name'=>$_FILES['images']['tmp_name'][0],'error'=>$_FILES['images']['error'][0],'size'=>$_FILES['images']['size'][0]];
+            $res = uploadImageToCloudinary($file, 'mcm/gallery');
+            if ($res['ok']) {
+                $image = $res['url'];
             } else {
-                respondJson(['status' => 'error', 'message' => 'Gagal menyimpan gambar baru.']);
+                respondJson(['status' => 'error', 'message' => $res['error']]);
             }
         }
 

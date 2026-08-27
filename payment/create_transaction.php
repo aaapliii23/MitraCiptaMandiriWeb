@@ -3,6 +3,7 @@ session_start();
 header('Content-Type: application/json');
 require_once '../config/database.php';
 require_once '../includes/payment_gateway.php';
+require_once '../includes/whatsapp_client.php';
 
 function validateFullName($name)
 {
@@ -143,6 +144,20 @@ if ($hasClassMode) {
     $stmt->execute([$orderNumber, $userId, $customerName, $digits, $customerEmail, $customerAddress, $customerInstitution ?: '-', $classId, $instructorId ?: null, $amount]);
 }
 $orderId = (int)$pdo->lastInsertId();
+
+// Notifikasi admin pesanan baru (Fonnte) — gagal kirim tidak boleh gagalkan transaksi
+try {
+    $adminWa = defined('MCM_WA_ADMIN') ? MCM_WA_ADMIN : (defined('FONNTE_TOKEN') ? '' : '');
+    if ($adminWa !== '') {
+        $adminMsg = "*PESANAN BARU - MCM*\n\n";
+        $adminMsg .= "Order: $orderNumber\n";
+        $adminMsg .= "Peserta: $customerName ($digits)\n";
+        $adminMsg .= "Kelas: {$class['name']} (" . ($classMode === 'online' ? 'Online' : 'Offline') . ")\n";
+        $adminMsg .= "Nominal: Rp " . number_format($amount, 0, ',', '.') . "\n";
+        $adminMsg .= "Status: Menunggu pembayaran";
+        wa_send_message($pdo, $adminWa, $adminMsg, 'admin_notif');
+    }
+} catch (Throwable $e) { error_log("[Fonnte admin notif] " . $e->getMessage()); }
 
 $res = pg_create_transaction($pdo, ['id' => $orderId, 'order_number' => $orderNumber, 'amount' => $amount], $class);
 if ($res['status'] !== 'success') {

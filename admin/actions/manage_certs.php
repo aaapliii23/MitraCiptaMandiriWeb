@@ -4,6 +4,7 @@ header('Content-Type: application/json');
 if (!isset($_SESSION['admin_logged_in'])) exit;
 
 require_once '../../config/database.php';
+require_once '../../includes/cloudinary.php';
 
 $action = $_POST['action'] ?? '';
 
@@ -16,18 +17,13 @@ if ($action === 'create') {
         exit;
     }
 
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $allowed = ['jpg', 'jpeg', 'png', 'webp'];
-        $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
-        if (in_array($ext, $allowed)) {
-            $dest = 'uploads/certs/' . uniqid() . '.' . $ext;
-            if (move_uploaded_file($_FILES['image']['tmp_name'], '../../' . $dest)) {
-                $stmt = $pdo->prepare("INSERT INTO certifications (title, description, image) VALUES (?, ?, ?)");
-                $stmt->execute([$title, $desc, $dest]);
-                echo json_encode(['status' => 'success', 'message' => 'Sertifikasi berhasil ditambahkan.']);
-                exit;
-            }
-        }
+    if (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        if ($_FILES['image']['error'] !== UPLOAD_ERR_OK) { echo json_encode(['status'=>'error','message'=>'Upload gagal.']); exit; }
+        $res = uploadImageToCloudinary($_FILES['image'], 'mcm/certs');
+        if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
+        $stmt = $pdo->prepare("INSERT INTO certifications (title, description, image) VALUES (?, ?, ?)");
+        $stmt->execute([$title, $desc, $res['url']]);
+        echo json_encode(['status'=>'success','message'=>'Sertifikasi berhasil ditambahkan.']); exit;
     }
     
     // Default fallback
@@ -45,15 +41,11 @@ if ($action === 'create') {
     }
 
     $image = null;
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $allowed = ['jpg', 'jpeg', 'png', 'webp'];
-        $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
-        if (in_array($ext, $allowed)) {
-            $dest = 'uploads/certs/' . uniqid() . '.' . $ext;
-            if (move_uploaded_file($_FILES['image']['tmp_name'], '../../' . $dest)) {
-                $image = $dest;
-            }
-        }
+    if (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        if ($_FILES['image']['error'] !== UPLOAD_ERR_OK) { echo json_encode(['status'=>'error','message'=>'Upload gagal.']); exit; }
+        $res = uploadImageToCloudinary($_FILES['image'], 'mcm/certs');
+        if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
+        $image = $res['url'];
     }
 
     if ($image) {

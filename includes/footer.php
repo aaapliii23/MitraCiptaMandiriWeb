@@ -8,6 +8,7 @@
         $script_dir = dirname($_SERVER['SCRIPT_NAME'] ?? '/');
         $base_url = ($script_dir === '/' || $script_dir === '' || $script_dir === '\\') ? '' : str_repeat('../', substr_count(rtrim($script_dir, '/'), '/'));
     }
+    $footerLogo = function_exists('mcm_setting') ? mcm_setting('logo_url', $base_url.'assets/img/logo.png') : $base_url.'assets/img/logo.png';
     ?>
     <!-- Footer -->
     <footer class="pt-5 pb-4" style="background-color: #0f172a !important; color: white;">
@@ -15,7 +16,7 @@
             <div class="row g-4">
                 <div class="col-md-4">
                     <div class="d-flex align-items-center mb-4">
-                        <img src="<?php echo $base_url; ?>assets/img/logo.png" alt="MCM Logo" style="height: 45px; filter: brightness(0) invert(1);">
+                        <img src="<?php echo htmlspecialchars($footerLogo); ?>" alt="MCM Logo" style="height: 45px; filter: brightness(0) invert(1);">
                         <div class="ms-2 ps-2 border-start border-2 border-light d-flex flex-column justify-content-center" style="height: 35px;">
                             <span class="fw-bold text-white" style="font-size: 0.75rem; letter-spacing: 1px; line-height: 1.1;">MITRA CIPTA</span>
                             <span class="fw-bold text-white" style="font-size: 0.75rem; letter-spacing: 1px; line-height: 1.1;">MANDIRI</span>

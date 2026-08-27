@@ -8,6 +8,7 @@ if (!isset($_SESSION['admin_logged_in'])) {
 }
 
 require_once '../../config/database.php';
+require_once '../../includes/cloudinary.php';
 
 try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS `certificate_templates` (
@@ -51,17 +52,11 @@ if ($action === 'create' || $action === 'update') {
         } catch (PDOException $e) {}
     }
 
-    if (isset($_FILES['bg_image']) && $_FILES['bg_image']['error'] === UPLOAD_ERR_OK) {
-        $allowed = ['jpg', 'jpeg', 'png', 'webp'];
-        $ext = strtolower(pathinfo($_FILES['bg_image']['name'], PATHINFO_EXTENSION));
-        if (in_array($ext, $allowed)) {
-            $dir = dirname(__DIR__, 2) . '/uploads/certs/';
-            if (!is_dir($dir)) mkdir($dir, 0775, true);
-            $dest = $dir . uniqid() . '.' . $ext;
-            if (move_uploaded_file($_FILES['bg_image']['tmp_name'], $dest)) {
-                $bgImage = 'uploads/certs/' . basename($dest);
-            }
-        }
+    if (isset($_FILES['bg_image']) && $_FILES['bg_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        if ($_FILES['bg_image']['error'] !== UPLOAD_ERR_OK) { echo json_encode(['status'=>'error','message'=>'Upload gagal.']); exit; }
+        $res = uploadImageToCloudinary($_FILES['bg_image'], 'mcm/certs');
+        if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
+        $bgImage = $res['url'];
     } elseif ($existing && !empty($existing['bg_image'])) {
         $bgImage = $existing['bg_image'];
     }

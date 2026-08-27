@@ -4,6 +4,7 @@ header('Content-Type: application/json');
 if (!isset($_SESSION['admin_logged_in'])) exit;
 
 require_once '../../config/database.php';
+require_once '../../includes/cloudinary.php';
 
 $action = $_POST['action'] ?? '';
 
@@ -17,21 +18,20 @@ if ($action === 'create') {
         exit;
     }
 
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $allowed = ['jpg', 'jpeg', 'png', 'webp'];
-        $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
-        if (in_array($ext, $allowed)) {
-            $dest = 'uploads/instructors/' . uniqid() . '.' . $ext;
-            if (move_uploaded_file($_FILES['image']['tmp_name'], '../../' . $dest)) {
-                $stmt = $pdo->prepare("INSERT INTO instructors (name, category, specialization, image) VALUES (?, ?, ?, ?)");
-                $stmt->execute([$name, $category, $spec, $dest]);
-                echo json_encode(['status' => 'success', 'message' => 'Instruktur berhasil ditambahkan.']);
-                exit;
-            }
+    if (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        if ($_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+            $tmpErr = $_FILES['image']['error'];
+            $msg = $tmpErr===UPLOAD_ERR_INI_SIZE||$tmpErr===UPLOAD_ERR_FORM_SIZE?'File terlalu besar.':'Upload gagal.';
+            echo json_encode(['status'=>'error','message'=>$msg]); exit;
         }
+        $res = uploadImageToCloudinary($_FILES['image'], 'mcm/instructors');
+        if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
+        $stmt = $pdo->prepare("INSERT INTO instructors (name, category, specialization, image) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$name, $category, $spec, $res['url']]);
+        echo json_encode(['status'=>'success','message'=>'Instruktur berhasil ditambahkan.']); exit;
     }
     
-    // Default fallback if no image or upload fails
+    // Default fallback if no image selected
     $stmt = $pdo->prepare("INSERT INTO instructors (name, category, specialization, image) VALUES (?, ?, ?, ?)");
     $stmt->execute([$name, $category, $spec, 'assets/img/logo.png']);
     echo json_encode(['status' => 'success', 'message' => 'Instruktur berhasil ditambahkan (tanpa foto).']);
@@ -47,15 +47,13 @@ if ($action === 'create') {
     }
 
     $image = null;
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $allowed = ['jpg', 'jpeg', 'png', 'webp'];
-        $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
-        if (in_array($ext, $allowed)) {
-            $dest = 'uploads/instructors/' . uniqid() . '.' . $ext;
-            if (move_uploaded_file($_FILES['image']['tmp_name'], '../../' . $dest)) {
-                $image = $dest;
-            }
+    if (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        if ($_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+            echo json_encode(['status'=>'error','message'=>'Upload gagal.']); exit;
         }
+        $res = uploadImageToCloudinary($_FILES['image'], 'mcm/instructors');
+        if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
+        $image = $res['url'];
     }
 
     if ($image) {

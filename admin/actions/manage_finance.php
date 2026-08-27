@@ -8,6 +8,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 }
 
 require_once '../../config/database.php';
+require_once '../../includes/cloudinary.php';
 
 // Auto-create & upgrade table
 try {
@@ -108,21 +109,22 @@ if ($action === 'create' || $action === 'update') {
         $transaction_date = date('Y-m-d');
     }
 
-    // Handle receipt image upload
+    // Handle receipt image upload -> Cloudinary for images, local for pdf
     $receipt_image = null;
-    if (isset($_FILES['receipt_image']) && $_FILES['receipt_image']['error'] === UPLOAD_ERR_OK) {
-        $allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+    if (isset($_FILES['receipt_image']) && $_FILES['receipt_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        if ($_FILES['receipt_image']['error'] !== UPLOAD_ERR_OK) { echo json_encode(['status'=>'error','message'=>'Upload nota gagal.']); exit; }
         $ext = strtolower(pathinfo($_FILES['receipt_image']['name'], PATHINFO_EXTENSION));
-        if (in_array($ext, $allowed)) {
+        if (in_array($ext, ['jpg','jpeg','png','webp'], true)) {
+            $res = uploadImageToCloudinary($_FILES['receipt_image'], 'mcm/finance');
+            if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
+            $receipt_image = $res['url'];
+        } elseif ($ext === 'pdf') {
             $uploadDir = '../../uploads/finance';
             if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
-
-            $newFilename = uniqid('rec_') . '.' . $ext;
-            $dest = 'uploads/finance/' . $newFilename;
-            if (move_uploaded_file($_FILES['receipt_image']['tmp_name'], '../../' . $dest)) {
-                $receipt_image = $dest;
-            }
-        }
+            $dest = 'uploads/finance/' . uniqid('rec_') . '.pdf';
+            if (move_uploaded_file($_FILES['receipt_image']['tmp_name'], '../../' . $dest)) $receipt_image = $dest;
+            else { echo json_encode(['status'=>'error','message'=>'Gagal menyimpan PDF.']); exit; }
+        } else { echo json_encode(['status'=>'error','message'=>'Format nota harus JPG/PNG/WEBP/PDF.']); exit; }
     }
 
     try {
@@ -163,7 +165,7 @@ if ($action === 'delete') {
         $stmt = $pdo->prepare("SELECT receipt_image FROM finance_transactions WHERE id = ?");
         $stmt->execute([$id]);
         $rec = $stmt->fetch();
-        if ($rec && !empty($rec['receipt_image'])) {
+        if ($rec && !empty($rec['receipt_image']) && strpos($rec['receipt_image'], 'http') !== 0) {
             @unlink('../../' . $rec['receipt_image']);
         }
 

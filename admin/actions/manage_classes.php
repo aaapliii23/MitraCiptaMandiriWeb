@@ -8,6 +8,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 }
 
 require_once '../../config/database.php';
+require_once '../../includes/cloudinary.php';
 
 $action = $_POST['action'] ?? '';
 
@@ -77,27 +78,12 @@ if ($action === 'create' || $action === 'update') {
     $features_array = array_map('trim', explode(',', $features_raw));
     $features_json = json_encode($features_array);
 
-    // Image Upload Handling
+    // Image Upload Handling -> Cloudinary
     $imagePath = '';
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $allowed = ['jpg', 'jpeg', 'png', 'webp'];
-        $filename = $_FILES['image']['name'];
-        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        
-        if (!in_array($ext, $allowed)) {
-            echo json_encode(['status' => 'error', 'message' => 'Format file tidak didukung.']);
-            exit;
-        }
-        
-        $newFilename = uniqid() . '.' . $ext;
-        $destination = 'uploads/classes/' . $newFilename;
-        
-        if (move_uploaded_file($_FILES['image']['tmp_name'], '../../' . $destination)) {
-            $imagePath = $destination;
-        } else {
-            echo json_encode(['status' => 'error', 'message' => 'Gagal mengupload gambar.']);
-            exit;
-        }
+    if (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        $res = uploadImageToCloudinary($_FILES['image'], 'mcm/classes');
+        if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
+        $imagePath = $res['url'];
     }
 
     // Cek kolom baru ada atau tidak (untuk backward compat)

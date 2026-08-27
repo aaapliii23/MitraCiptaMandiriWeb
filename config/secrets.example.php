@@ -21,3 +21,11 @@ define('MCM_WA_ADMIN', '6285793935707');
 
 // Nomor WhatsApp chatbot (tombol mengambang & target balasan otomatis)
 define('MCM_WA_CHATBOT', '6285793935707');
+
+// --- Cloudinary (upload gambar) ---
+define('CLOUDINARY_CLOUD_NAME', 'your_cloud_name');
+define('CLOUDINARY_API_KEY', 'your_api_key');
+define('CLOUDINARY_API_SECRET', 'your_api_secret');
+
+// --- Fonnte WhatsApp Gateway ---
+define('FONNTE_TOKEN', 'your_fonnte_token'); // https://api.fonnte.com/send -> header Authorization: <token>

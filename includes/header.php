@@ -33,6 +33,7 @@ if (!isset($classItems)) {
         $classItems = $stmt->fetchAll();
     } catch(PDOException $e) { $classItems = []; }
 }
+$headerLogo = function_exists('mcm_setting') ? mcm_setting('logo_url', $base_url.'assets/img/logo.png') : $base_url.'assets/img/logo.png';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -55,7 +56,7 @@ if (!isset($classItems)) {
     <nav class="navbar navbar-expand-lg fixed-top<?php echo $is_home ? '' : ' navbar-solid'; ?>" style="transition: all 0.4s ease;">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="<?php echo $base_url; ?>index.php">
-                <img src="<?php echo $base_url; ?>assets/img/logo.png" alt="MCM Logo" style="height: 40px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
+                <img src="<?php echo htmlspecialchars($headerLogo); ?>" alt="MCM Logo" style="height: 40px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
                 <div class="ms-2 ps-2 border-start border-2 brand-divider d-flex flex-column justify-content-center" style="height: 35px;">
                     <span class="fw-bold brand-text" style="font-size: 0.75rem; letter-spacing: 1px; line-height: 1.1;">MITRA CIPTA</span>
                     <span class="fw-bold brand-text" style="font-size: 0.75rem; letter-spacing: 1px; line-height: 1.1;">MANDIRI</span>
