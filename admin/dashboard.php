@@ -249,7 +249,12 @@ if ($page === 'materials') {
 $chats = [];
 $threadNumber = '';
 if ($page === 'chat') {
-    $threadNumber = preg_replace('/\D+/', '', $_GET['thread'] ?? '');
+    $rawThread = $_GET['thread'] ?? '';
+    if (str_starts_with($rawThread, 'web-')) {
+        $threadNumber = preg_replace('/[^a-z0-9\-]/', '', strtolower($rawThread));
+    } else {
+        $threadNumber = preg_replace('/\D+/', '', $rawThread);
+    }
     try {
         $chats = $pdo->query("SELECT * FROM chat_messages ORDER BY created_at DESC, id DESC LIMIT 500")->fetchAll();
     } catch (PDOException $e) {}

@@ -28,7 +28,7 @@ if ($action === 'send_reply') {
     }
 
     try {
-        wa_send_message($pdo, $waNumber, $message, 'admin');
+        wa_send_message($pdo, $waNumber, $message, 'admin', 'admin');
         echo json_encode(['status' => 'success', 'message' => 'Balasan terkirim.']);
     } catch (PDOException $e) {
         echo json_encode(['status' => 'error', 'message' => 'Gagal mengirim balasan.']);

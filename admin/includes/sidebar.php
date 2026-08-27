@@ -57,7 +57,15 @@ function mcm_item($page, $target, $icon, $label) {
             <?php echo mcm_item($page, 'orders', 'fas fa-shopping-cart', 'Pesanan &amp; Transaksi'); ?>
             <?php echo mcm_item($page, 'finance', 'fas fa-money-bill-wave', 'Keuangan'); ?>
             <?php echo mcm_item($page, 'testimonials', 'fas fa-comment-dots', 'Testimoni'); ?>
-            <?php echo mcm_item($page, 'chat', 'fab fa-whatsapp', 'Chat WhatsApp'); ?>
+            <?php
+            $chatUnread = 0;
+            try {
+                if (isset($pdo)) {
+                    $chatUnread = (int)$pdo->query("SELECT COUNT(*) FROM (SELECT MAX(id) AS mid FROM chat_messages GROUP BY wa_number) t JOIN chat_messages m ON m.id=t.mid WHERE m.direction='in' AND m.sender_type='visitor'")->fetchColumn();
+                }
+            } catch (Exception $e) {}
+            ?>
+            <li class="nav-item mb-1"><a href="?page=chat" class="nav-link <?php echo $page==='chat'?'active':''; ?>"><i class="fab fa-whatsapp"></i> Chat WhatsApp <?php if($chatUnread>0) echo '<span class="badge bg-danger rounded-pill ms-2">'.$chatUnread.'</span>'; ?></a></li>
             <?php echo mcm_item($page, 'chatbot', 'fas fa-robot', 'Chatbot &amp; Balasan'); ?>
         </ul>
         </div>
