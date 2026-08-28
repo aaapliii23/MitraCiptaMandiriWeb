@@ -66,6 +66,7 @@ function wa_send_message($pdo, $toNumber, $message, $matchedIntent = null, $send
     // ponytail: Fonnte first (server-side), fallback ke Cloud API, jangan gagalkan flow utama
     $r = sendWhatsAppNotification($toNumber, $message);
     if ($r['ok']) return true;
+    error_log('[Fonnte] wa_send_message gagal ke ' . $toNumber . ': ' . ($r['error'] ?? 'unknown'));
     // log sudah di sendWhatsAppNotification, lanjut fallback
     if (defined('WA_ACCESS_TOKEN') && WA_ACCESS_TOKEN !== '' && defined('WA_PHONE_NUMBER_ID') && WA_PHONE_NUMBER_ID !== '') {
         $ch = curl_init('https://graph.facebook.com/v19.0/' . WA_PHONE_NUMBER_ID . '/messages');

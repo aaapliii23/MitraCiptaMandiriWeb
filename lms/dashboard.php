@@ -124,7 +124,7 @@ try {
                     ?>
                         <div class="col-md-6 col-lg-4">
                             <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
-                                <img src="../<?php echo htmlspecialchars($c['image']); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="card-img-top" style="height: 160px; object-fit: cover;" onerror="this.src='../assets/img/logo.png';">
+                                <img src="<?php echo htmlspecialchars(asset_src($c['image'])); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="card-img-top" style="height: 160px; object-fit: cover;" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
                                 <div class="card-body p-4 d-flex flex-column">
                                     <div class="d-flex flex-wrap gap-2 mb-2">
                                         <span class="badge bg-soft-primary text-primary rounded-pill px-3"><?php echo htmlspecialchars($c['category']); ?></span>
@@ -172,7 +172,7 @@ try {
                     <?php foreach ($offline as $c): ?>
                         <div class="col-md-6 col-lg-4">
                             <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
-                                <img src="../<?php echo htmlspecialchars($c['image']); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="card-img-top" style="height: 160px; object-fit: cover;" onerror="this.src='../assets/img/logo.png';">
+                                <img src="<?php echo htmlspecialchars(asset_src($c['image'])); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="card-img-top" style="height: 160px; object-fit: cover;" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
                                 <div class="card-body p-4 d-flex flex-column">
                                     <div class="d-flex flex-wrap gap-2 mb-2">
                                         <span class="badge bg-soft-primary text-primary rounded-pill px-3"><?php echo htmlspecialchars($c['category']); ?></span>
