@@ -70,7 +70,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['user_id'] = $userId;
                 $_SESSION['user_name'] = $name;
                 $_SESSION['user_email'] = $email;
-
+                $cv = preg_replace('/[^a-f0-9]/', '', strtolower($_POST['chat_visitor_id'] ?? ''));
+                if ($cv !== '' && strlen($cv) === 12) {
+                    try { $pdo->prepare("UPDATE chat_messages SET user_id=? WHERE wa_number=? AND (user_id IS NULL OR user_id=0)")->execute([$userId, 'web-'.$cv]); } catch (Exception $e) {}
+                    $_SESSION['chat_visitor_id'] = $cv;
+                    setcookie('mcmChatVid', $cv, time()+90*24*60*60, '/');
+                }
                 if ($isAjax) {
                     header('Content-Type: application/json');
                     echo json_encode(['status' => 'success']);
@@ -106,8 +111,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php if (!empty($errorMessage)): ?>
                         <div class="alert alert-danger py-2 small"><?php echo htmlspecialchars($errorMessage); ?></div>
                     <?php endif; ?>
-                    <form method="POST" action="user_register.php">
+                    <form method="POST" action="user_register.php" id="registerForm">
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                        <input type="hidden" name="chat_visitor_id" id="chatVisitorIdReg" value="">
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Nama Asli Lengkap</label>
                             <input type="text" class="form-control" name="name" required autocomplete="name" minlength="3" maxlength="100" pattern="[A-Za-z\u00C0-\u017F\s-]+">
@@ -165,6 +171,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     setupToggle('togglePassword', 'password');
     setupToggle('togglePassword2', 'password2');
+    var cv = localStorage.getItem('mcmChatVid') || (document.cookie.match(/(?:^|; )mcmChatVid=([a-f0-9]{12})/) || [])[1] || '';
+    var el = document.getElementById('chatVisitorIdReg');
+    if (el) el.value = cv;
 });
 </script>
 

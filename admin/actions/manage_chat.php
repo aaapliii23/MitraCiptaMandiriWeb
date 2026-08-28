@@ -27,9 +27,18 @@ if ($action === 'send_reply') {
         exit;
     }
 
+    $isAnon = str_starts_with($waNumber, 'web-');
     try {
-        wa_send_message($pdo, $waNumber, $message, 'admin', 'admin');
-        echo json_encode(['status' => 'success', 'message' => 'Balasan terkirim.']);
+        $ok = wa_send_message($pdo, $waNumber, $message, 'admin', 'admin');
+        if ($isAnon) {
+            echo json_encode(['status' => 'success', 'message' => 'Balasan tersimpan — hanya di widget', 'wa_sent' => false]);
+        } else {
+            if ($ok) {
+                echo json_encode(['status' => 'success', 'message' => 'Balasan terkirim ke WhatsApp', 'wa_sent' => true]);
+            } else {
+                echo json_encode(['status' => 'success', 'message' => 'Balasan tersimpan, tapi gagal terkirim ke WhatsApp. Cek koneksi Fonnte.', 'wa_sent' => false, 'wa_error' => 'Fonnte gagal']);
+            }
+        }
     } catch (PDOException $e) {
         echo json_encode(['status' => 'error', 'message' => 'Gagal mengirim balasan.']);
     }

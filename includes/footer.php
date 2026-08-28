@@ -188,11 +188,20 @@
         const text = document.getElementById('mcmChatText');
         let opened = false;
         let pollTimer = null;
-        let vid = localStorage.getItem('mcmChatVid');
-        if (!vid || !/^[a-f0-9]{12}$/.test(vid)) {
-            vid = Math.random().toString(16).slice(2,14).padEnd(12,'0').slice(0,12);
-            localStorage.setItem('mcmChatVid', vid);
+        function getVid() {
+            let v = localStorage.getItem('mcmChatVid');
+            if (!v || !/^[a-f0-9]{12}$/.test(v)) {
+                const m = document.cookie.match(/(?:^|; )mcmChatVid=([a-f0-9]{12})/);
+                if (m) v = m[1];
+            }
+            if (!v || !/^[a-f0-9]{12}$/.test(v)) {
+                v = Math.random().toString(16).slice(2,14).padEnd(12,'0').slice(0,12);
+            }
+            localStorage.setItem('mcmChatVid', v);
+            document.cookie = 'mcmChatVid=' + v + '; expires=' + new Date(Date.now()+90*24*60*60*1000).toUTCString() + '; path=/';
+            return v;
         }
+        let vid = getVid();
 
         function esc(s) {
             return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

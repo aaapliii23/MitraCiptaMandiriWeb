@@ -8,12 +8,18 @@ header('Content-Type: application/json');
 if (empty($_SESSION['chat_visitor_id'])) {
     $_SESSION['chat_visitor_id'] = substr(bin2hex(random_bytes(8)), 0, 12);
 }
-// ponytail: persist anon thread via localStorage vid (survive PHP session GC)
-$clientVid = preg_replace('/[^a-f0-9]/', '', strtolower($_POST['visitor_id'] ?? $_GET['visitor_id'] ?? ''));
+// ponytail: persist anon thread via localStorage+cookie vid (90 hari, survive PHP session GC)
+$clientVid = preg_replace('/[^a-f0-9]/', '', strtolower($_POST['visitor_id'] ?? $_GET['visitor_id'] ?? $_COOKIE['mcmChatVid'] ?? ''));
 if ($clientVid !== '' && strlen($clientVid) === 12) {
     $_SESSION['chat_visitor_id'] = $clientVid;
 }
 $visitorNumber = 'web-' . $_SESSION['chat_visitor_id'];
+// set cookie 90 hari agar anonim kembali beberapa jam tetap terhubung
+setcookie('mcmChatVid', $_SESSION['chat_visitor_id'], time()+90*24*60*60, '/');
+// ponytail: lazy migrasi anonim -> user (jika sudah login, hubungkan riwayat lama)
+if ($userId) {
+    try { $pdo->prepare("UPDATE chat_messages SET user_id=? WHERE wa_number=? AND (user_id IS NULL OR user_id=0)")->execute([$userId, $visitorNumber]); } catch (Exception $e) {}
+}
 $userId = isset($_SESSION['user_logged_in']) ? (int)($_SESSION['user_id'] ?? 0) : null;
 if ($userId < 1) $userId = null;
 
@@ -21,8 +27,13 @@ $action = $_GET['action'] ?? ($_POST['action'] ?? 'history');
 
 if ($action === 'history') {
     try {
-        $stmt = $pdo->prepare("SELECT direction, sender_type, message, matched_intent, DATE_FORMAT(created_at, '%H:%i') AS time FROM chat_messages WHERE wa_number = ? ORDER BY id ASC LIMIT 100");
-        $stmt->execute([$visitorNumber]);
+        if ($userId) {
+            $stmt = $pdo->prepare("SELECT direction, sender_type, message, matched_intent, DATE_FORMAT(created_at, '%H:%i') AS time FROM chat_messages WHERE wa_number = ? OR (user_id = ? AND user_id IS NOT NULL) ORDER BY id ASC LIMIT 100");
+            $stmt->execute([$visitorNumber, $userId]);
+        } else {
+            $stmt = $pdo->prepare("SELECT direction, sender_type, message, matched_intent, DATE_FORMAT(created_at, '%H:%i') AS time FROM chat_messages WHERE wa_number = ? ORDER BY id ASC LIMIT 100");
+            $stmt->execute([$visitorNumber]);
+        }
         echo json_encode(['status' => 'success', 'messages' => $stmt->fetchAll(), 'visitor_id' => $_SESSION['chat_visitor_id']]);
     } catch (PDOException $e) {
         echo json_encode(['status' => 'error', 'message' => 'Gagal memuat percakapan.']);

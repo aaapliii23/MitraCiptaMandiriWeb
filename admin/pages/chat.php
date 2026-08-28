@@ -151,7 +151,7 @@ if (empty($threadNumber)) {
                     <div class="fw-bold text-dark"><i class="fab fa-whatsapp text-success me-2"></i><?php echo htmlspecialchars($threadNumber); ?></div>
                     <span class="badge bg-light text-dark border rounded-pill px-3"><?php echo count($messages); ?> pesan</span>
                 </div>
-                <div class="card-body p-4" style="max-height: 460px; overflow-y: auto; background: #f8fafc;">
+                <div id="adminChatBody" class="card-body p-4" style="max-height: 460px; overflow-y: auto; background: #f8fafc;">
                     <?php if (empty($messages)): ?>
                         <div class="text-center text-muted py-5">Belum ada pesan di percakapan ini.</div>
                     <?php else: ?>
@@ -170,7 +170,18 @@ if (empty($threadNumber)) {
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
+                <script>
+                (function(){
+                    var b=document.getElementById('adminChatBody');
+                    if(b) b.scrollTop=b.scrollHeight;
+                })();
+                </script>
                 <div class="card-footer bg-white border-0 p-4">
+                    <?php $isAnonThread = str_starts_with($threadNumber, 'web-'); ?>
+                    <div class="small mb-2 <?php echo $isAnonThread ? 'text-muted' : 'text-success'; ?>">
+                        <i class="fas <?php echo $isAnonThread ? 'fa-desktop' : 'fa-whatsapp'; ?> me-1"></i>
+                        <?php echo $isAnonThread ? 'Balasan ini hanya muncul di widget chat website' : 'Balasan ini akan dikirim ke WhatsApp'; ?>
+                    </div>
                     <form id="chatReplyForm" class="d-flex gap-2" action="<?php echo $adminBase; ?>/actions/manage_chat.php" method="POST">
                         <input type="hidden" name="action" value="send_reply">
                         <input type="hidden" name="wa_number" value="<?php echo htmlspecialchars($threadNumber); ?>">
@@ -195,8 +206,7 @@ if (empty($threadNumber)) {
                         .then(function(r){ return r.json(); })
                         .then(function(d){
                             if (d.status === 'success') {
-                                var body = document.querySelector('.card-body[style*="max-height"]');
-                                if (!body) body = document.querySelector('.card-body.p-4');
+                                var body = document.getElementById('adminChatBody');
                                 // hapus placeholder "Belum ada pesan" jika ada
                                 var empty = body ? body.querySelector('.text-center.text-muted.py-5') : null;
                                 if (empty) empty.remove();
@@ -210,6 +220,10 @@ if (empty($threadNumber)) {
                                 wrap.innerHTML = '<div class="rounded-3 px-3 py-2 shadow-sm small bg-warning text-dark border border-warning" style="max-width:75%;"><div>' + esc(msg) + ' <span class="badge bg-dark ms-1" style="font-size:0.6rem;">Admin</span></div><div class="small mt-1 text-dark opacity-75">' + time + ' <span class="badge bg-dark text-white ms-1">admin</span></div></div>';
                                 if (body) { body.appendChild(wrap); body.scrollTop = body.scrollHeight; }
                                 form.reset();
+                                if (d.wa_error) {
+                                    if (window.Swal) Swal.fire('Tersimpan', d.message, 'warning');
+                                    else alert(d.message);
+                                }
                             } else {
                                 if (window.Swal) Swal.fire('Gagal', d.message || 'Gagal mengirim', 'error');
                                 else alert(d.message || 'Gagal');

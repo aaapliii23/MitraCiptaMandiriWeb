@@ -5,6 +5,7 @@ if (!isset($_SESSION['admin_logged_in'])) exit;
 
 require_once '../../config/database.php';
 require_once '../../includes/cloudinary.php';
+try { $cols = $pdo->query("SHOW COLUMNS FROM instructors")->fetchAll(PDO::FETCH_COLUMN); if (!in_array('image_public_id', $cols)) $pdo->exec("ALTER TABLE instructors ADD COLUMN image_public_id VARCHAR(255) DEFAULT NULL AFTER image"); } catch (Throwable $e) {}
 
 $action = $_POST['action'] ?? '';
 
@@ -26,8 +27,9 @@ if ($action === 'create') {
         }
         $res = uploadImageToCloudinary($_FILES['image'], 'mcm/instructors');
         if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
-        $stmt = $pdo->prepare("INSERT INTO instructors (name, category, specialization, image) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$name, $category, $spec, $res['url']]);
+        $imagePublicId = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']);
+        $stmt = $pdo->prepare("INSERT INTO instructors (name, category, specialization, image, image_public_id) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$name, $category, $spec, $res['url'], $imagePublicId]);
         echo json_encode(['status'=>'success','message'=>'Instruktur berhasil ditambahkan.']); exit;
     }
     
@@ -46,19 +48,19 @@ if ($action === 'create') {
         exit;
     }
 
-    $image = null;
+    $image = null; $imagePublicId = null;
     if (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
         if ($_FILES['image']['error'] !== UPLOAD_ERR_OK) {
             echo json_encode(['status'=>'error','message'=>'Upload gagal.']); exit;
         }
         $res = uploadImageToCloudinary($_FILES['image'], 'mcm/instructors');
         if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
-        $image = $res['url'];
+        $image = $res['url']; $imagePublicId = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']);
     }
 
     if ($image) {
-        $stmt = $pdo->prepare("UPDATE instructors SET name = ?, category = ?, specialization = ?, image = ? WHERE id = ?");
-        $stmt->execute([$name, $category, $spec, $image, $id]);
+        $stmt = $pdo->prepare("UPDATE instructors SET name = ?, category = ?, specialization = ?, image = ?, image_public_id = ? WHERE id = ?");
+        $stmt->execute([$name, $category, $spec, $image, $imagePublicId, $id]);
     } else {
         $stmt = $pdo->prepare("UPDATE instructors SET name = ?, category = ?, specialization = ? WHERE id = ?");
         $stmt->execute([$name, $category, $spec, $id]);
@@ -71,8 +73,11 @@ if ($action === 'create') {
         exit;
     }
     try {
+        try { $stmt = $pdo->prepare("SELECT image, image_public_id FROM instructors WHERE id = ?"); $stmt->execute([$id]); $row = $stmt->fetch(); } catch (PDOException $e) { $stmt = $pdo->prepare("SELECT image FROM instructors WHERE id = ?"); $stmt->execute([$id]); $row = $stmt->fetch(); if ($row) $row['image_public_id'] = ''; }
         $stmt = $pdo->prepare("DELETE FROM instructors WHERE id = ?");
         $stmt->execute([$id]);
+        if ($row && (!empty($row['image_public_id']) || str_contains($row['image'] ?? '', 'res.cloudinary.com'))) { $pid = $row['image_public_id'] ?: $row['image']; $delRes = deleteImageFromCloudinary($pid); if (!$delRes['ok']) error_log("[Cloudinary delete instructors $id] ".$delRes['error']); }
+        if ($row && strpos($row['image'] ?? '', 'http') !== 0 && !empty($row['image']) && file_exists('../../' . $row['image'])) { @unlink('../../' . $row['image']); }
         echo json_encode(['status' => 'success', 'message' => 'Data instruktur dihapus.']);
     } catch (PDOException $e) {
         if ($e->getCode() == 23000) { // Integrity constraint violation

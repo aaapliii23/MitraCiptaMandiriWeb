@@ -31,6 +31,8 @@ if ($isLogoUpload) {
     $res = uploadImageToCloudinary($_FILES['logo'], 'mcm/logo');
     if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
     $upsert->execute(['logo_url', $res['url']]);
+    $logoPublicId = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']);
+    $upsert->execute(['logo_public_id', $logoPublicId]);
 }
 
 echo json_encode(['status' => 'success', 'message' => 'Pengaturan website berhasil diperbarui.']);

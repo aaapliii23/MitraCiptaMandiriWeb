@@ -86,9 +86,62 @@ function uploadImageToCloudinary(array $file, string $folder = CLOUDINARY_FOLDER
     }
     $data = json_decode($resp, true);
     if ($code >= 200 && $code < 300 && isset($data['secure_url'])) {
-        return ['ok'=>true, 'url'=>$data['secure_url']];
+        return ['ok'=>true, 'url'=>$data['secure_url'], 'public_id'=>$data['public_id'] ?? ''];
     }
     $msg = $data['error']['message'] ?? ('Upload gagal (HTTP '.$code.')');
     // Cloudinary kadang kirim "File size too large" dll
     return ['ok'=>false, 'error'=>$msg];
+}
+
+/**
+ * Ekstrak public_id dari secure_url Cloudinary.
+ * Contoh: https://res.cloudinary.com/ijpgxnt4/image/upload/v123/mcm/gallery/abc123.jpg -> mcm/gallery/abc123
+ */
+function cloudinaryPublicIdFromUrl(string $url): string {
+    if (!str_contains($url, 'res.cloudinary.com')) return '';
+    $p = parse_url($url, PHP_URL_PATH);
+    if (!$p) return '';
+    // cari /upload/ lalu ambil setelah version v123/
+    $pos = strpos($p, '/upload/');
+    if ($pos === false) return '';
+    $after = substr($p, $pos + 8); // setelah /upload/
+    // hapus v123/ di awal jika ada
+    $after = preg_replace('#^v\d+/#', '', $after);
+    // hapus ekstensi
+    $after = preg_replace('/\.[a-z0-9]+$/i', '', $after);
+    return ltrim($after, '/');
+}
+
+/**
+ * Hapus gambar dari Cloudinary (signed destroy).
+ * @param string $publicIdOrUrl public_id atau secure_url
+ * @return array ['ok'=>bool,'error'=>string]
+ * ponytail: Admin API destroy, SHA1(public_id+timestamp+secret)
+ */
+function deleteImageFromCloudinary(string $publicIdOrUrl): array {
+    $publicId = $publicIdOrUrl;
+    if (str_contains($publicIdOrUrl, 'res.cloudinary.com')) {
+        $publicId = cloudinaryPublicIdFromUrl($publicIdOrUrl);
+    }
+    $publicId = trim($publicId);
+    if ($publicId === '') return ['ok'=>false, 'error'=>'public_id kosong'];
+    if (!str_contains($publicId, '/')) {
+        // fallback: coba tanpa folder (legacy)
+    }
+    $cloud = CLOUDINARY_CLOUD_NAME; $key = CLOUDINARY_API_KEY; $secret = CLOUDINARY_API_SECRET;
+    if (!$cloud || !$key || !$secret) return ['ok'=>false, 'error'=>'Konfigurasi Cloudinary belum diatur'];
+    $timestamp = time();
+    $toSign = "public_id={$publicId}&timestamp={$timestamp}";
+    $signature = sha1($toSign . $secret);
+    $url = "https://api.cloudinary.com/v1_1/{$cloud}/image/destroy";
+    $post = ['public_id'=>$publicId,'api_key'=>$key,'timestamp'=>$timestamp,'signature'=>$signature];
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>$post,CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>15,CURLOPT_SSL_VERIFYPEER=>true]);
+    $resp = curl_exec($ch); $err=curl_error($ch); $code=curl_getinfo($ch,CURLINFO_HTTP_CODE); curl_close($ch);
+    if ($resp===false) return ['ok'=>false,'error'=>'Koneksi Cloudinary gagal: '.$err];
+    $data=json_decode($resp,true);
+    $res = $data['result'] ?? '';
+    if (($code>=200 && $code<300) && ($res==='ok' || $res==='not found')) return ['ok'=>true];
+    $msg=$data['error']['message'] ?? ('Hapus gagal (HTTP '.$code.': '.$res.')');
+    return ['ok'=>false,'error'=>$msg];
 }
