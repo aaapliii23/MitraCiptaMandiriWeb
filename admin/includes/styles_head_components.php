@@ -151,4 +151,34 @@
             .card { border-radius: 1rem; }
             .table thead { display: none; } /* Hide headers on very small mobile if card fallback is used, but for now we keep table-responsive */
         }
+
+        /* ===== Compact admin tables — no horizontal scroll (1280-1440) ===== */
+        .admin-table-toolbar {
+            display:flex; align-items:center; justify-content:space-between; gap:12px;
+            padding:10px 14px; margin-bottom:10px;
+            background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px;
+        }
+        .admin-table-toolbar.d-none { display:none !important; }
+        .bulk-select-all, .bulk-row-check { width:16px; height:16px; cursor:pointer; accent-color:#2563eb; }
+        th.col-check, td.col-check { width:38px; text-align:center; padding:0.5rem 0.3rem !important; }
+        .table.admin-compact { width:100%; table-layout:auto; }
+        .table.admin-compact thead th { padding:0.7rem 0.75rem; font-size:0.68rem; white-space:nowrap; }
+        .table.admin-compact tbody td { padding:0.65rem 0.75rem; font-size:0.82rem; vertical-align:middle; }
+        .cell-ellipsis { max-width:165px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-block; vertical-align:middle; }
+        .cell-ellipsis-lg { max-width:240px; }
+        .cell-stack { display:flex; flex-direction:column; gap:2px; line-height:1.25; }
+        .cell-stack .line-main { font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
+        .cell-stack .line-sub { font-size:0.72rem; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
+        .table.admin-compact .badge { font-size:0.68rem; padding:0.35rem 0.6rem; }
+        .table.admin-compact .btn-action { width:32px; height:32px; border-radius:0.6rem; font-size:0.8rem; }
+        /* wrapper tanpa scroll — semua kolom terlihat */
+        .table-responsive--no-scroll { overflow:visible !important; overflow-x:visible !important; }
+        /* Sembunyikan kolom sekunder di layar sempit, tampilkan via expand */
+        .col-optional { }
+        @media (max-width: 1280px) {
+            .col-optional { display:none !important; }
+        }
+        .row-expand-detail { display:none; background:#f8fafc; }
+        .row-expand-detail.open { display:table-row; }
+        .row-expand-detail td { padding:0.75rem 1rem !important; font-size:0.8rem; color:#475569; }
 </style>

@@ -52,29 +52,36 @@ if (empty($threadNumber)) {
                 <button type="button" class="btn btn-sm rounded-pill px-3 btn-outline-primary" data-filter="wa"><i class="fab fa-whatsapp me-1"></i>WhatsApp</button>
                 <button type="button" class="btn btn-sm rounded-pill px-3 btn-outline-primary" data-filter="web">Widget (Anonim)</button>
             </div>
+            <div data-bulk-table="chat">
+            <div class="admin-table-toolbar d-none" data-bulk-toolbar>
+                <div class="small fw-bold text-primary"><i class="fas fa-check-square me-1"></i><span data-bulk-count>0 dipilih</span></div>
+                <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" data-bulk-delete><i class="fas fa-trash me-1"></i>Hapus Terpilih (<span data-bulk-count-num>0</span>)</button>
+            </div>
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table align-middle mb-0">
+                    <div class="table-responsive table-responsive--no-scroll">
+                        <table class="table align-middle admin-compact mb-0">
                             <thead class="bg-light">
                                 <tr>
-                                    <th class="ps-4">Nomor WhatsApp</th>
+                                    <th class="col-check"><input type="checkbox" class="bulk-select-all js-bulk-select-all"></th>
+                                    <th>Nomor WhatsApp</th>
                                     <th>Pesan Terakhir</th>
-                                    <th class="text-center">Intensitas Masuk</th>
+                                    <th class="text-center">Masuk</th>
                                     <th class="text-end pe-4">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="conversationTableBody">
                                 <?php if (empty($conversations)): ?>
-                                    <tr><td colspan="4" class="text-center py-5 text-muted">Belum ada percakapan.</td></tr>
+                                    <tr><td colspan="5" class="text-center py-5 text-muted">Belum ada percakapan.</td></tr>
                                 <?php else: ?>
                                     <?php foreach ($conversations as $cv): $kind = str_starts_with($cv['number'],'web-') ? 'web' : 'wa'; ?>
                                         <tr data-kind="<?php echo $kind; ?>">
-                                            <td class="ps-4">
-                                                <div class="fw-bold text-dark">
-                                                    <i class="fab fa-whatsapp text-success me-2"></i><?php echo htmlspecialchars($cv['number']); ?>
+                                            <td class="col-check"><input type="checkbox" class="bulk-row-check js-bulk-row" value="<?php echo htmlspecialchars($cv['number']); ?>"></td>
+                                            <td>
+                                                <div class="fw-bold text-dark small" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px;" title="<?php echo htmlspecialchars($cv['number']); ?>">
+                                                    <i class="fab fa-whatsapp text-success me-1"></i><?php echo htmlspecialchars($cv['number']); ?>
                                                     <?php if ($cv['in_count'] > 0): ?>
-                                                        <span class="badge bg-success rounded-pill ms-1"><?php echo $cv['in_count']; ?></span>
+                                                        <span class="badge bg-success rounded-pill ms-1" style="font-size:0.6rem;"><?php echo $cv['in_count']; ?></span>
                                                     <?php endif; ?>
                                                 </div>
                                             </td>
@@ -102,6 +109,7 @@ if (empty($threadNumber)) {
                     </div>
                 </div>
             </div>
+            </div>
             <script>
             (function(){
                 if (typeof window.debounce !== 'function') {
@@ -127,7 +135,7 @@ if (empty($threadNumber)) {
                     var empty=tbody.querySelector('tr.table-search-empty');
                     if(q&&vis===0||active!=='all'&&vis===0){
                         if(!empty){empty=document.createElement('tr');empty.className='table-search-empty';tbody.appendChild(empty);}
-                        empty.innerHTML='<td colspan="4" class="text-center py-5 text-muted">Tidak ada hasil untuk filter ini.</td>';
+                        empty.innerHTML='<td colspan="5" class="text-center py-5 text-muted">Tidak ada hasil untuk filter ini.</td>';
                         empty.style.display='';
                     }else if(empty){empty.style.display='none';}
                 }

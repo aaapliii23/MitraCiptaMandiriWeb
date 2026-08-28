@@ -2,7 +2,7 @@
 $host = 'localhost';
 $dbname = 'mcm_db';
 $username = 'root';
-$password = 'password';
+$password = '';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
@@ -10,6 +10,14 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     // Optional: Set default fetch mode to associative array
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    // Auto-migrate: chat_messages.sender_type (dibutuhkan chat_api.php & whatsapp_client.php terbaru)
+    try {
+        $pdo->query("SELECT sender_type FROM chat_messages LIMIT 1");
+    } catch (PDOException $e) {
+        try { $pdo->exec("ALTER TABLE chat_messages ADD COLUMN sender_type ENUM('visitor','bot','admin') NOT NULL DEFAULT 'visitor' AFTER direction"); } catch (PDOException $e2) {}
+        try { $pdo->exec("ALTER TABLE chat_messages ADD INDEX idx_chat_wa_number (wa_number)"); } catch (PDOException $e2) {}
+        try { $pdo->exec("ALTER TABLE chat_messages ADD INDEX idx_chat_sender_type (sender_type)"); } catch (PDOException $e2) {}
+    }
 } catch (PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }

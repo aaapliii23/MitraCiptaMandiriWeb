@@ -68,4 +68,11 @@ if ($action === 'create') {
         if ($row && strpos($row['image'] ?? '', 'http') !== 0 && !empty($row['image']) && file_exists('../../' . $row['image'])) { @unlink('../../' . $row['image']); }
         echo json_encode(['status' => 'success', 'message' => 'Data sertifikasi dihapus.']);
     }
+} elseif ($action === 'bulk_delete') {
+    $raw = $_POST['ids'] ?? ''; $ids=[]; if(is_array($raw))$ids=$raw; elseif(is_string($raw)&&$raw!==''){ $d=json_decode($raw,true); $ids=is_array($d)?$d:array_filter(array_map('trim',explode(',',$raw))); }
+    $ids=array_values(array_unique(array_filter(array_map('intval',$ids))));
+    if(empty($ids)){ echo json_encode(['status'=>'error','message'=>'Tidak ada data terpilih']); exit; }
+    if(count($ids)>100){ echo json_encode(['status'=>'error','message'=>'Maksimal 100']); exit; }
+    try{ $ph=implode(',',array_fill(0,count($ids),'?')); try{ $stmt=$pdo->prepare("SELECT image, image_public_id FROM certifications WHERE id IN ($ph)"); $stmt->execute($ids); $rows=$stmt->fetchAll(); }catch(PDOException $e){ $rows=[]; } $del=$pdo->prepare("DELETE FROM certifications WHERE id IN ($ph)"); $del->execute($ids); foreach($rows as $row){ if(!empty($row['image_public_id'])||str_contains($row['image']??'','res.cloudinary.com')){ $pid=$row['image_public_id']?:$row['image']; $r=deleteImageFromCloudinary($pid); if(!$r['ok']) error_log("[Cloudinary bulk certs] ".$r['error']); } if(!empty($row['image'])&&strpos($row['image'],'http')!==0&&file_exists('../../'.$row['image'])) @unlink('../../'.$row['image']); } echo json_encode(['status'=>'success','message'=>$del->rowCount().' sertifikasi dihapus']); }catch(PDOException $e){ echo json_encode(['status'=>'error','message'=>'Gagal hapus massal']); }
+    exit;
 }

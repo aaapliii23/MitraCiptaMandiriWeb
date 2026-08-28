@@ -210,6 +210,22 @@ if ($action === 'create') {
     } else {
         respondJson(['status' => 'error', 'message' => 'Gagal menghapus foto.']);
     }
+} elseif ($action === 'bulk_delete') {
+    $raw = $_POST['ids'] ?? '';
+    $ids = [];
+    if (is_array($raw)) $ids = $raw;
+    elseif (is_string($raw) && $raw !== '') { $d=json_decode($raw,true); $ids=is_array($d)?$d:array_filter(array_map('trim',explode(',',$raw))); }
+    $ids = array_values(array_unique(array_filter(array_map('intval',$ids))));
+    if (empty($ids)) { respondJson(['status'=>'error','message'=>'Tidak ada data terpilih']); }
+    if (count($ids)>100) { respondJson(['status'=>'error','message'=>'Maksimal 100']); }
+    try {
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        try { $stmt=$pdo->prepare("SELECT image, image_public_id FROM gallery WHERE id IN ($ph)"); $stmt->execute($ids); $rows=$stmt->fetchAll(); } catch (PDOException $e) { $rows=[]; }
+        $stmt=$pdo->prepare("DELETE FROM gallery WHERE id IN ($ph)");
+        $stmt->execute($ids);
+        foreach($rows as $r){ if(!empty($r['image_public_id'])||str_contains($r['image']??'','res.cloudinary.com')){ $pid=$r['image_public_id']?:$r['image']; $res=deleteImageFromCloudinary($pid); if(!$res['ok']) error_log("[Cloudinary bulk gallery] ".$res['error']); } if(!empty($r['image'])&&strpos($r['image'],'http')!==0&&file_exists('../../'.$r['image'])) @unlink('../../'.$r['image']); }
+        respondJson(['status'=>'success','message'=> $stmt->rowCount().' foto berhasil dihapus']);
+    } catch (PDOException $e) { respondJson(['status'=>'error','message'=>'Gagal hapus massal']); }
 } else {
     respondJson(['status' => 'error', 'message' => 'Aksi tidak valid.']);
 }

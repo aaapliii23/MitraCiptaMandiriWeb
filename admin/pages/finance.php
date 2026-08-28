@@ -287,83 +287,80 @@ for ($m = 1; $m <= 12; $m++) {
 </div>
 
 <!-- Detailed Transactions Table -->
-<div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+<div data-bulk-table="finance">
+<div class="admin-table-toolbar d-none" data-bulk-toolbar>
+    <div class="small fw-bold text-primary"><i class="fas fa-check-square me-1"></i><span data-bulk-count>0 dipilih</span></div>
+    <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" data-bulk-delete><i class="fas fa-trash me-1"></i>Hapus Terpilih (<span data-bulk-count-num>0</span>)</button>
+</div>
+<div class="card border-0 shadow-sm rounded-4 p-0 bg-white mb-4 overflow-hidden">
+    <div class="d-flex justify-content-between align-items-center p-3 flex-wrap gap-2 border-bottom bg-light">
         <div>
-            <h5 class="fw-bold text-dark mb-0">Daftar Transaksi &amp; Pengeluaran</h5>
-            <p class="small text-muted mb-0">Rincian seluruh pembelian barang, biaya operasional, dan pemasukan.</p>
+            <h5 class="fw-bold text-dark mb-0" style="font-size:0.95rem;">Daftar Transaksi &amp; Pengeluaran</h5>
+            <p class="small text-muted mb-0" style="font-size:0.75rem;">Rincian pembelian &amp; pemasukan — kolom digabung agar tidak scroll.</p>
         </div>
-        <span class="badge bg-light text-secondary rounded-pill px-3 py-2 border"><?php echo count($finRows); ?> Transaksi</span>
+        <span class="badge bg-light text-secondary rounded-pill px-3 py-2 border small"><?php echo count($finRows); ?> Transaksi</span>
     </div>
 
-    <div class="table-responsive rounded-4 border">
-        <table class="table align-middle table-hover mb-0">
+    <div class="table-responsive table-responsive--no-scroll">
+        <table class="table align-middle admin-compact table-hover mb-0">
             <thead class="bg-light">
                 <tr>
-                    <th class="ps-3 py-2 small" style="width: 40px;">No</th>
-                    <th class="py-2 small">Tanggal</th>
-                    <th class="py-2 small">Tipe</th>
-                    <th class="py-2 small">Kategori</th>
-                    <th class="py-2 small">Nama Barang / Uraian</th>
-                    <th class="py-2 small text-center">Kuantitas</th>
-                    <th class="py-2 small text-end">Nominal</th>
-                    <th class="py-2 small text-center">Nota / Struk</th>
-                    <th class="py-2 small text-end pe-3">Aksi</th>
+                    <th class="col-check"><input type="checkbox" class="bulk-select-all js-bulk-select-all"></th>
+                    <th class="text-center" style="width:36px;">No</th>
+                    <th>Tanggal</th>
+                    <th>Keterangan</th>
+                    <th class="text-center">Qty</th>
+                    <th class="text-end">Nominal</th>
+                    <th class="text-center">Nota</th>
+                    <th class="text-end pe-3">Aksi</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($finRows)): ?>
-                    <tr><td colspan="9" class="text-center py-5 text-muted small">Belum ada data transaksi keuangan tercatat.</td></tr>
+                    <tr><td colspan="8" class="text-center py-5 text-muted small">Belum ada data transaksi keuangan tercatat.</td></tr>
                 <?php else: ?>
                     <?php foreach ($finRows as $idx => $tr): ?>
                         <tr>
-                            <td class="ps-3 py-3 text-muted small"><?php echo $idx + 1; ?></td>
-                            <td class="py-3 text-nowrap small text-muted"><?php echo date('d M Y', strtotime($tr['transaction_date'])); ?></td>
-                            <td class="py-3">
+                            <td class="col-check"><input type="checkbox" class="bulk-row-check js-bulk-row" value="<?php echo (int)$tr['id']; ?>"></td>
+                            <td class="text-center text-muted small"><?php echo $idx + 1; ?></td>
+                            <td class="text-nowrap small">
+                                <div class="fw-semibold text-dark" style="font-size:0.8rem;"><?php echo date('d M y', strtotime($tr['transaction_date'])); ?></div>
                                 <?php if ($tr['type'] === 'in'): ?>
-                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1"><i class="fas fa-arrow-down me-1"></i>Masuk</span>
+                                    <span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.62rem;"><i class="fas fa-arrow-down me-1"></i>Masuk</span>
                                 <?php else: ?>
-                                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-1"><i class="fas fa-arrow-up me-1"></i>Keluar</span>
+                                    <span class="badge bg-danger bg-opacity-10 text-danger" style="font-size:0.62rem;"><i class="fas fa-arrow-up me-1"></i>Keluar</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="py-3">
-                                <span class="badge bg-light text-dark border small"><?php echo ucwords(str_replace('_', ' ', $tr['category'])); ?></span>
+                            <td>
+                                <div class="cell-stack" style="max-width:280px;">
+                                    <span class="line-main" title="<?php echo htmlspecialchars($tr['item_name'] ?: $tr['category']); ?>"><?php echo htmlspecialchars($tr['item_name'] ?: ucwords(str_replace('_',' ',$tr['category']))); ?></span>
+                                    <span class="d-flex align-items-center gap-1"><span class="badge bg-light text-dark border" style="font-size:0.62rem;"><?php echo ucwords(str_replace('_',' ',$tr['category'])); ?></span></span>
+                                    <?php if (!empty($tr['description'])): ?>
+                                        <span class="line-sub" title="<?php echo htmlspecialchars($tr['description']); ?>"><?php echo htmlspecialchars(mb_strimwidth($tr['description'],0,80,'...')); ?></span>
+                                    <?php endif; ?>
+                                </div>
                             </td>
-                            <td class="py-3">
-                                <div class="fw-bold text-dark"><?php echo htmlspecialchars($tr['item_name'] ?: ucwords(str_replace('_', ' ', $tr['category']))); ?></div>
-                                <?php if (!empty($tr['description'])): ?>
-                                    <small class="text-muted d-block" style="font-size: 0.75rem;"><?php echo htmlspecialchars($tr['description']); ?></small>
-                                <?php endif; ?>
-                            </td>
-                            <td class="py-3 text-center">
+                            <td class="text-center">
                                 <?php if ($tr['quantity'] > 1 || $tr['unit_price'] > 0): ?>
-                                    <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill">
-                                        <?php echo $tr['quantity']; ?> unit <?php echo $tr['unit_price'] > 0 ? '(@ Rp ' . number_format($tr['unit_price'], 0, ',', '.') . ')' : ''; ?>
-                                    </span>
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size:0.68rem;"><?php echo $tr['quantity']; ?>×<?php echo $tr['unit_price']>0 ? ' Rp'.number_format($tr['unit_price'],0,',','.') : ''; ?></span>
                                 <?php else: ?>
-                                    <span class="text-muted small">1 unit</span>
+                                    <span class="text-muted small">1</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="py-3 text-end fw-bold <?php echo $tr['type'] === 'in' ? 'text-success' : 'text-danger'; ?>">
-                                <?php echo $tr['type'] === 'in' ? '+' : '-'; ?> Rp <?php echo number_format($tr['amount'], 0, ',', '.'); ?>
+                            <td class="text-end fw-bold text-nowrap small <?php echo $tr['type'] === 'in' ? 'text-success' : 'text-danger'; ?>">
+                                <?php echo $tr['type']==='in'?'+':'-'; ?>Rp <?php echo number_format($tr['amount'],0,',','.'); ?>
                             </td>
-                            <td class="py-3 text-center">
+                            <td class="text-center">
                                 <?php if (!empty($tr['receipt_image'])): ?>
-                                    <a href="../<?php echo htmlspecialchars($tr['receipt_image']); ?>" target="_blank" class="btn btn-sm btn-outline-info rounded-pill px-2 py-1" title="Lihat Nota/Kuitansi">
-                                        <i class="fas fa-file-invoice me-1"></i>Nota
-                                    </a>
+                                    <a href="../<?php echo htmlspecialchars($tr['receipt_image']); ?>" target="_blank" class="btn btn-sm btn-outline-info rounded-pill px-2 py-1" style="font-size:0.7rem;" title="Lihat Nota"><i class="fas fa-file-invoice me-1"></i>Nota</a>
                                 <?php else: ?>
                                     <span class="text-muted small">-</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="py-3 text-end pe-3">
+                            <td class="text-end pe-3">
                                 <div class="d-inline-flex gap-1">
-                                    <button class="btn btn-action btn-soft-primary btn-sm" onclick="editFinance(<?php echo htmlspecialchars(json_encode($tr)); ?>)" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-action btn-soft-danger btn-sm" onclick="deleteItem('finance', <?php echo $tr['id']; ?>)" title="Hapus">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    <button class="btn btn-action btn-soft-primary btn-sm" onclick="editFinance(<?php echo htmlspecialchars(json_encode($tr)); ?>)" title="Edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn btn-action btn-soft-danger btn-sm" onclick="deleteItem('finance', <?php echo $tr['id']; ?>)" title="Hapus"><i class="fas fa-trash"></i></button>
                                 </div>
                             </td>
                         </tr>
@@ -372,6 +369,7 @@ for ($m = 1; $m <= 12; $m++) {
             </tbody>
         </table>
     </div>
+</div>
 </div>
 
 <script>

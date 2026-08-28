@@ -582,6 +582,178 @@ function deleteItem(type, id) {
     });
 }
 
+// ===== Bulk select & bulk delete (shared) =====
+function getBulkEndpoint(type){
+    const adminBase = '<?php echo $adminBase; ?>';
+    const map = {
+        classes: adminBase + '/actions/manage_classes.php',
+        gallery: adminBase + '/actions/manage_gallery.php',
+        instructors: adminBase + '/actions/manage_instructors.php',
+        certs: adminBase + '/actions/manage_certs.php',
+        cert_templates: adminBase + '/actions/manage_cert_templates.php',
+        admins: adminBase + '/actions/manage_admins.php',
+        orders: adminBase + '/actions/manage_orders.php',
+        categories: adminBase + '/actions/manage_categories.php',
+        testimonials: adminBase + '/actions/manage_testimonials.php',
+        materials: adminBase + '/actions/manage_materials.php',
+        chatbot: adminBase + '/actions/manage_chatbot.php',
+        finance: adminBase + '/actions/manage_finance.php',
+        facilities: adminBase + '/actions/manage_facilities.php',
+        users: adminBase + '/actions/manage_users.php',
+        chat: adminBase + '/actions/manage_chat.php'
+    };
+    return map[type] || '';
+}
+    // Optimized bulk — single delegation, no MutationObserver loop
+    function initBulkTables(){
+        document.querySelectorAll('[data-bulk-table]').forEach(function(wrap){
+            if (wrap.dataset.bulkInit) return;
+            wrap.dataset.bulkInit = '1';
+            const type = wrap.getAttribute('data-bulk-table');
+            const endpoint = getBulkEndpoint(type);
+            const toolbar = wrap.querySelector('[data-bulk-toolbar]');
+            const countEl = wrap.querySelector('[data-bulk-count]');
+            const delBtn = wrap.querySelector('[data-bulk-delete]');
+            const selectAll = wrap.querySelector('.js-bulk-select-all');
+            // cache rows on demand, use offsetParent check (no getComputedStyle reflow)
+            const getVisibleRows = () => {
+                const all = wrap.querySelectorAll('.js-bulk-row');
+                const vis = [];
+                for (let i=0;i<all.length;i++){
+                    const cb = all[i];
+                    const tr = cb.closest('tr');
+                    const card = cb.closest('[data-bulk-card]');
+                    const el = tr || card || cb;
+                    // offsetParent null => hidden (display:none), fast path
+                    if (el.style.display === 'none') continue;
+                    if (el.offsetParent === null && el.tagName !== 'BODY') {
+                        // for <tr> offsetParent is null when hidden, also check card hidden via class
+                        if (tr || card) continue;
+                    }
+                    // also respect explicit hidden via .d-none on card wrapper
+                    if (card && card.style.display === 'none') continue;
+                    vis.push(cb);
+                }
+                return vis;
+            };
+            let rafPending = false;
+            function updateToolbar(){
+                if (rafPending) return;
+                rafPending = true;
+                requestAnimationFrame(function(){
+                    rafPending = false;
+                    const vis = getVisibleRows();
+                    let checked = 0;
+                    for (let i=0;i<vis.length;i++) if (vis[i].checked) checked++;
+                    const n = checked;
+                    if (toolbar){
+                        const shouldHide = n===0;
+                        if (toolbar.classList.contains('d-none') !== shouldHide) toolbar.classList.toggle('d-none', shouldHide);
+                        const c2 = toolbar.querySelector('[data-bulk-count-num]');
+                        if (c2) c2.textContent = n;
+                        if (countEl) countEl.textContent = n + ' dipilih';
+                    }
+                    if (selectAll){
+                        const totalVis = vis.length;
+                        if (n===0){ if(selectAll.checked||selectAll.indeterminate){ selectAll.checked=false; selectAll.indeterminate=false; } }
+                        else if (n===totalVis){ if(!selectAll.checked||selectAll.indeterminate){ selectAll.checked=true; selectAll.indeterminate=false; } }
+                        else { if(selectAll.checked||!selectAll.indeterminate){ selectAll.checked=false; selectAll.indeterminate=true; } }
+                    }
+                });
+            }
+            if (selectAll){
+                selectAll.addEventListener('change', function(){
+                    const vis = getVisibleRows();
+                    for (let i=0;i<vis.length;i++) vis[i].checked = selectAll.checked;
+                    updateToolbar();
+                });
+            }
+            // delegation: one listener per wrap
+            wrap.addEventListener('change', function(e){
+                if (e.target.classList.contains('js-bulk-row')) updateToolbar();
+            });
+            // also update on filter/search inputs inside wrap
+            wrap.addEventListener('input', function(e){
+                if (e.target.matches('input[type="text"], input[type="search"]')) {
+                    // debounce 150ms
+                    clearTimeout(wrap._bulkInputTimer);
+                    wrap._bulkInputTimer = setTimeout(updateToolbar, 150);
+                }
+            });
+            // filter pills (facilities, chat) trigger display:none via click
+            wrap.addEventListener('click', function(e){
+                if (e.target.closest('[data-filter], .admin-fac-filter')) {
+                    setTimeout(updateToolbar, 50);
+                }
+            });
+            if (delBtn){
+                delBtn.addEventListener('click', function(){
+                    const vis = getVisibleRows();
+                    const checked = [];
+                    for (let i=0;i<vis.length;i++) if (vis[i].checked) checked.push(vis[i]);
+                    if (!checked.length) return;
+                    let sendIds;
+                    if (type==='chat') sendIds = checked.map(cb=> cb.value).filter(v=> String(v).trim()!=='');
+                    else { sendIds=[]; for(let i=0;i<checked.length;i++){ const v=parseInt(checked[i].value,10); if(v>0) sendIds.push(v); } }
+                    if (!sendIds.length) return;
+                    Swal.fire({
+                        title: 'Hapus '+sendIds.length+' data terpilih?',
+                        text: 'Data yang dihapus tidak dapat dikembalikan. Jumlah: '+sendIds.length,
+                        icon: 'warning',
+                        showCancelButton:true,
+                        confirmButtonColor:'#dc2626',
+                        cancelButtonColor:'#6b7280',
+                        confirmButtonText:'Ya, Hapus '+sendIds.length,
+                        cancelButtonText:'Batal'
+                    }).then(function(res){
+                        if (!res.isConfirmed) return;
+                        const fd = new FormData();
+                        fd.append('action', type==='chat' ? 'bulk_delete_thread' : 'bulk_delete');
+                        if (type==='chat') fd.append('wa_numbers', JSON.stringify(sendIds));
+                        else fd.append('ids', JSON.stringify(sendIds));
+                        const ep = endpoint || getBulkEndpoint(type);
+                        if (!ep){ Swal.fire('Gagal','Endpoint tidak ditemukan','error'); return; }
+                        delBtn.disabled = true;
+                        const orig = delBtn.innerHTML;
+                        delBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menghapus...';
+                        fetch(ep, { method:'POST', body: fd })
+                        .then(r=>r.json())
+                        .then(d=>{
+                            if (d.status==='success'){
+                                Swal.fire('Terhapus!', d.message || (sendIds.length+' data berhasil dihapus.'), 'success').then(()=> window.location.reload());
+                            } else {
+                                Swal.fire('Gagal', d.message || 'Gagal menghapus', 'error');
+                            }
+                        })
+                        .catch(()=> Swal.fire('Error','Terjadi kesalahan sistem.','error'))
+                        .finally(()=>{ delBtn.disabled=false; delBtn.innerHTML=orig; });
+                    });
+                });
+            }
+            updateToolbar();
+            // lightweight observer for table body / card grid childList only (search replaces tbody)
+            const bodyEl = wrap.querySelector('tbody, .row.g-4, #adminFacilityGrid, .admin-fac-card');
+            const obsTarget = wrap.querySelector('tbody') || wrap.querySelector('.row') || wrap;
+            try {
+                const obs = new MutationObserver(function(){ clearTimeout(wrap._bulkObsTimer); wrap._bulkObsTimer = setTimeout(updateToolbar, 80); });
+                obs.observe(obsTarget, { childList:true, subtree:false });
+                wrap._bulkObs = obs;
+            } catch(e){}
+        });
+    }
+    // expose debounced global trigger for order search & other dynamic filters
+    window.refreshBulkToolbar = function(){
+        document.querySelectorAll('[data-bulk-table]').forEach(function(wrap){
+            const ev = new Event('change', {bubbles:true});
+            wrap.dispatchEvent(ev);
+        });
+    };
+    document.addEventListener('DOMContentLoaded', initBulkTables);
+    document.addEventListener('ajaxReload', initBulkTables);
+    if (document.readyState !== 'loading') initBulkTables();
+    window.initBulkTables = initBulkTables;
+    window.getBulkEndpoint = getBulkEndpoint;
+
 // AJAX Form Submission
 document.querySelectorAll('.ajax-form').forEach(form => {
     form.addEventListener('submit', function(e) {

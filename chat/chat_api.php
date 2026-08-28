@@ -14,14 +14,14 @@ if ($clientVid !== '' && strlen($clientVid) === 12) {
     $_SESSION['chat_visitor_id'] = $clientVid;
 }
 $visitorNumber = 'web-' . $_SESSION['chat_visitor_id'];
+$userId = isset($_SESSION['user_logged_in']) ? (int)($_SESSION['user_id'] ?? 0) : null;
+if ($userId < 1) $userId = null;
 // set cookie 90 hari agar anonim kembali beberapa jam tetap terhubung
 setcookie('mcmChatVid', $_SESSION['chat_visitor_id'], time()+90*24*60*60, '/');
 // ponytail: lazy migrasi anonim -> user (jika sudah login, hubungkan riwayat lama)
 if ($userId) {
     try { $pdo->prepare("UPDATE chat_messages SET user_id=? WHERE wa_number=? AND (user_id IS NULL OR user_id=0)")->execute([$userId, $visitorNumber]); } catch (Exception $e) {}
 }
-$userId = isset($_SESSION['user_logged_in']) ? (int)($_SESSION['user_id'] ?? 0) : null;
-if ($userId < 1) $userId = null;
 
 $action = $_GET['action'] ?? ($_POST['action'] ?? 'history');
 

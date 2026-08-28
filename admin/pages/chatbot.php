@@ -20,13 +20,19 @@
             Balasan dengan token <code>{classes}</code> atau <code>{prices}</code> otomatis diisi daftar program/harga terbaru dari database.
         </div>
 
-        <div class="card border-0 shadow-sm">
+        <div data-bulk-table="chatbot">
+        <div class="admin-table-toolbar d-none" data-bulk-toolbar>
+            <div class="small fw-bold text-primary"><i class="fas fa-check-square me-1"></i><span data-bulk-count>0 dipilih</span></div>
+            <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" data-bulk-delete><i class="fas fa-trash me-1"></i>Hapus Terpilih (<span data-bulk-count-num>0</span>)</button>
+        </div>
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table align-middle">
+                <div class="table-responsive table-responsive--no-scroll">
+                    <table class="table align-middle admin-compact mb-0">
                         <thead class="bg-light text-secondary small text-uppercase">
                             <tr>
-                                <th class="ps-4">Intent</th>
+                                <th class="col-check"><input type="checkbox" class="bulk-select-all js-bulk-select-all"></th>
+                                <th>Intent</th>
                                 <th>Kata Kunci</th>
                                 <th>Balasan</th>
                                 <th class="text-center">Status</th>
@@ -35,14 +41,15 @@
                         </thead>
                         <tbody id="intentTableBody">
                             <?php if (empty($chatbotIntents)): ?>
-                                <tr><td colspan="5" class="text-center py-5 text-muted">Belum ada data intent.</td></tr>
+                                <tr><td colspan="6" class="text-center py-5 text-muted">Belum ada data intent.</td></tr>
                             <?php else: ?>
                                 <?php foreach ($chatbotIntents as $ci): ?>
                                     <tr>
-                                        <td class="ps-4"><span class="badge bg-primary bg-opacity-10 text-primary"><?php echo htmlspecialchars($ci['intent']); ?></span></td>
-                                        <td class="small text-muted"><?php echo htmlspecialchars($ci['keywords']); ?></td>
-                                        <td class="small text-muted" style="max-width: 300px;">
-                                            <div class="text-truncate" style="white-space: pre-line;" title="<?php echo htmlspecialchars($ci['reply']); ?>"><?php echo nl2br(htmlspecialchars(mb_strimwidth($ci['reply'], 0, 120, '...'))); ?></div>
+                                        <td class="col-check"><input type="checkbox" class="bulk-row-check js-bulk-row" value="<?php echo (int)$ci['id']; ?>"></td>
+                                        <td><span class="badge bg-primary bg-opacity-10 text-primary small"><?php echo htmlspecialchars($ci['intent']); ?></span></td>
+                                        <td><span class="cell-ellipsis small text-muted" title="<?php echo htmlspecialchars($ci['keywords']); ?>" style="max-width:160px;"><?php echo htmlspecialchars($ci['keywords']); ?></span></td>
+                                        <td style="max-width: 300px;">
+                                            <span class="cell-ellipsis small text-muted" title="<?php echo htmlspecialchars($ci['reply']); ?>" style="max-width:260px; white-space:pre-line;"><?php echo htmlspecialchars(mb_strimwidth(str_replace(["\r","\n"], ' ', $ci['reply']),0,100,'...')); ?></span>
                                         </td>
                                         <td class="text-center">
                                             <?php if ((int)$ci['enabled'] === 1): ?>
@@ -69,4 +76,5 @@
                 </div>
             </div>
         </div>
-<script>attachTableSearch('intentSearch', 'intentTableBody', 5);</script>
+        </div>
+<script>attachTableSearch('intentSearch', 'intentTableBody', 6);</script>

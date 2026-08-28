@@ -136,4 +136,19 @@ if ($action === 'list') {
         }
         echo json_encode(['status' => 'success', 'message' => 'Soal quiz dihapus.']);
     }
+} elseif ($action === 'bulk_delete') {
+    $raw = $_POST['ids'] ?? '';
+    $ids = [];
+    if (is_array($raw)) $ids = $raw;
+    elseif (is_string($raw) && $raw !== '') { $d=json_decode($raw,true); $ids=is_array($d)?$d:array_filter(array_map('trim',explode(',',$raw))); }
+    $ids = array_values(array_unique(array_filter(array_map('intval',$ids))));
+    if (empty($ids)) { echo json_encode(['status'=>'error','message'=>'Tidak ada data terpilih']); exit; }
+    if (count($ids)>100) { echo json_encode(['status'=>'error','message'=>'Maksimal 100']); exit; }
+    try {
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        $stmt=$pdo->prepare("SELECT DISTINCT material_id FROM quiz_questions WHERE id IN ($ph)"); $stmt->execute($ids); $mids=$stmt->fetchAll(PDO::FETCH_COLUMN);
+        $del=$pdo->prepare("DELETE FROM quiz_questions WHERE id IN ($ph)"); $del->execute($ids);
+        foreach($mids as $mid){ $stmt=$pdo->prepare("SELECT COUNT(*) FROM quiz_questions WHERE material_id=?"); $stmt->execute([$mid]); if((int)$stmt->fetchColumn()===0) $pdo->prepare("DELETE FROM quiz_attempts WHERE material_id=?")->execute([$mid]); }
+        echo json_encode(['status'=>'success','message'=> $del->rowCount().' soal dihapus']);
+    } catch (PDOException $e) { echo json_encode(['status'=>'error','message'=>'Gagal hapus massal']); }
 }

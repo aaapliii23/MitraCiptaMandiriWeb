@@ -161,9 +161,9 @@
         </button>
     </div>
     <style>
-        .mcm-chat-fab { position: fixed; right: 20px; bottom: 20px; z-index: 1055; width: 56px; height: 56px; border: none; border-radius: 50%; background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 8px 20px rgba(14, 165, 233, 0.45); transition: transform 0.2s; }
+        .mcm-chat-fab { position: fixed; right: 24px; bottom: 24px; z-index: 1040; width: 56px; height: 56px; border: none; border-radius: 50%; background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 8px 20px rgba(14, 165, 233, 0.45); transition: transform 0.2s; }
         .mcm-chat-fab:hover { transform: scale(1.08); }
-        .mcm-chat-panel { position: fixed; right: 20px; bottom: 88px; z-index: 1055; width: min(360px, calc(100vw - 40px)); height: 480px; max-height: calc(100vh - 120px); background: #fff; border-radius: 1rem; overflow: hidden; box-shadow: 0 20px 50px rgba(2, 6, 23, 0.25); display: none; flex-direction: column; }
+        .mcm-chat-panel { position: fixed; right: 24px; bottom: 92px; z-index: 1040; width: min(360px, calc(100vw - 32px)); height: 480px; max-height: min(480px, calc(100vh - 140px)); background: #fff; border-radius: 1rem; overflow: hidden; box-shadow: 0 20px 50px rgba(2, 6, 23, 0.25); display: none; flex-direction: column; }
         .mcm-chat-panel.open { display: flex; }
         .mcm-chat-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: linear-gradient(135deg, #0c4a6e, #0ea5e9); }
         .mcm-chat-body { flex: 1; overflow-y: auto; padding: 14px; background: #f8fafc; }
@@ -178,6 +178,13 @@
         .mcm-chat-input { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid #e2e8f0; }
         .mcm-chat-input input { flex: 1; border: 1px solid #e2e8f0; border-radius: 999px; padding: 8px 14px; font-size: 0.85rem; outline: none; }
         .mcm-chat-input button { border: none; border-radius: 50%; width: 38px; height: 38px; background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: #fff; }
+        @media (max-width: 991.98px) {
+            .mcm-chat-fab { right: 16px; bottom: 16px; width: 52px; height: 52px; font-size: 22px; }
+            .mcm-chat-panel { right: 12px; bottom: 76px; width: min(360px, calc(100vw - 24px)); max-height: calc(100vh - 100px); }
+        }
+        @media (max-width: 575.98px) {
+            .mcm-chat-panel { right: 8px; left: 8px; width: auto; bottom: 72px; }
+        }
     </style>
     <script>
     (function() {
@@ -218,10 +225,37 @@
             body.scrollTop = body.scrollHeight;
         }
 
+        function renderError(msg) {
+            body.innerHTML = '<div class="text-center py-4"><div class="text-danger small mb-2"><i class="fas fa-exclamation-triangle me-1"></i>' + esc(msg) + '</div><button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" id="mcmChatRetry">Coba lagi</button></div>';
+            var btn = document.getElementById('mcmChatRetry');
+            if (btn) btn.addEventListener('click', loadHistory);
+        }
+
         function loadHistory() {
-            fetch('<?php echo $base_url; ?>chat/chat_api.php?action=history&visitor_id=' + encodeURIComponent(vid))
-                .then(r => r.json())
-                .then(d => { if (d.status === 'success') { if (d.visitor_id) { vid = d.visitor_id; localStorage.setItem('mcmChatVid', vid); } render(d.messages); }});
+            // tampilkan loading hanya jika masih kosong
+            if (!body.dataset.hasContent) body.innerHTML = '<div class="text-center text-muted small py-4"><span class="spinner-border spinner-border-sm me-1"></span>Memuat percakapan...</div>';
+            fetch('<?php echo $base_url; ?>chat/chat_api.php?action=history&visitor_id=' + encodeURIComponent(vid), { headers: { 'Accept': 'application/json' } })
+                .then(function(r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.text().then(function(t) {
+                        try { return JSON.parse(t); }
+                        catch(e) { throw new Error('Response bukan JSON: ' + t.slice(0, 150)); }
+                    });
+                })
+                .then(function(d) {
+                    if (d.status === 'success') {
+                        if (d.visitor_id) { vid = d.visitor_id; localStorage.setItem('mcmChatVid', vid); }
+                        body.dataset.hasContent = '1';
+                        render(d.messages);
+                    } else {
+                        renderError(d.message || 'Gagal memuat percakapan.');
+                        console.error('[MCM Chat] history error:', d);
+                    }
+                })
+                .catch(function(err) {
+                    renderError('Gagal memuat percakapan, coba lagi');
+                    console.error('[MCM Chat] fetch history failed:', err);
+                });
         }
 
         function send(message) {
@@ -233,9 +267,25 @@
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: 'action=send&csrf_token=' + encodeURIComponent(csrf) + '&message=' + encodeURIComponent(msg) + '&visitor_id=' + encodeURIComponent(vid)
             })
-            .then(r => r.json())
-            .then(d => { if (d.visitor_id) { vid = d.visitor_id; localStorage.setItem('mcmChatVid', vid); } loadHistory(); })
-            .catch(() => {});
+            .then(function(r) {
+                if (!r.ok) throw new Error('HTTP '+r.status);
+                return r.text().then(function(t){ try{ return JSON.parse(t);} catch(e){ throw new Error('Response bukan JSON: '+t.slice(0,150)); }});
+            })
+            .then(function(d) {
+                if (d.status === 'error') {
+                    // tampilkan error tapi tetap render history agar tidak stuck
+                    console.error('[MCM Chat] send error:', d);
+                    // optional: tampilkan toast
+                    if (d.message && window.Swal) Swal.fire('Gagal', d.message, 'error');
+                }
+                if (d.visitor_id) { vid = d.visitor_id; localStorage.setItem('mcmChatVid', vid); }
+                loadHistory();
+            })
+            .catch(function(err){
+                console.error('[MCM Chat] send fail:', err);
+                if (window.Swal) Swal.fire('Error', 'Gagal mengirim pesan, coba lagi', 'error');
+                loadHistory();
+            });
         }
 
         fab.addEventListener('click', () => {

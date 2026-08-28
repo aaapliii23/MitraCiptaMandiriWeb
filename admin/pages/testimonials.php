@@ -15,13 +15,19 @@
             </div>
         </div>
 
+        <div data-bulk-table="testimonials">
+        <div class="admin-table-toolbar d-none" data-bulk-toolbar>
+            <div class="small fw-bold text-primary"><i class="fas fa-check-square me-1"></i><span data-bulk-count>0 dipilih</span></div>
+            <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" data-bulk-delete><i class="fas fa-trash me-1"></i>Hapus Terpilih (<span data-bulk-count-num>0</span>)</button>
+        </div>
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table align-middle mb-0">
+                <div class="table-responsive table-responsive--no-scroll">
+                    <table class="table align-middle admin-compact mb-0">
                         <thead class="bg-light">
                             <tr>
-                                <th class="ps-4">Peserta</th>
+                                <th class="col-check"><input type="checkbox" class="bulk-select-all js-bulk-select-all"></th>
+                                <th>Peserta</th>
                                 <th>Rating</th>
                                 <th>Program</th>
                                 <th>Ulasan</th>
@@ -32,7 +38,7 @@
                         </thead>
                         <tbody id="testimonialTableBody">
                             <?php if (empty($testimonials)): ?>
-                                <tr><td colspan="7" class="text-center py-5 text-muted">Belum ada testimoni.</td></tr>
+                                <tr><td colspan="8" class="text-center py-5 text-muted">Belum ada testimoni.</td></tr>
                             <?php else: ?>
                                 <?php foreach ($testimonials as $t):
                                     $rating = (int)$t['rating'];
@@ -44,25 +50,26 @@
                                     $badge = $badges[$t['status']] ?? ['badge-soft-primary', $t['status']];
                                 ?>
                                 <tr>
-                                    <td class="ps-4">
+                                    <td class="col-check"><input type="checkbox" class="bulk-row-check js-bulk-row" value="<?php echo (int)$t['id']; ?>"></td>
+                                    <td>
                                         <div class="d-flex align-items-center">
                                             <?php if (!empty($t['image'])): ?>
-                                                <img src="<?php echo htmlspecialchars(getImgSrc($t['image'])); ?>" alt="<?php echo htmlspecialchars($t['name']); ?>" class="rounded-circle me-3 border border-2 border-white shadow-sm" style="width: 40px; height: 40px; object-fit: cover;">
+                                                <img src="<?php echo htmlspecialchars(getImgSrc($t['image'])); ?>" alt="<?php echo htmlspecialchars($t['name']); ?>" class="rounded-circle me-2 border border-2 border-white shadow-sm" style="width: 32px; height: 32px; object-fit: cover;">
                                             <?php else: ?>
-                                                <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center fw-bold me-3" style="width: 40px; height: 40px;"><?php echo strtoupper(mb_substr(trim($t['name']), 0, 1)); ?></div>
+                                                <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center fw-bold me-2" style="width: 32px; height: 32px; font-size:0.8rem;"><?php echo strtoupper(mb_substr(trim($t['name']), 0, 1)); ?></div>
                                             <?php endif; ?>
-                                            <span class="fw-bold text-dark"><?php echo htmlspecialchars($t['name']); ?></span>
+                                            <span class="fw-bold text-dark small" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px;" title="<?php echo htmlspecialchars($t['name']); ?>"><?php echo htmlspecialchars($t['name']); ?></span>
                                         </div>
                                     </td>
                                     <td>
                                         <?php for ($i = 1; $i <= 5; $i++): ?>
-                                            <i class="fas fa-star <?php echo $i <= $rating ? 'text-warning' : 'text-muted'; ?>" style="font-size: 0.75rem;"></i>
+                                            <i class="fas fa-star <?php echo $i <= $rating ? 'text-warning' : 'text-muted'; ?>" style="font-size: 0.65rem;"></i>
                                         <?php endfor; ?>
                                     </td>
-                                    <td class="text-muted small"><?php echo htmlspecialchars($t['class_name'] ?? '-'); ?></td>
-                                    <td style="max-width: 280px;"><span class="text-muted small d-block text-truncate"><?php echo htmlspecialchars($t['review']); ?></span></td>
-                                    <td><span class="badge <?php echo $badge[0]; ?>"><?php echo $badge[1]; ?></span></td>
-                                    <td class="small text-muted"><?php echo date('d M Y', strtotime($t['created_at'])); ?></td>
+                                    <td><span class="cell-ellipsis small text-muted" title="<?php echo htmlspecialchars($t['class_name'] ?? ''); ?>" style="max-width:120px;"><?php echo htmlspecialchars($t['class_name'] ?? '-'); ?></span></td>
+                                    <td style="max-width: 240px;"><span class="cell-ellipsis small text-muted" title="<?php echo htmlspecialchars($t['review']); ?>" style="max-width:220px;"><?php echo htmlspecialchars($t['review']); ?></span></td>
+                                    <td><span class="badge <?php echo $badge[0]; ?>" style="font-size:0.68rem;"><?php echo $badge[1]; ?></span></td>
+                                    <td class="small text-muted text-nowrap"><?php echo date('d M y', strtotime($t['created_at'])); ?></td>
                                     <td class="text-end pe-4">
                                         <div class="d-inline-flex gap-2">
                                             <?php if ($t['status'] !== 'approved'): ?>
@@ -83,4 +90,5 @@
                 </div>
             </div>
         </div>
-<script>attachTableSearch('testimonialSearch', 'testimonialTableBody', 7);</script>
+        </div>
+<script>attachTableSearch('testimonialSearch', 'testimonialTableBody', 8);</script>

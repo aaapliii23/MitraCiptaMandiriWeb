@@ -64,13 +64,25 @@ foreach ($facilities as $fac) {
     <?php endforeach; ?>
 </div>
 
-<div class="row g-4" id="adminFacilityGrid">
+<div data-bulk-table="facilities">
+        <div class="admin-table-toolbar d-none" data-bulk-toolbar>
+            <div class="small fw-bold text-primary"><i class="fas fa-check-square me-1"></i><span data-bulk-count>0 dipilih</span></div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="document.querySelectorAll('[data-bulk-table=facilities] .js-bulk-row').forEach(cb=>cb.checked=false); document.querySelector('[data-bulk-table=facilities] .js-bulk-select-all').checked=false; document.querySelector('[data-bulk-table=facilities] .js-bulk-select-all').indeterminate=false; document.querySelector('[data-bulk-table=facilities] [data-bulk-toolbar]').classList.add('d-none');">Batal</button>
+                <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" data-bulk-delete><i class="fas fa-trash me-1"></i>Hapus Terpilih (<span data-bulk-count-num>0</span>)</button>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <label class="small fw-bold text-muted mb-0" style="cursor:pointer;"><input type="checkbox" class="bulk-select-all js-bulk-select-all me-1"> Pilih semua</label>
+        </div>
+        <div class="row g-4" id="adminFacilityGrid">
     <?php if (!empty($facilities)): ?>
         <?php foreach ($facilities as $fac): ?>
             <?php $normCat = strtolower(preg_replace('/[^a-z0-9]+/', '_', trim($fac['category']))); $normCat = trim($normCat, '_'); if ($normCat === '') $normCat = 'kelas'; ?>
-            <div class="col-lg-3 col-md-4 col-sm-6 admin-fac-card" data-category="<?php echo htmlspecialchars($normCat); ?>">
+            <div class="col-lg-3 col-md-4 col-sm-6 admin-fac-card" data-bulk-card data-category="<?php echo htmlspecialchars($normCat); ?>">
                 <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden bg-white" style="border: 1px solid rgba(0,0,0,0.05) !important;">
-                    <div class="position-relative" style="height: 190px;">
+                    <input type="checkbox" class="bulk-row-check js-bulk-row position-absolute" value="<?php echo (int)$fac['id']; ?>" style="width:18px;height:18px;accent-color:#2563eb;z-index:2; top:10px; left:10px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+                        <div class="position-relative" style="height: 190px;">
                         <img src="<?php echo htmlspecialchars(getImgSrc($fac['image'])); ?>" class="w-100 h-100" style="object-fit: cover;" alt="<?php echo htmlspecialchars($fac['title']); ?>" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
                         <div class="position-absolute top-0 start-0 m-2">
                             <span class="badge px-2 py-1 rounded-pill shadow-sm" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); font-size: 0.7rem;">
@@ -113,6 +125,7 @@ foreach ($facilities as $fac) {
         </div>
     <?php endif; ?>
 </div>
+        </div>
 
 <style>
     .admin-fac-filter {
