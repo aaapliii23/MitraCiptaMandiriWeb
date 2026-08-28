@@ -135,14 +135,27 @@ try {
                                     <div class="mb-3">
                                         <div class="d-flex justify-content-between small mb-1">
                                             <span class="text-muted">Progres Belajar</span>
-                                            <span class="fw-bold text-primary"><?php echo $pct; ?>% (<?php echo $done; ?>/<?php echo $total; ?> materi)</span>
+                                            <span class="fw-bold <?php echo $pct >= 100 ? 'text-success' : 'text-primary'; ?>"><?php echo $pct; ?>% (<?php echo $done; ?>/<?php echo $total; ?> materi)</span>
                                         </div>
                                         <div class="progress" style="height: 8px; border-radius: 10px;">
-                                            <div class="progress-bar bg-primary rounded-pill" style="width: <?php echo $pct; ?>%"></div>
+                                            <div class="progress-bar <?php echo $pct >= 100 ? 'bg-success' : 'bg-primary'; ?> rounded-pill" style="width: <?php echo $pct; ?>%"></div>
                                         </div>
                                     </div>
                                     <div class="mt-auto">
-                                        <a href="course.php?class_id=<?php echo (int)$c['id']; ?>" class="btn btn-primary w-100 rounded-pill fw-bold"><?php echo $total > 0 ? 'Mulai Belajar' : 'Lihat Kelas'; ?></a>
+                                        <?php
+                                        $btnLabel = 'Mulai Belajar';
+                                        $btnClass = 'btn-primary';
+                                        if ($total === 0) {
+                                            $btnLabel = 'Lihat Kelas';
+                                        } elseif ($pct >= 100) {
+                                            $btnLabel = 'Kelas Selesai';
+                                            $btnClass = 'btn-success';
+                                        }
+                                        ?>
+                                        <a href="course.php?class_id=<?php echo (int)$c['id']; ?>" class="btn <?php echo $btnClass; ?> w-100 rounded-pill fw-bold">
+                                            <?php if ($pct >= 100 && $total > 0): ?><i class="fas fa-check-circle me-1"></i><?php endif; ?>
+                                            <?php echo $btnLabel; ?>
+                                        </a>
                                     </div>
                                 </div>
                             </div>

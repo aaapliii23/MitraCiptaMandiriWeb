@@ -1,6 +1,6 @@
 <!-- Finance Transaction Modal -->
 <div class="modal fade" id="financeModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
         <div class="modal-content border-0 shadow-lg rounded-5 overflow-hidden">
             <div class="modal-header border-0 bg-light px-4 py-3">
                 <h5 class="modal-title fw-bold text-dark" id="financeModalTitle">
@@ -15,18 +15,19 @@
                 <div class="modal-body p-4">
                     <!-- Tipe Transaksi Switch -->
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-dark">Tipe Transaksi <span class="text-danger">*</span></label>
-                        <div class="btn-group w-100 p-1 bg-light rounded-pill border" role="group">
-                            <input type="radio" class="btn-check" name="type" id="financeTypeOut" value="out" checked onchange="toggleFinanceType('out')">
-                            <label class="btn btn-outline-danger rounded-pill fw-bold" for="financeTypeOut">
-                                <i class="fas fa-arrow-up me-1"></i> Uang Keluar (Pengeluaran / Beli Barang)
+                        <label class="form-label small fw-bold text-dark mb-2 d-block">Tipe Transaksi <span class="text-danger">*</span></label>
+                        <div class="d-flex p-1 bg-light rounded-pill" id="financeTypeToggle">
+                            <input type="radio" class="btn-check" name="type" id="financeTypeOut" value="out" checked onchange="toggleFinanceType('out')" autocomplete="off">
+                            <label class="btn btn-sm flex-fill rounded-pill fw-bold finance-type-btn active" data-type="out" for="financeTypeOut" style="background: linear-gradient(135deg, #dc2626, #ef4444); color: white; border: none; transition: all 0.25s ease;">
+                                <i class="fas fa-arrow-up me-1"></i> Uang Keluar
                             </label>
-                            
-                            <input type="radio" class="btn-check" name="type" id="financeTypeIn" value="in" onchange="toggleFinanceType('in')">
-                            <label class="btn btn-outline-success rounded-pill fw-bold" for="financeTypeIn">
-                                <i class="fas fa-arrow-down me-1"></i> Uang Masuk (Pemasukan)
+
+                            <input type="radio" class="btn-check" name="type" id="financeTypeIn" value="in" onchange="toggleFinanceType('in')" autocomplete="off">
+                            <label class="btn btn-sm flex-fill rounded-pill fw-bold finance-type-btn text-muted" data-type="in" for="financeTypeIn" style="background: transparent; border: none; transition: all 0.25s ease;">
+                                <i class="fas fa-arrow-down me-1"></i> Uang Masuk
                             </label>
                         </div>
+                        <div id="financeTypeInfo" class="small mt-2 px-1" style="color: #64748b;">Pengeluaran untuk pembelian barang, bahan praktek, operasional, atau gaji.</div>
                     </div>
 
                     <div class="row g-3 mb-3">
@@ -104,6 +105,28 @@
 
 <script>
 function toggleFinanceType(type) {
+    const outLabel = document.querySelector('label[for="financeTypeOut"]');
+    const inLabel = document.querySelector('label[for="financeTypeIn"]');
+    const info = document.getElementById('financeTypeInfo');
+    if (outLabel && inLabel) {
+        if (type === 'out') {
+            outLabel.style.background = 'linear-gradient(135deg, #dc2626, #ef4444)';
+            outLabel.style.color = 'white';
+            outLabel.classList.add('active');
+            inLabel.style.background = 'transparent';
+            inLabel.style.color = '#64748b';
+            inLabel.classList.remove('active');
+            if (info) info.textContent = 'Pengeluaran untuk pembelian barang, bahan praktek, operasional, atau gaji.';
+        } else {
+            inLabel.style.background = 'linear-gradient(135deg, #16a34a, #22c55e)';
+            inLabel.style.color = 'white';
+            inLabel.classList.add('active');
+            outLabel.style.background = 'transparent';
+            outLabel.style.color = '#64748b';
+            outLabel.classList.remove('active');
+            if (info) info.textContent = 'Pemasukan dari pembayaran peserta, kerjasama, atau sumber lain.';
+        }
+    }
     const catSelect = document.getElementById('financeCategory');
     const itemLabel = document.getElementById('financeItemLabel');
     const itemName = document.getElementById('financeItemName');

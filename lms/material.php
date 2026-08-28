@@ -177,7 +177,7 @@ $csrf = $_SESSION['csrf_token'] ?? '';
                     <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4" id="quizCard">
                         <div class="card-body p-4">
                             <h5 class="fw-bold text-dark mb-1"><i class="fas fa-question-circle text-primary me-2"></i>Ujian Akhir Modul</h5>
-                            <p class="text-muted small mb-3" id="quizDesc">Jawab semua soal di bawah ini. Anda harus menjawab <b>100% benar</b> untuk lulus. Jika ada yang salah, sistem akan menampilkan pembahasan dan Anda hanya perlu memperbaiki soal yang salah sampai semua benar.</p>
+                            <p class="text-muted small mb-3" id="quizDesc">Jawab semua soal di bawah ini. Anda harus menjawab <b>100% benar</b> untuk lulus. </p>
 
                             <?php if ($quizPassed): ?>
                                 <div class="alert alert-success rounded-3 mb-3">

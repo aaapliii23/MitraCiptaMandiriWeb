@@ -199,6 +199,34 @@
             transform: rotate(180deg);
         }
         
+        .finance-type-btn {
+            cursor: pointer;
+            white-space: nowrap;
+            text-align: center;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+        }
+        @media (max-width: 400px) {
+            .finance-type-btn {
+                font-size: 0.78rem;
+                padding: 0.5rem 0.4rem;
+            }
+        }
+        @media (max-width: 576px) {
+            #financeModal .modal-body { -webkit-overflow-scrolling: touch; }
+            #financeModal input[type="text"],
+            #financeModal input[type="number"],
+            #financeModal textarea,
+            #financeModal select { font-size: 16px !important; }
+            #financeModal .modal-footer {
+                position: sticky;
+                bottom: 0;
+                background: #f8fafc;
+                z-index: 2;
+                border-top: 1px solid #e2e8f0;
+            }
+        }
+
         @media print {
             .no-print, 
             .sidebar, 

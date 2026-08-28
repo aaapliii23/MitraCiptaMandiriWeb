@@ -31,6 +31,7 @@
         padding: 30px 15px 60px;
     }
 
+    .cert-scale-outer { display: flex; justify-content: center; align-items: flex-start; width: 100%; max-width: 100%; margin: 0 auto; overflow: visible; flex-shrink: 0; box-sizing: border-box; }
     /* Certificate Base Page */
     .cert-page {
         background: #ffffff;
@@ -41,6 +42,9 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        margin-left: auto;
+        margin-right: auto;
+        flex-shrink: 0;
     }
 
     /* Landscape Mode */
@@ -140,6 +144,24 @@
     .cert-wrapper.orientation-portrait .units-table th,
     .cert-wrapper.orientation-portrait .units-table td {
         padding: 10px 14px;
+    }
+
+    /* Back page: override asymmetric ribbon padding — center content horizontally inside border */
+    .cert-wrapper.orientation-landscape .cert-page.page-back .cert-border {
+        padding: 14px 28px !important;
+    }
+    .cert-wrapper.orientation-portrait .cert-page.page-back .cert-border {
+        padding: 22px 22px !important;
+    }
+    .cert-page.page-back .cert-border > div {
+        width: 100%;
+        max-width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .cert-page.page-back .units-table {
+        margin-left: auto;
+        margin-right: auto;
     }
 
     /* Inner Gold Border */
@@ -541,6 +563,85 @@
         .cert-front-title { font-size: 1.75rem !important; }
     }
 
+    /* ===== Mobile responsive (382x642 dan umum 360-414) — tidak ubah desktop ===== */
+    @media (max-width: 600px) {
+        html, body { overflow-x: hidden; max-width: 100vw; }
+        .cert-container {
+            padding: 12px 8px 24px !important;
+            gap: 16px !important;
+            width: 100%;
+            max-width: 100vw;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+        .cert-scale-outer { width: 100% !important; max-width: 100% !important; overflow: hidden !important; display: flex !important; justify-content: center !important; align-items: flex-start !important; }
+        .cert-wrapper.orientation-landscape .cert-page.page-front,
+        .cert-wrapper.orientation-portrait .cert-page.page-front {
+            max-width: none !important;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .cert-wrapper.orientation-landscape .cert-page.page-back,
+        .cert-wrapper.orientation-portrait .cert-page.page-back {
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+            min-height: 0 !important;
+            aspect-ratio: auto !important;
+            padding: 5px !important;
+            box-sizing: border-box;
+            overflow: visible !important;
+            transform: none !important;
+        }
+        .cert-wrapper.orientation-landscape .cert-border,
+        .cert-wrapper.orientation-portrait .cert-border {
+            padding: 10px 40px 10px 12px !important;
+            box-sizing: border-box;
+        }
+        .cert-wrapper.orientation-landscape .cert-page.page-back .cert-border,
+        .cert-wrapper.orientation-portrait .cert-page.page-back .cert-border {
+            padding: 10px 12px !important;
+        }
+        /* Front: biarkan skala proporsional via JS, tidak perlu perkecil font manual di mobile */
+        /* Lampiran transkrip: tabel stacked tanpa scroll horizontal */
+        .cert-page.page-back .units-table { display: block !important; width: 100% !important; border: none !important; font-size: 0.78rem !important; overflow: visible !important; }
+        .cert-page.page-back .units-table thead { display: none !important; }
+        .cert-page.page-back .units-table tbody,
+        .cert-page.page-back .units-table tfoot { display: block !important; width: 100% !important; }
+        .cert-page.page-back .units-table tr { display: block !important; width: 100% !important; box-sizing: border-box !important; border: 1px solid #cbd5e1 !important; border-radius: 12px !important; margin-bottom: 10px !important; overflow: hidden !important; background: #fff !important; }
+        .cert-page.page-back .units-table th { display: none !important; }
+        .cert-page.page-back .units-table td { display: flex !important; justify-content: space-between !important; align-items: flex-start !important; gap: 10px !important; width: 100% !important; border: none !important; border-bottom: 1px solid #f1f5f9 !important; padding: 8px 12px !important; font-size: 0.74rem !important; text-align: left !important; white-space: normal !important; word-break: break-word !important; box-sizing: border-box !important; }
+        .cert-page.page-back .units-table td:last-child { border-bottom: none !important; }
+        .cert-page.page-back .units-table td::before { font-weight: 700; color: #0c4a6e; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.4px; flex: 0 0 88px; text-align: left; }
+        .cert-page.page-back .units-table td:nth-child(1)::before { content: "No"; }
+        .cert-page.page-back .units-table td:nth-child(2)::before { content: "Kode Unit"; }
+        .cert-page.page-back .units-table td:nth-child(3)::before { content: "Judul Unit"; }
+        .cert-page.page-back .units-table td:nth-child(4)::before { content: "Durasi"; }
+        .cert-page.page-back .units-table td:nth-child(5)::before { content: "Hasil"; }
+        .cert-page.page-back .units-table tfoot { border: none !important; }
+        .cert-page.page-back .units-table tfoot tr { display: flex !important; flex-wrap: wrap !important; gap: 8px !important; background: #f8fafc !important; border: 1.5px solid #0c4a6e !important; padding: 10px 12px !important; margin-bottom: 0 !important; border-radius: 12px !important; }
+        .cert-page.page-back .units-table tfoot td { display: block !important; border: none !important; padding: 4px 0 !important; font-size: 0.74rem !important; text-align: center !important; }
+        .cert-page.page-back .units-table tfoot td::before { display: none !important; content: none !important; }
+        .cert-page.page-back .units-table tfoot td[colspan="3"] { flex: 1 1 100% !important; text-align: center !important; border-bottom: 1px dashed #cbd5e1 !important; padding-bottom: 8px !important; margin-bottom: 4px !important; font-weight: 800 !important; }
+        .cert-page.page-back .units-table tfoot td:not([colspan]) { flex: 1 1 45% !important; }
+        /* Info peserta & tanda tangan stack 1 kolom agar tidak overflow */
+        .cert-page.page-back .row.g-2.mb-3.small > [class*="col-"] { flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important; }
+        .cert-page.page-back .pt-3.border-top .row { flex-direction: column !important; gap: 16px !important; }
+        .cert-page.page-back .pt-3.border-top .row > [class*="col-"] { flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important; }
+        .cert-page.page-back .cert-border { box-sizing: border-box !important; width: 100% !important; max-width: 100% !important; overflow-x: hidden !important; }
+    }
+    @media (max-width: 480px) {
+        .cert-page.page-back .units-table td { font-size: 0.7rem !important; padding: 7px 10px !important; }
+        .cert-page.page-back .units-table td::before { flex: 0 0 78px !important; font-size: 0.62rem !important; }
+    }
+    @media (max-width: 360px) {
+        .cert-container { padding: 8px 6px 20px !important; }
+        .cert-front-title { font-size: 0.95rem !important; }
+        .cert-ribbon-v { width: 26px !important; right: 4px !important; }
+        .cert-seal-badge { width: 60px !important; height: 60px !important; right: 6px !important; }
+        .cert-seal-badge svg.seal-svg { width: 60px !important; height: 60px !important; }
+    }
+
     /* Units Table */
     .units-table {
         width: 100%;
@@ -593,7 +694,9 @@
             break-inside: avoid !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+            transform: none !important;
         }
+        .cert-scale-outer { height: auto !important; overflow: visible !important; transform: none !important; }
         .cert-guilloche, .cert-ribbon-v, .cert-seal-badge, #certQr, .cert-qr-link, .cert-qr-wrap {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
@@ -613,6 +716,12 @@
         .cert-wrapper.orientation-portrait .cert-border {
             padding: 18px 78px 18px 20px !important;
         }
+        .cert-wrapper.orientation-landscape .cert-page.page-back .cert-border {
+            padding: 14px 28px !important;
+        }
+        .cert-wrapper.orientation-portrait .cert-page.page-back .cert-border {
+            padding: 18px 22px 18px 22px !important;
+        }
         .cert-wrapper.orientation-portrait .units-table {
             font-size: 0.72rem !important;
         }
@@ -623,6 +732,46 @@
         .cert-wrapper.orientation-portrait .units-table td {
             padding: 4px 8px !important;
         }
+        /* Portrait print: muat 1 halaman A4, cegah footer/QR terpisah & ribbon terpotong */
+        .cert-wrapper.orientation-portrait .cert-page.page-front .cert-border {
+            padding: 10px 62px 10px 18px !important;
+        }
+        .cert-wrapper.orientation-portrait .cert-front-header { margin-bottom: 2px !important; }
+        .cert-wrapper.orientation-portrait .cert-front-header .cert-brand img { height: 36px !important; }
+        .cert-wrapper.orientation-portrait .cert-brand-text { height: 34px !important; }
+        .cert-wrapper.orientation-portrait .cert-brand-text .brand-title { font-size: 0.78rem !important; }
+        .cert-wrapper.orientation-portrait .cert-brand-text .brand-sub { font-size: 0.52rem !important; }
+        .cert-wrapper.orientation-portrait .cert-front-title { font-size: 1.45rem !important; letter-spacing: 2px !important; margin: 6px 0 4px !important; }
+        .cert-wrapper.orientation-portrait .cert-front-reg { font-size: 0.62rem !important; margin-bottom: 4px !important; }
+        .cert-wrapper.orientation-portrait .cert-recipient-name { font-size: 1.55rem !important; padding: 0 12px 2px 0 !important; margin: 2px 0 !important; }
+        .cert-wrapper.orientation-portrait .cert-class-name { font-size: 1.1rem !important; margin: 3px 0 !important; }
+        .cert-wrapper.orientation-portrait .cert-front-body { max-width: 74% !important; padding: 2px 0 !important; }
+        .cert-wrapper.orientation-portrait .cert-desc { margin-top: 6px !important; font-size: 0.70rem !important; }
+        .cert-wrapper.orientation-portrait .cert-category-badge { font-size: 0.60rem !important; padding: 4px 10px !important; }
+        .cert-wrapper.orientation-portrait .cert-front-footer { gap: 8px !important; max-width: 90% !important; margin-top: 4px !important; }
+        .cert-wrapper.orientation-portrait .cert-issued-label { font-size: 0.52rem !important; }
+        .cert-wrapper.orientation-portrait .cert-issued-org { font-size: 0.68rem !important; }
+        .cert-wrapper.orientation-portrait .cert-issued-date { font-size: 0.60rem !important; }
+        .cert-wrapper.orientation-portrait .cert-sign-name { font-size: 0.65rem !important; }
+        .cert-wrapper.orientation-portrait .cert-sign .small { font-size: 0.58rem !important; }
+        .cert-wrapper.orientation-portrait .cert-ribbon-v { width: 52px !important; right: 8px !important; }
+        .cert-wrapper.orientation-portrait .cert-seal-badge { width: 96px !important; height: 96px !important; right: 24px !important; top: 50% !important; }
+        .cert-wrapper.orientation-portrait .cert-seal-badge svg.seal-svg { width: 96px !important; height: 96px !important; }
+        .cert-wrapper.orientation-portrait .cert-seal-badge .seal-center-logo { width: 40px !important; height: 40px !important; }
+        .cert-wrapper.orientation-portrait .cert-seal-badge .seal-center-logo img { width: 30px !important; height: 30px !important; }
+        .cert-wrapper.orientation-portrait #certQr { width: 70px !important; height: 70px !important; }
+        .cert-wrapper.orientation-portrait #certQr img, .cert-wrapper.orientation-portrait #certQr canvas { width: 70px !important; height: 70px !important; }
+        .cert-wrapper.orientation-portrait .cert-qr-wrap { transform: none !important; }
+        .cert-wrapper.orientation-portrait .cert-front-header,
+        .cert-wrapper.orientation-portrait .cert-front-body,
+        .cert-wrapper.orientation-portrait .cert-front-footer,
+        .cert-wrapper.orientation-portrait .cert-qr-wrap,
+        .cert-wrapper.orientation-portrait .cert-center-meta,
+        .cert-wrapper.orientation-portrait .cert-sign {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+        .cert-wrapper.orientation-portrait .cert-page { overflow: hidden !important; }
         .cert-page.page-front {
             page-break-after: always !important;
             break-after: page !important;

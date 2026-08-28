@@ -144,6 +144,84 @@ try {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <?php include __DIR__ . '/partials/certificate_styles.php'; ?>
+    <style>
+        /* Toolbar sertifikat: konsisten zoom 80%-150% & mobile 360-414px */
+        .cert-toolbar {
+            padding-top: 0.85rem !important;
+            padding-bottom: 0.85rem !important;
+        }
+        .cert-toolbar-inner {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem 1rem;
+        }
+        .cert-toolbar-left,
+        .cert-toolbar-center,
+        .cert-toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 0 1 auto;
+            min-width: 0;
+        }
+        .cert-toolbar-center { justify-content: center; flex: 0 0 auto; }
+        .cert-toolbar-center .btn-group { flex-wrap: nowrap; white-space: nowrap; flex-shrink: 0; }
+        .cert-toolbar-right { justify-content: flex-end; flex-wrap: wrap; }
+        .cert-toolbar .btn {
+            white-space: nowrap;
+            flex-shrink: 0;
+            font-size: 0.875rem;
+            line-height: 1.3;
+        }
+        @media (max-width: 991.98px) {
+            .cert-toolbar-inner { justify-content: center; gap: 0.75rem; }
+            .cert-toolbar-left,
+            .cert-toolbar-center,
+            .cert-toolbar-right { justify-content: center; }
+        }
+        @media (max-width: 600px) {
+            .cert-toolbar-inner {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.6rem;
+            }
+            .cert-toolbar-left,
+            .cert-toolbar-center,
+            .cert-toolbar-right {
+                width: 100%;
+                justify-content: center;
+            }
+            .cert-toolbar-left .btn,
+            .cert-toolbar-right .btn {
+                width: 100%;
+                max-width: 22rem;
+                justify-content: center;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            .cert-toolbar-center { width: 100%; }
+            .cert-toolbar-center .btn-group {
+                width: 100%;
+                max-width: 22rem;
+                justify-content: center;
+            }
+            .cert-toolbar-center .btn-group .btn {
+                flex: 1 1 0;
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+                font-size: 0.8rem;
+            }
+            .cert-toolbar-right { flex-direction: column; align-items: stretch; }
+            .cert-toolbar-right .btn { width: 100%; max-width: 22rem; }
+        }
+        @media (max-width: 480px) {
+            .cert-toolbar { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+            .cert-toolbar .btn { font-size: 0.82rem; padding-top: 0.55rem; padding-bottom: 0.55rem; }
+            .cert-toolbar-center .btn-group .btn { font-size: 0.75rem; }
+        }
+    </style>
 </head>
 <body>
 
@@ -161,15 +239,14 @@ try {
         </section>
     <?php else: ?>
         <!-- Top Toolbar Control (No Print) -->
-        <div class="bg-white shadow-sm py-3 px-4 border-bottom no-print sticky-top">
-            <div class="container d-flex flex-wrap justify-content-between align-items-center gap-3">
-                <div class="d-flex align-items-center gap-2">
+        <div class="bg-white shadow-sm border-bottom no-print sticky-top cert-toolbar">
+            <div class="container cert-toolbar-inner">
+                <div class="cert-toolbar-left">
                     <a href="course.php?class_id=<?php echo (int)$classId; ?>" class="btn btn-outline-secondary rounded-pill btn-sm px-3 fw-bold">
                         <i class="fas fa-arrow-left me-1"></i> Kembali ke Kelas
                     </a>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="small fw-bold text-muted me-1"><i class="fas fa-sliders-h me-1"></i> Orientasi Cetak:</span>
+                <div class="cert-toolbar-center">
                     <div class="btn-group btn-group-sm rounded-pill p-1 bg-light border" role="group">
                         <button type="button" class="btn btn-orientation rounded-pill px-3 fw-bold <?php echo $orientation === 'landscape' ? 'btn-primary active' : 'btn-light'; ?>" data-mode="landscape" onclick="setOrientation('landscape')">
                             <i class="fas fa-image me-1"></i> Landscape (Default)
@@ -179,7 +256,7 @@ try {
                         </button>
                     </div>
                 </div>
-                <div class="d-flex align-items-center gap-2">
+                <div class="cert-toolbar-right">
                     <button class="btn btn-warning rounded-pill px-3 py-1 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#certTestimonialModal" style="font-size: 0.85rem;">
                         <i class="fas fa-star me-1"></i> Tulis Testimoni
                     </button>
@@ -200,9 +277,9 @@ try {
         <?php endif; ?>
 
         <div class="cert-wrapper orientation-<?php echo $orientation; ?>" id="certWrapper">
-            <div class="cert-container">
-                <?php include __DIR__ . '/partials/certificate_front.php'; ?>
-                <?php include __DIR__ . '/partials/certificate_back.php'; ?>
+            <div class="cert-container" id="certContainer">
+                <div class="cert-scale-outer"><?php include __DIR__ . '/partials/certificate_front.php'; ?></div>
+                <div class="cert-scale-outer"><?php include __DIR__ . '/partials/certificate_back.php'; ?></div>
             </div>
         </div>
 
@@ -280,7 +357,63 @@ try {
                 btn.classList.toggle('btn-primary', isActive);
                 btn.classList.toggle('btn-light', !isActive);
             });
+            setTimeout(updateCertScale, 60);
         }
+        function updateCertScale(){
+            const wrapper=document.getElementById('certWrapper');
+            const container=document.getElementById('certContainer');
+            if(!wrapper||!container) return;
+            const isPortrait=wrapper.classList.contains('orientation-portrait');
+            const designW=isPortrait?794:1040;
+            const isMobile=window.innerWidth<=768;
+            document.querySelectorAll('.cert-scale-outer').forEach(function(outer){
+                const page=outer.querySelector('.cert-page');
+                if(!page) return;
+                const isBack=page.classList.contains('page-back');
+                if(!isMobile){
+                    page.style.transform='';
+                    page.style.width='';
+                    page.style.height='';
+                    outer.style.height='';
+                    outer.style.width='';
+                    outer.style.overflow='';
+                    return;
+                }
+                if(isBack){
+                    page.style.transform='';
+                    page.style.width='';
+                    page.style.height='';
+                    outer.style.height='';
+                    outer.style.width='100%';
+                    outer.style.overflow='visible';
+                    return;
+                }
+                page.style.transform='none';
+                page.style.width=designW+'px';
+                page.style.height='auto';
+                const actualH=page.offsetHeight;
+                const availableW=container.clientWidth;
+                const scale=Math.min(1,(availableW-2)/designW);
+                page.style.transform='scale('+scale+')';
+                page.style.transformOrigin='top center';
+                page.style.width=designW+'px';
+                page.style.marginLeft='auto';
+                page.style.marginRight='auto';
+                outer.style.width='100%';
+                outer.style.height=(actualH*scale)+'px';
+                outer.style.overflow='hidden';
+                outer.style.display='flex';
+                outer.style.justifyContent='center';
+                outer.style.alignItems='flex-start';
+            });
+        }
+        window.addEventListener('load', updateCertScale);
+        window.addEventListener('resize', updateCertScale);
+        window.addEventListener('orientationchange', function(){ setTimeout(updateCertScale,300); });
+        document.addEventListener('DOMContentLoaded', updateCertScale);
+        // Jalankan setelah font & gambar siap
+        if(document.fonts&&document.fonts.ready) document.fonts.ready.then(updateCertScale);
+        window.addEventListener('pageshow', updateCertScale);
     </script>
 </body>
 </html>
