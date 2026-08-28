@@ -22,7 +22,10 @@ try {
       `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    $cols = $pdo->query("SHOW COLUMNS FROM certificate_templates")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('bg_image_public_id', $cols)) $pdo->exec("ALTER TABLE certificate_templates ADD COLUMN bg_image_public_id VARCHAR(255) DEFAULT NULL AFTER bg_image");
 } catch (PDOException $e) {}
+try { $cols2 = $pdo->query("SHOW COLUMNS FROM certificate_templates")->fetchAll(PDO::FETCH_COLUMN); if (!in_array('bg_image_public_id', $cols2)) $pdo->exec("ALTER TABLE certificate_templates ADD COLUMN bg_image_public_id VARCHAR(255) DEFAULT NULL AFTER bg_image"); } catch (Throwable $e) {}
 
 $action = $_POST['action'] ?? '';
 
@@ -42,11 +45,11 @@ if ($action === 'create' || $action === 'update') {
         exit;
     }
 
-    $bgImage = null;
+    $bgImage = null; $bgImagePublicId = null;
     $existing = null;
     if ($action === 'update') {
         try {
-            $stmt = $pdo->prepare("SELECT bg_image FROM certificate_templates WHERE id = ?");
+            $stmt = $pdo->prepare("SELECT bg_image, bg_image_public_id FROM certificate_templates WHERE id = ?");
             $stmt->execute([$id]);
             $existing = $stmt->fetch();
         } catch (PDOException $e) {}
@@ -56,9 +59,10 @@ if ($action === 'create' || $action === 'update') {
         if ($_FILES['bg_image']['error'] !== UPLOAD_ERR_OK) { echo json_encode(['status'=>'error','message'=>'Upload gagal.']); exit; }
         $res = uploadImageToCloudinary($_FILES['bg_image'], 'mcm/certs');
         if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
-        $bgImage = $res['url'];
+        $bgImage = $res['url']; $bgImagePublicId = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']);
     } elseif ($existing && !empty($existing['bg_image'])) {
         $bgImage = $existing['bg_image'];
+        $bgImagePublicId = $existing['bg_image_public_id'] ?? null;
     }
 
     if ($isDefault) {
@@ -69,11 +73,11 @@ if ($action === 'create' || $action === 'update') {
 
     try {
         if ($action === 'create') {
-            $stmt = $pdo->prepare("INSERT INTO certificate_templates (name, class_id, layout, bg_image, accent_color, is_default) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$name, $classId, $layout, $bgImage, $accentColor, $isDefault]);
+            $stmt = $pdo->prepare("INSERT INTO certificate_templates (name, class_id, layout, bg_image, bg_image_public_id, accent_color, is_default) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$name, $classId, $layout, $bgImage, $bgImagePublicId, $accentColor, $isDefault]);
         } else {
-            $stmt = $pdo->prepare("UPDATE certificate_templates SET name = ?, class_id = ?, layout = ?, bg_image = ?, accent_color = ?, is_default = ? WHERE id = ?");
-            $stmt->execute([$name, $classId, $layout, $bgImage, $accentColor, $isDefault, $id]);
+            $stmt = $pdo->prepare("UPDATE certificate_templates SET name = ?, class_id = ?, layout = ?, bg_image = ?, bg_image_public_id = ?, accent_color = ?, is_default = ? WHERE id = ?");
+            $stmt->execute([$name, $classId, $layout, $bgImage, $bgImagePublicId, $accentColor, $isDefault, $id]);
         }
         echo json_encode(['status' => 'success', 'message' => $action === 'create' ? 'Template sertifikat berhasil ditambahkan' : 'Template sertifikat berhasil diperbarui']);
     } catch (PDOException $e) {
@@ -89,8 +93,11 @@ if ($action === 'delete') {
         exit;
     }
     try {
+        try { $stmt = $pdo->prepare("SELECT bg_image, bg_image_public_id FROM certificate_templates WHERE id = ?"); $stmt->execute([$id]); $row = $stmt->fetch(); } catch (PDOException $e) { $stmt = $pdo->prepare("SELECT bg_image FROM certificate_templates WHERE id = ?"); $stmt->execute([$id]); $row = $stmt->fetch(); if ($row) $row['bg_image_public_id'] = ''; }
         $stmt = $pdo->prepare("DELETE FROM certificate_templates WHERE id = ?");
         $stmt->execute([$id]);
+        if ($row && (!empty($row['bg_image_public_id']) || str_contains($row['bg_image'] ?? '', 'res.cloudinary.com'))) { $pid = $row['bg_image_public_id'] ?: $row['bg_image']; $delRes = deleteImageFromCloudinary($pid); if (!$delRes['ok']) error_log("[Cloudinary delete certificate_templates $id] ".$delRes['error']); }
+        if ($row && strpos($row['bg_image'] ?? '', 'http') !== 0 && !empty($row['bg_image']) && file_exists('../../' . $row['bg_image'])) { @unlink('../../' . $row['bg_image']); }
         echo json_encode(['status' => 'success', 'message' => 'Template sertifikat berhasil dihapus']);
     } catch (PDOException $e) {
         echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus template sertifikat']);

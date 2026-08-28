@@ -30,6 +30,8 @@ try {
       `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    $colsFL = $pdo->query("SHOW COLUMNS FROM facility_locations")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('image_public_id', $colsFL)) $pdo->exec("ALTER TABLE facility_locations ADD COLUMN image_public_id VARCHAR(255) DEFAULT NULL AFTER image");
 
     // Seed default categories if table empty
     $catCount = (int)$pdo->query("SELECT COUNT(*) FROM facility_categories")->fetchColumn();
@@ -50,6 +52,7 @@ try {
         }
     }
 } catch (PDOException $e) {}
+try { $colsFL2 = $pdo->query("SHOW COLUMNS FROM facility_locations")->fetchAll(PDO::FETCH_COLUMN); if (!in_array('image_public_id', $colsFL2)) $pdo->exec("ALTER TABLE facility_locations ADD COLUMN image_public_id VARCHAR(255) DEFAULT NULL AFTER image"); } catch (Throwable $e) {}
 
 $action = $_POST['action'] ?? '';
 
@@ -165,9 +168,10 @@ if ($action === 'create') {
         $res = uploadImageToCloudinary($file, 'mcm/facilities');
         if (!$res['ok']) { $errors[] = "'$filename' ".$res['error']; continue; }
         $destination = $res['url'];
+        $publicId = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']);
         $itemTitle = ($totalFiles > 1) ? ($title . ' (' . ($i + 1) . ')') : $title;
-        $stmt = $pdo->prepare("INSERT INTO facility_locations (category, title, image, description) VALUES (?, ?, ?, ?)");
-        if ($stmt->execute([$category, $itemTitle, $destination, $description])) {
+        $stmt = $pdo->prepare("INSERT INTO facility_locations (category, title, image, image_public_id, description) VALUES (?, ?, ?, ?, ?)");
+        if ($stmt->execute([$category, $itemTitle, $destination, $publicId, $description])) {
             $successCount++;
         }
     }
@@ -196,17 +200,17 @@ if ($action === 'update') {
         exit;
     }
 
-    $imagePath = null;
+    $imagePath = null; $imagePublicId = null;
     if (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
         if ($_FILES['image']['error'] !== UPLOAD_ERR_OK) { echo json_encode(['status'=>'error','message'=>'Upload gagal.']); exit; }
         $res = uploadImageToCloudinary($_FILES['image'], 'mcm/facilities');
         if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
-        $imagePath = $res['url'];
+        $imagePath = $res['url']; $imagePublicId = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']);
     }
 
     if ($imagePath) {
-        $stmt = $pdo->prepare("UPDATE facility_locations SET category = ?, title = ?, description = ?, image = ? WHERE id = ?");
-        $res = $stmt->execute([$category, $title, $description, $imagePath, $id]);
+        $stmt = $pdo->prepare("UPDATE facility_locations SET category = ?, title = ?, description = ?, image = ?, image_public_id = ? WHERE id = ?");
+        $res = $stmt->execute([$category, $title, $description, $imagePath, $imagePublicId, $id]);
     } else {
         $stmt = $pdo->prepare("UPDATE facility_locations SET category = ?, title = ?, description = ? WHERE id = ?");
         $res = $stmt->execute([$category, $title, $description, $id]);
@@ -228,19 +232,19 @@ if ($action === 'delete') {
         exit;
     }
 
-    $stmt = $pdo->prepare("SELECT image FROM facility_locations WHERE id = ?");
-    $stmt->execute([$id]);
-    $item = $stmt->fetch();
-
-    if ($item && !empty($item['image']) && strpos($item['image'], 'uploads/facilities/') === 0) {
-        $file = '../../' . $item['image'];
-        if (file_exists($file)) {
-            @unlink($file);
-        }
-    }
+    try { $stmt = $pdo->prepare("SELECT image, image_public_id FROM facility_locations WHERE id = ?"); $stmt->execute([$id]); $item = $stmt->fetch(); } catch (PDOException $e) { $stmt = $pdo->prepare("SELECT image FROM facility_locations WHERE id = ?"); $stmt->execute([$id]); $item = $stmt->fetch(); if ($item) $item['image_public_id'] = ''; }
 
     $del = $pdo->prepare("DELETE FROM facility_locations WHERE id = ?");
     if ($del->execute([$id])) {
+        if ($item && (!empty($item['image_public_id']) || str_contains($item['image'] ?? '', 'res.cloudinary.com'))) { $pid = $item['image_public_id'] ?: $item['image']; $delRes = deleteImageFromCloudinary($pid); if (!$delRes['ok']) error_log("[Cloudinary delete facility_locations $id] ".$delRes['error']); }
+        if ($item && !empty($item['image']) && strpos($item['image'], 'uploads/facilities/') === 0) {
+            $file = '../../' . $item['image'];
+            if (file_exists($file)) {
+                @unlink($file);
+            }
+        } elseif ($item && !empty($item['image']) && strpos($item['image'], 'http') !== 0 && file_exists('../../' . $item['image'])) {
+            @unlink('../../' . $item['image']);
+        }
         echo json_encode(['status' => 'success', 'message' => 'Foto lokasi berhasil dihapus.']);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus foto lokasi.']);

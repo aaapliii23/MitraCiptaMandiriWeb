@@ -34,6 +34,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_name'] = $user['name'];
                 $_SESSION['user_email'] = $user['email'];
+                $cv = preg_replace('/[^a-f0-9]/', '', strtolower($_POST['chat_visitor_id'] ?? ''));
+                if ($cv !== '' && strlen($cv) === 12) {
+                    try { $pdo->prepare("UPDATE chat_messages SET user_id=? WHERE wa_number=? AND (user_id IS NULL OR user_id=0)")->execute([$user['id'], 'web-'.$cv]); } catch (Exception $e) {}
+                    $_SESSION['chat_visitor_id'] = $cv;
+                    setcookie('mcmChatVid', $cv, time()+90*24*60*60, '/');
+                }
                 if ($isAjax) {
                     header('Content-Type: application/json');
                     echo json_encode(['status' => 'success']);
@@ -126,6 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+<<<<<<< HEAD
     var email = document.getElementById('authEmail');
     var pass = document.getElementById('password');
     var toggleBtn = document.getElementById('togglePassword');
@@ -211,6 +218,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var firstEmpty = form ? form.querySelector('.auth-input') : null;
     if(firstEmpty && !firstEmpty.value) { /* keep focus natural */ }
+=======
+    var btn = document.getElementById('togglePassword');
+    var input = document.getElementById('password');
+    if (btn && input) {
+        btn.addEventListener('click', function() {
+            var isPassword = input.getAttribute('type') === 'password';
+            input.setAttribute('type', isPassword ? 'text' : 'password');
+            var icon = this.querySelector('i');
+            icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash');
+        });
+    }
+    var cv = localStorage.getItem('mcmChatVid') || (document.cookie.match(/(?:^|; )mcmChatVid=([a-f0-9]{12})/) || [])[1] || '';
+    var el = document.getElementById('chatVisitorId');
+    if (el) el.value = cv;
+>>>>>>> FinalV1G
 });
 </script>
 

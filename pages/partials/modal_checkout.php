@@ -90,6 +90,7 @@
 
                                 <form id="checkoutForm" action="payment/create_transaction.php" method="POST" onsubmit="return submitPayment(this);">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+                                    <input type="hidden" name="chat_visitor_id" class="checkoutChatVid" value="">
                                     <input type="hidden" name="customer_name"    value="<?php echo htmlspecialchars($checkoutUser['name']  ?? ''); ?>">
                                     <input type="hidden" name="customer_email"   value="<?php echo htmlspecialchars($checkoutUser['email'] ?? ''); ?>">
                                     <input type="hidden" name="customer_phone"   value="<?php echo htmlspecialchars($checkoutUser['phone'] ?? ''); ?>">
@@ -130,6 +131,7 @@
 
                                 <form id="checkoutForm" action="payment/create_transaction.php" method="POST" onsubmit="return submitPayment(this);">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+                                    <input type="hidden" name="chat_visitor_id" class="checkoutChatVid" value="">
                                     <div class="row g-2">
                                         <div class="col-md-6">
                                             <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.7rem;">Nama Lengkap *</label>

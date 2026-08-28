@@ -2,6 +2,7 @@
 require_once '../includes/auth_user.php';
 require_once '../config/database.php';
 require_once '../includes/cloudinary.php';
+try { $cols = $pdo->query("SHOW COLUMNS FROM testimonials")->fetchAll(PDO::FETCH_COLUMN); if (!in_array('image_public_id', $cols)) $pdo->exec("ALTER TABLE testimonials ADD COLUMN image_public_id VARCHAR(255) DEFAULT NULL AFTER image"); } catch (Throwable $e) {}
 
 $userId = (int)$_SESSION['user_id'];
 
@@ -42,12 +43,12 @@ if ($testimonialType === 'testimonial') {
     } elseif (empty($review)) {
         $testimonialMessage = 'Ulasan wajib diisi.';
     } else {
-        $image = null;
+        $image = null; $imagePublicId = null;
         $uploadErr = null;
         if (isset($_FILES['photo']) && $_FILES['photo']['error'] !== UPLOAD_ERR_NO_FILE) {
             $res = uploadImageToCloudinary($_FILES['photo'], 'mcm/testimonials');
             if (!$res['ok']) { $uploadErr = $res['error']; $testimonialMessage = $res['error']; }
-            else $image = $res['url'];
+            else { $image = $res['url']; $imagePublicId = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']); }
         }
 
         if ($uploadErr) {
@@ -58,8 +59,8 @@ if ($testimonialType === 'testimonial') {
             $stmtName->execute([$userId]);
             $nameRow = $stmtName->fetch();
             $name = $nameRow['name'] ?? $_SESSION['user_name'] ?? '';
-            $stmt = $pdo->prepare("INSERT INTO testimonials (user_id, name, rating, review, image, class_id, graduation_year, job, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
-            if ($stmt->execute([$userId, $name, $rating, $review, $image, $classId, $graduationYear ?: null, $job ?: null])) {
+            $stmt = $pdo->prepare("INSERT INTO testimonials (user_id, name, rating, review, image, image_public_id, class_id, graduation_year, job, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
+            if ($stmt->execute([$userId, $name, $rating, $review, $image, $imagePublicId, $classId, $graduationYear ?: null, $job ?: null])) {
                 $testimonialMessage = 'Testimoni berhasil dikirim dan menunggu persetujuan admin.';
             } else {
                 $testimonialMessage = 'Gagal menyimpan testimoni. Silakan coba lagi.';

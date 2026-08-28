@@ -113,9 +113,10 @@ if ($action === 'create') {
             $res = uploadImageToCloudinary($file, 'mcm/gallery');
             if ($res['ok']) {
                 $destination = $res['url'];
+                $publicId = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']);
                 $itemTitle = ($totalFiles > 1) ? ($title . ' (' . ($i + 1) . ')') : $title;
-                $stmt = $pdo->prepare("INSERT INTO gallery (category, title, image, show_on_home) VALUES (?, ?, ?, ?)");
-                if ($stmt->execute([$category, $itemTitle, $destination, $showOnHome])) {
+                $stmt = $pdo->prepare("INSERT INTO gallery (category, title, image, image_public_id, show_on_home) VALUES (?, ?, ?, ?, ?)");
+                if ($stmt->execute([$category, $itemTitle, $destination, $publicId, $showOnHome])) {
                     $successCount++;
                 }
             } else {
@@ -148,7 +149,7 @@ if ($action === 'create') {
             respondJson(['status' => 'error', 'message' => 'Semua kolom wajib diisi.']);
         }
 
-        $stmt = $pdo->prepare("SELECT image FROM gallery WHERE id=?");
+        $stmt = $pdo->prepare("SELECT image, image_public_id FROM gallery WHERE id=?");
         $stmt->execute([$id]);
         $photo = $stmt->fetch();
         if (!$photo) {
@@ -156,6 +157,7 @@ if ($action === 'create') {
         }
 
         $image = $photo['image'];
+        $imagePublicId = $photo['image_public_id'] ?? '';
 
         if (isset($_FILES['images']) && !empty($_FILES['images']['name'][0])) {
             $filename = $_FILES['images']['name'][0];
@@ -171,14 +173,14 @@ if ($action === 'create') {
             $file = ['name'=>$_FILES['images']['name'][0],'type'=>$_FILES['images']['type'][0],'tmp_name'=>$_FILES['images']['tmp_name'][0],'error'=>$_FILES['images']['error'][0],'size'=>$_FILES['images']['size'][0]];
             $res = uploadImageToCloudinary($file, 'mcm/gallery');
             if ($res['ok']) {
-                $image = $res['url'];
+                $image = $res['url']; $imagePublicId = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']);
             } else {
                 respondJson(['status' => 'error', 'message' => $res['error']]);
             }
         }
 
-        $upd = $pdo->prepare("UPDATE gallery SET title = ?, category = ?, image = ?, show_on_home = ? WHERE id = ?");
-        if ($upd->execute([$title, $category, $image, $showOnHome, $id])) {
+        $upd = $pdo->prepare("UPDATE gallery SET title=?, category=?, image=?, image_public_id=?, show_on_home=? WHERE id=?");
+        if ($upd->execute([$title, $category, $image, $imagePublicId, $showOnHome, $id])) {
             respondJson(['status' => 'success', 'message' => 'Foto berhasil diperbarui.']);
         } else {
             respondJson(['status' => 'error', 'message' => 'Gagal memperbarui foto.']);
@@ -194,12 +196,13 @@ if ($action === 'create') {
         respondJson(['status' => 'error', 'message' => 'ID tidak valid.']);
     }
     
-    $stmt = $pdo->prepare("SELECT image FROM gallery WHERE id=?");
+    $stmt = $pdo->prepare("SELECT image, image_public_id FROM gallery WHERE id=?");
     $stmt->execute([$id]);
     $photo = $stmt->fetch();
     
     $del = $pdo->prepare("DELETE FROM gallery WHERE id=?");
     if ($del->execute([$id])) {
+        if (!empty($photo['image_public_id']) || str_contains($photo['image'], 'res.cloudinary.com')) { $pid = $photo['image_public_id'] ?: $photo['image']; $delRes = deleteImageFromCloudinary($pid); if (!$delRes['ok']) error_log("[Cloudinary delete gallery $id] ".$delRes['error']); }
         if ($photo && strpos($photo['image'], 'http') !== 0 && file_exists('../../' . $photo['image'])) {
             unlink('../../' . $photo['image']);
         }

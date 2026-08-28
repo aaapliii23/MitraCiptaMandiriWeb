@@ -70,7 +70,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['user_id'] = $userId;
                 $_SESSION['user_name'] = $name;
                 $_SESSION['user_email'] = $email;
-
+                $cv = preg_replace('/[^a-f0-9]/', '', strtolower($_POST['chat_visitor_id'] ?? ''));
+                if ($cv !== '' && strlen($cv) === 12) {
+                    try { $pdo->prepare("UPDATE chat_messages SET user_id=? WHERE wa_number=? AND (user_id IS NULL OR user_id=0)")->execute([$userId, 'web-'.$cv]); } catch (Exception $e) {}
+                    $_SESSION['chat_visitor_id'] = $cv;
+                    setcookie('mcmChatVid', $cv, time()+90*24*60*60, '/');
+                }
                 if ($isAjax) {
                     header('Content-Type: application/json');
                     echo json_encode(['status' => 'success']);
@@ -360,6 +365,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if(ic) ic.className='btn-spinner';
         });
     }
+<<<<<<< HEAD
+=======
+    setupToggle('togglePassword', 'password');
+    setupToggle('togglePassword2', 'password2');
+    var cv = localStorage.getItem('mcmChatVid') || (document.cookie.match(/(?:^|; )mcmChatVid=([a-f0-9]{12})/) || [])[1] || '';
+    var el = document.getElementById('chatVisitorIdReg');
+    if (el) el.value = cv;
+>>>>>>> FinalV1G
 });
 </script>
 

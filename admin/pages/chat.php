@@ -14,10 +14,17 @@ if (empty($threadNumber)) {
     }
     $conversations = array_values($tmp);
 } else {
-    foreach ($chats as $ch) {
-        if ($ch['wa_number'] === $threadNumber) $messages[] = $ch;
+    // ponytail: query langsung untuk thread anonim (web-), jangan andalkan $chats LIMIT 500 yang bisa bikin kosong
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM chat_messages WHERE wa_number = ? ORDER BY created_at ASC, id ASC");
+        $stmt->execute([$threadNumber]);
+        $messages = $stmt->fetchAll();
+    } catch (PDOException $e) {
+        foreach ($chats as $ch) {
+            if ($ch['wa_number'] === $threadNumber) $messages[] = $ch;
+        }
+        $messages = array_reverse($messages);
     }
-    $messages = array_reverse($messages);
 }
 ?>
 <!-- CHAT PAGE -->
@@ -40,6 +47,11 @@ if (empty($threadNumber)) {
         </div>
 
         <?php if (empty($threadNumber)): ?>
+            <div class="d-flex gap-2 mb-3" id="chatFilterTabs">
+                <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold btn-primary active" data-filter="all">Semua</button>
+                <button type="button" class="btn btn-sm rounded-pill px-3 btn-outline-primary" data-filter="wa"><i class="fab fa-whatsapp me-1"></i>WhatsApp</button>
+                <button type="button" class="btn btn-sm rounded-pill px-3 btn-outline-primary" data-filter="web">Widget (Anonim)</button>
+            </div>
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -56,8 +68,8 @@ if (empty($threadNumber)) {
                                 <?php if (empty($conversations)): ?>
                                     <tr><td colspan="4" class="text-center py-5 text-muted">Belum ada percakapan.</td></tr>
                                 <?php else: ?>
-                                    <?php foreach ($conversations as $cv): ?>
-                                        <tr>
+                                    <?php foreach ($conversations as $cv): $kind = str_starts_with($cv['number'],'web-') ? 'web' : 'wa'; ?>
+                                        <tr data-kind="<?php echo $kind; ?>">
                                             <td class="ps-4">
                                                 <div class="fw-bold text-dark">
                                                     <i class="fab fa-whatsapp text-success me-2"></i><?php echo htmlspecialchars($cv['number']); ?>
@@ -90,25 +102,67 @@ if (empty($threadNumber)) {
                     </div>
                 </div>
             </div>
-            <script>attachTableSearch('chatThreadSearch', 'conversationTableBody', 4);</script>
+            <script>
+            (function(){
+                if (typeof window.debounce !== 'function') {
+                    window.debounce = function(fn, ms){ let t=null; return function(){ const a=arguments,s=this; clearTimeout(t); t=setTimeout(function(){ fn.apply(s,a); }, ms||300); }; };
+                }
+                var input=document.getElementById('chatThreadSearch');
+                var tbody=document.getElementById('conversationTableBody');
+                if(!input||!tbody) return;
+                if(input.dataset.filterBound) return;
+                input.dataset.filterBound='1';
+                var active='all';
+                function apply(){
+                    var q=(input.value||'').toLowerCase().trim();
+                    var vis=0;
+                    tbody.querySelectorAll('tr[data-kind]').forEach(function(tr){
+                        var kind=tr.getAttribute('data-kind');
+                        var okKind=(active==='all'||kind===active);
+                        var okSearch=!q||tr.textContent.toLowerCase().indexOf(q)!==-1;
+                        var show=okKind&&okSearch;
+                        tr.style.display=show?'':'none';
+                        if(show) vis++;
+                    });
+                    var empty=tbody.querySelector('tr.table-search-empty');
+                    if(q&&vis===0||active!=='all'&&vis===0){
+                        if(!empty){empty=document.createElement('tr');empty.className='table-search-empty';tbody.appendChild(empty);}
+                        empty.innerHTML='<td colspan="4" class="text-center py-5 text-muted">Tidak ada hasil untuk filter ini.</td>';
+                        empty.style.display='';
+                    }else if(empty){empty.style.display='none';}
+                }
+                input.addEventListener('input', window.debounce(apply,300));
+                document.querySelectorAll('#chatFilterTabs [data-filter]').forEach(function(b){
+                    if(b.dataset.tabBound) return;
+                    b.dataset.tabBound='1';
+                    b.addEventListener('click',function(){
+                        active=this.getAttribute('data-filter');
+                        document.querySelectorAll('#chatFilterTabs [data-filter]').forEach(function(x){
+                            x.className=x.getAttribute('data-filter')===active?'btn btn-sm rounded-pill px-3 fw-bold btn-primary active':'btn btn-sm rounded-pill px-3 btn-outline-primary';
+                        });
+                        apply();
+                    });
+                });
+            })();
+            </script>
         <?php else: ?>
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 <div class="card-header bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between">
                     <div class="fw-bold text-dark"><i class="fab fa-whatsapp text-success me-2"></i><?php echo htmlspecialchars($threadNumber); ?></div>
                     <span class="badge bg-light text-dark border rounded-pill px-3"><?php echo count($messages); ?> pesan</span>
                 </div>
-                <div class="card-body p-4" style="max-height: 460px; overflow-y: auto; background: #f8fafc;">
+                <div id="adminChatBody" class="card-body p-4" style="max-height: 460px; overflow-y: auto; background: #f8fafc;">
                     <?php if (empty($messages)): ?>
                         <div class="text-center text-muted py-5">Belum ada pesan di percakapan ini.</div>
                     <?php else: ?>
-                        <?php foreach ($messages as $msg): ?>
-                            <div class="d-flex mb-3 <?php echo $msg['direction'] === 'in' ? '' : 'justify-content-end'; ?>">
-                                <div class="rounded-3 px-3 py-2 shadow-sm small <?php echo $msg['direction'] === 'in' ? 'bg-white border' : 'bg-primary text-white'; ?>" style="max-width: 75%;">
-                                    <div><?php echo nl2br(htmlspecialchars($msg['message'])); ?></div>
-                                    <div class="small mt-1 <?php echo $msg['direction'] === 'in' ? 'text-muted' : 'text-white-50'; ?>">
+                        <?php foreach ($messages as $msg): $isIn = $msg['direction'] === 'in'; $isAdmin = ($msg['sender_type'] ?? '') === 'admin'; ?>
+                            <div class="d-flex mb-3 <?php echo $isIn ? '' : 'justify-content-end'; ?>">
+                                <div class="rounded-3 px-3 py-2 shadow-sm small <?php echo $isIn ? 'bg-white border' : ($isAdmin ? 'bg-warning text-dark border border-warning' : 'bg-primary text-white'); ?>" style="max-width: 75%;">
+                                    <div><?php echo nl2br(htmlspecialchars($msg['message'])); ?><?php if($isAdmin) echo ' <span class="badge bg-dark ms-1" style="font-size:0.6rem;">Admin</span>'; ?></div>
+                                    <div class="small mt-1 <?php echo $isIn ? 'text-muted' : ($isAdmin ? 'text-dark opacity-75' : 'text-white-50'); ?>">
                                         <?php echo date('d M Y H:i', strtotime($msg['created_at'])); ?>
                                         <?php if ($msg['matched_intent']): ?>
-                                            <span class="badge <?php echo $msg['direction'] === 'in' ? 'bg-soft-primary text-primary' : 'bg-white bg-opacity-25 text-white'; ?> ms-1"><?php echo htmlspecialchars($msg['matched_intent']); ?></span>
+                                            <span class="badge <?php echo $isIn ? 'bg-soft-primary text-primary' : ($isAdmin ? 'bg-dark text-white' : 'bg-white bg-opacity-25 text-white'); ?> ms-1"><?php echo htmlspecialchars($msg['matched_intent']); ?></span>
                                         <?php endif; ?>
                                     </div>
                                 </div>
@@ -116,8 +170,19 @@ if (empty($threadNumber)) {
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
+                <script>
+                (function(){
+                    var b=document.getElementById('adminChatBody');
+                    if(b) b.scrollTop=b.scrollHeight;
+                })();
+                </script>
                 <div class="card-footer bg-white border-0 p-4">
-                    <form id="chatReplyForm" class="ajax-form d-flex gap-2" action="<?php echo $adminBase; ?>/actions/manage_chat.php" method="POST">
+                    <?php $isAnonThread = str_starts_with($threadNumber, 'web-'); ?>
+                    <div class="small mb-2 <?php echo $isAnonThread ? 'text-muted' : 'text-success'; ?>">
+                        <i class="fas <?php echo $isAnonThread ? 'fa-desktop' : 'fa-whatsapp'; ?> me-1"></i>
+                        <?php echo $isAnonThread ? 'Balasan ini hanya muncul di widget chat website' : 'Balasan ini akan dikirim ke WhatsApp'; ?>
+                    </div>
+                    <form id="chatReplyForm" class="d-flex gap-2" action="<?php echo $adminBase; ?>/actions/manage_chat.php" method="POST">
                         <input type="hidden" name="action" value="send_reply">
                         <input type="hidden" name="wa_number" value="<?php echo htmlspecialchars($threadNumber); ?>">
                         <input type="text" class="form-control rounded-pill" name="message" required placeholder="Tulis balasan...">
@@ -126,6 +191,50 @@ if (empty($threadNumber)) {
                 </div>
             </div>
 
+            <script>
+            (function(){
+                var form = document.getElementById('chatReplyForm');
+                if (form && !form.dataset.bound) {
+                    form.dataset.bound = '1';
+                    form.addEventListener('submit', function(e){
+                        e.preventDefault();
+                        var btn = form.querySelector('button[type=submit]');
+                        var orig = btn ? btn.innerHTML : '';
+                        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Mengirim...'; }
+                        var fd = new FormData(form);
+                        fetch(form.getAttribute('action'), { method: 'POST', body: fd })
+                        .then(function(r){ return r.json(); })
+                        .then(function(d){
+                            if (d.status === 'success') {
+                                var body = document.getElementById('adminChatBody');
+                                // hapus placeholder "Belum ada pesan" jika ada
+                                var empty = body ? body.querySelector('.text-center.text-muted.py-5') : null;
+                                if (empty) empty.remove();
+                                // buat bubble admin baru (kanan kuning)
+                                var wrap = document.createElement('div');
+                                wrap.className = 'd-flex mb-3 justify-content-end';
+                                var now = new Date();
+                                var time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+                                var msg = fd.get('message') || '';
+                                var esc = function(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+                                wrap.innerHTML = '<div class="rounded-3 px-3 py-2 shadow-sm small bg-warning text-dark border border-warning" style="max-width:75%;"><div>' + esc(msg) + ' <span class="badge bg-dark ms-1" style="font-size:0.6rem;">Admin</span></div><div class="small mt-1 text-dark opacity-75">' + time + ' <span class="badge bg-dark text-white ms-1">admin</span></div></div>';
+                                if (body) { body.appendChild(wrap); body.scrollTop = body.scrollHeight; }
+                                form.reset();
+                                if (d.wa_error) {
+                                    if (window.Swal) Swal.fire('Tersimpan', d.message, 'warning');
+                                    else alert(d.message);
+                                }
+                            } else {
+                                if (window.Swal) Swal.fire('Gagal', d.message || 'Gagal mengirim', 'error');
+                                else alert(d.message || 'Gagal');
+                            }
+                        })
+                        .catch(function(){ if(window.Swal) Swal.fire('Error','Terjadi kesalahan','error'); })
+                        .finally(function(){ if(btn){ btn.disabled=false; btn.innerHTML=orig; }});
+                    });
+                }
+            })();
+            </script>
             <script>
             function deleteConversation(number) {
                 Swal.fire({

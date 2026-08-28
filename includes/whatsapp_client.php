@@ -4,7 +4,7 @@ if (file_exists(__DIR__ . '/../config/secrets.php')) {
 }
 
 function wa_log_inbound($pdo, $fromNumber, $message, $matchedIntent = null, $userId = null) {
-    $stmt = $pdo->prepare("INSERT INTO chat_messages (user_id, wa_number, direction, message, matched_intent) VALUES (?, ?, 'in', ?, ?)");
+    $stmt = $pdo->prepare("INSERT INTO chat_messages (user_id, wa_number, direction, sender_type, message, matched_intent) VALUES (?, ?, 'in', 'visitor', ?, ?)");
     $stmt->execute([$userId, $fromNumber, $message, $matchedIntent]);
 }
 
@@ -54,9 +54,10 @@ function sendWhatsAppNotification($toNumber, $message) {
     }
     return ['ok' => true, 'data' => $data];
 }
-function wa_send_message($pdo, $toNumber, $message, $matchedIntent = null) {
-    $stmt = $pdo->prepare("INSERT INTO chat_messages (wa_number, direction, message, matched_intent) VALUES (?, 'out', ?, ?)");
-    $stmt->execute([$toNumber, $message, $matchedIntent]);
+function wa_send_message($pdo, $toNumber, $message, $matchedIntent = null, $senderType = 'bot') {
+    if (!in_array($senderType, ['bot','admin','visitor'], true)) $senderType = 'bot';
+    $stmt = $pdo->prepare("INSERT INTO chat_messages (wa_number, direction, sender_type, message, matched_intent) VALUES (?, 'out', ?, ?, ?)");
+    $stmt->execute([$toNumber, $senderType, $message, $matchedIntent]);
 
     if (strpos($toNumber, 'web-') === 0) {
         return true;
@@ -130,6 +131,8 @@ function wa_match_intent($message, $pdo = null) {
     $bestPos = PHP_INT_MAX;
     foreach ($intents as $intent => $keywords) {
         foreach ($keywords as $kw) {
+            $kw = strtolower(trim($kw));
+            if ($kw === '') continue;
             $pos = strpos($msg, $kw);
             if ($pos !== false && $pos < $bestPos) {
                 $bestPos = $pos;

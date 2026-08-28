@@ -133,10 +133,23 @@
                 <div class="text-center text-muted small py-4">Memuat percakapan...</div>
             </div>
             <div class="mcm-chat-chips" id="mcmChatChips">
-                <button type="button" data-q="berapa harga kelas?">Harga</button>
-                <button type="button" data-q="kapan jadwal pelatihan mulai?">Jadwal</button>
-                <button type="button" data-q="apa saja program pelatihan?">Program</button>
-                <button type="button" data-q="dimana alamat MCM?">Lokasi</button>
+                <?php
+                $chipIntents = [];
+                try { $chipIntents = $pdo->query("SELECT intent, keywords FROM chatbot_intents WHERE enabled=1 ORDER BY id ASC")->fetchAll(); } catch (Exception $e) {}
+                if ($chipIntents) {
+                    foreach ($chipIntents as $ci) {
+                        $label = ucfirst(htmlspecialchars($ci['intent']));
+                        $kws = array_values(array_filter(array_map('trim', explode(',', $ci['keywords']))));
+                        $q = $kws[0] ?? $ci['intent'];
+                        echo '<button type="button" data-q="'.htmlspecialchars($q).'">'.$label.'</button>';
+                    }
+                } else {
+                    echo '<button type="button" data-q="berapa harga kelas?">Harga</button>';
+                    echo '<button type="button" data-q="kapan jadwal pelatihan mulai?">Jadwal</button>';
+                    echo '<button type="button" data-q="apa saja program pelatihan?">Program</button>';
+                    echo '<button type="button" data-q="dimana alamat MCM?">Lokasi</button>';
+                }
+                ?>
             </div>
             <div class="mcm-chat-input">
                 <input type="text" id="mcmChatText" placeholder="Ketik pesan..." maxlength="500">
@@ -157,6 +170,7 @@
         .mcm-chat-body .mcm-msg { max-width: 82%; padding: 8px 12px; border-radius: 12px; margin-bottom: 8px; font-size: 0.85rem; line-height: 1.45; white-space: pre-line; }
         .mcm-msg.mcm-in { background: #fff; border: 1px solid #e2e8f0; border-top-left-radius: 4px; }
         .mcm-msg.mcm-out { background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: #fff; border-top-right-radius: 4px; margin-left: auto; }
+        .mcm-msg.mcm-admin { background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; border-top-right-radius: 4px; margin-left: auto; }
         .mcm-msg .mcm-time { display: block; font-size: 0.65rem; opacity: 0.65; margin-top: 3px; }
         .mcm-chat-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 14px; border-top: 1px solid #e2e8f0; }
         .mcm-chat-chips button { border: 1px solid #cbd5e1; background: #fff; color: #0c4a6e; border-radius: 999px; padding: 4px 12px; font-size: 0.75rem; font-weight: 600; }
@@ -174,6 +188,20 @@
         const text = document.getElementById('mcmChatText');
         let opened = false;
         let pollTimer = null;
+        function getVid() {
+            let v = localStorage.getItem('mcmChatVid');
+            if (!v || !/^[a-f0-9]{12}$/.test(v)) {
+                const m = document.cookie.match(/(?:^|; )mcmChatVid=([a-f0-9]{12})/);
+                if (m) v = m[1];
+            }
+            if (!v || !/^[a-f0-9]{12}$/.test(v)) {
+                v = Math.random().toString(16).slice(2,14).padEnd(12,'0').slice(0,12);
+            }
+            localStorage.setItem('mcmChatVid', v);
+            document.cookie = 'mcmChatVid=' + v + '; expires=' + new Date(Date.now()+90*24*60*60*1000).toUTCString() + '; path=/';
+            return v;
+        }
+        let vid = getVid();
 
         function esc(s) {
             return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -181,16 +209,19 @@
 
         function render(messages) {
             body.innerHTML = messages.map(m => {
-                const dir = m.direction === 'in' ? 'mcm-in' : 'mcm-out';
-                return '<div class="mcm-msg ' + dir + '">' + esc(m.message) + '<span class="mcm-time">' + esc(m.time || '') + '</span></div>';
+                const isIn = m.direction === 'in';
+                const isAdmin = m.sender_type === 'admin';
+                const dir = isIn ? 'mcm-in' : (isAdmin ? 'mcm-admin' : 'mcm-out');
+                const label = isAdmin ? '<span class="badge bg-warning text-dark ms-1" style="font-size:0.6rem;">Admin</span>' : '';
+                return '<div class="mcm-msg ' + dir + '">' + esc(m.message) + label + '<span class="mcm-time">' + esc(m.time || '') + '</span></div>';
             }).join('') || '<div class="text-center text-muted small py-3">Belum ada percakapan. Tulis pesan untuk bertanya.</div>';
             body.scrollTop = body.scrollHeight;
         }
 
         function loadHistory() {
-            fetch('<?php echo $base_url; ?>chat/chat_api.php?action=history')
+            fetch('<?php echo $base_url; ?>chat/chat_api.php?action=history&visitor_id=' + encodeURIComponent(vid))
                 .then(r => r.json())
-                .then(d => { if (d.status === 'success') render(d.messages); });
+                .then(d => { if (d.status === 'success') { if (d.visitor_id) { vid = d.visitor_id; localStorage.setItem('mcmChatVid', vid); } render(d.messages); }});
         }
 
         function send(message) {
@@ -200,10 +231,10 @@
             fetch('<?php echo $base_url; ?>chat/chat_api.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'action=send&csrf_token=' + encodeURIComponent(csrf) + '&message=' + encodeURIComponent(msg)
+                body: 'action=send&csrf_token=' + encodeURIComponent(csrf) + '&message=' + encodeURIComponent(msg) + '&visitor_id=' + encodeURIComponent(vid)
             })
             .then(r => r.json())
-            .then(d => { loadHistory(); })
+            .then(d => { if (d.visitor_id) { vid = d.visitor_id; localStorage.setItem('mcmChatVid', vid); } loadHistory(); })
             .catch(() => {});
         }
 
