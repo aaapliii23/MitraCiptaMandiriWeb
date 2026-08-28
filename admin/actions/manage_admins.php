@@ -72,6 +72,17 @@ if ($action === 'create') {
         $stmt->execute([$id]);
         echo json_encode(['status' => 'success', 'message' => 'Akun admin berhasil dihapus.']);
     }
+} elseif ($action === 'bulk_delete') {
+    $raw=$_POST['ids']??''; $ids=[]; if(is_array($raw))$ids=$raw; elseif(is_string($raw)&&$raw!==''){ $d=json_decode($raw,true); $ids=is_array($d)?$d:array_filter(array_map('trim',explode(',',$raw))); }
+    $ids=array_values(array_unique(array_filter(array_map('intval',$ids))));
+    if(empty($ids)){ echo json_encode(['status'=>'error','message'=>'Tidak ada data terpilih']); exit; }
+    if(count($ids)>100){ echo json_encode(['status'=>'error','message'=>'Maksimal 100']); exit; }
+    $selfId = null;
+    try{ $selfRow=$pdo->prepare("SELECT id FROM admins WHERE username=?"); $selfRow->execute([$_SESSION['admin_username'] ?? '']); $selfId=$selfRow->fetchColumn(); }catch(PDOException $e){}
+    $ids=array_values(array_filter($ids, fn($v)=> $v!=$selfId));
+    if(empty($ids)){ echo json_encode(['status'=>'error','message'=>'Tidak bisa menghapus akun sendiri']); exit; }
+    try{ $ph=implode(',',array_fill(0,count($ids),'?')); $stmt=$pdo->prepare("DELETE FROM admins WHERE id IN ($ph)"); $stmt->execute($ids); echo json_encode(['status'=>'success','message'=>$stmt->rowCount().' admin berhasil dihapus']); }catch(PDOException $e){ echo json_encode(['status'=>'error','message'=>'Gagal hapus massal']); }
+    exit;
 }
 
 

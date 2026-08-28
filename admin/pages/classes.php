@@ -16,6 +16,18 @@
             </div>
         </div>
 
+        <div data-bulk-table="classes">
+        <div class="admin-table-toolbar d-none" data-bulk-toolbar>
+            <div class="small fw-bold text-primary"><i class="fas fa-check-square me-1"></i><span data-bulk-count>0 dipilih</span></div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="document.querySelectorAll('[data-bulk-table=classes] .js-bulk-row').forEach(cb=>cb.checked=false); document.querySelector('[data-bulk-table=classes] .js-bulk-select-all').checked=false; document.querySelector('[data-bulk-table=classes] .js-bulk-select-all').indeterminate=false; document.querySelector('[data-bulk-table=classes] [data-bulk-toolbar]').classList.add('d-none');">Batal</button>
+                <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" data-bulk-delete><i class="fas fa-trash me-1"></i>Hapus Terpilih (<span data-bulk-count-num>0</span>)</button>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <label class="small fw-bold text-muted mb-0" style="cursor:pointer;"><input type="checkbox" class="bulk-select-all js-bulk-select-all me-1"> Pilih semua</label>
+            <span class="small text-muted">(centang kartu untuk aksi massal)</span>
+        </div>
         <div class="row g-4">
             <?php if (empty($classes)): ?>
                 <div class="col-12 text-center py-5">
@@ -23,8 +35,11 @@
                 </div>
             <?php else: ?>
                 <?php foreach ($classes as $c): ?>
-                    <div class="col-md-6 col-xl-4">
-                        <div class="card h-100 border-0 shadow-sm overflow-hidden">
+                    <div class="col-md-6 col-xl-4" data-bulk-card>
+                        <div class="card h-100 border-0 shadow-sm overflow-hidden position-relative">
+                            <div class="position-absolute top-0 start-0 m-2" style="z-index:2;">
+                                <input type="checkbox" class="bulk-row-check js-bulk-row" value="<?php echo (int)$c['id']; ?>" style="width:18px;height:18px;accent-color:#2563eb; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+                            </div>
                             <div class="position-relative">
                                 <?php if (!empty($c['image'])): ?>
                                     <img src="<?php echo htmlspecialchars(getImgSrc($c['image'])); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($c['name']); ?>" style="height: 180px; object-fit: cover;">
@@ -91,4 +106,5 @@
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
+        </div>
         </div>

@@ -57,6 +57,7 @@ async function loadContent(url, pushState = true) {
             initCounters();
             initAjaxLinks();
             reinitBootstrapModals();
+            if (typeof initBulkTables === 'function') initBulkTables();
             
             // Re-init Reports if on reports page
             if (pageName === 'reports' && typeof initReportsChart === 'function') {

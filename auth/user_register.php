@@ -137,6 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <form method="POST" action="user_register.php" id="authRegisterForm" novalidate>
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                    <input type="hidden" name="chat_visitor_id" id="chatVisitorIdReg" value="">
 
                     <div class="auth-field">
                         <label class="auth-label" for="authName"><i class="fas fa-user"></i> Nama Asli Lengkap</label>
@@ -358,6 +359,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if(!validatePass()) ok=false;
             if(!validatePass2()) ok=false;
             if(!ok){ e.preventDefault(); var first=form.querySelector('.is-invalid'); if(first) first.focus(); return; }
+            var cv = localStorage.getItem('mcmChatVid') || (document.cookie.match(/(?:^|; )mcmChatVid=([a-f0-9]{12})/) || [])[1] || '';
+            var cvEl = document.getElementById('chatVisitorIdReg');
+            if (cvEl) cvEl.value = cv;
             var txt=submitBtn.querySelector('.btn-text');
             submitBtn.disabled=true;
             if(txt) txt.textContent='Memproses...';
@@ -365,14 +369,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if(ic) ic.className='btn-spinner';
         });
     }
-<<<<<<< HEAD
-=======
-    setupToggle('togglePassword', 'password');
-    setupToggle('togglePassword2', 'password2');
-    var cv = localStorage.getItem('mcmChatVid') || (document.cookie.match(/(?:^|; )mcmChatVid=([a-f0-9]{12})/) || [])[1] || '';
-    var el = document.getElementById('chatVisitorIdReg');
-    if (el) el.value = cv;
->>>>>>> FinalV1G
+    // init hidden chat id on load
+    var cvInit = localStorage.getItem('mcmChatVid') || (document.cookie.match(/(?:^|; )mcmChatVid=([a-f0-9]{12})/) || [])[1] || '';
+    var elInit = document.getElementById('chatVisitorIdReg');
+    if (elInit) elInit.value = cvInit;
 });
 </script>
 

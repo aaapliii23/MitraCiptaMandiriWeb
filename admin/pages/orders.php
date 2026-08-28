@@ -31,18 +31,22 @@
         </div>
         <?php endif; ?>
 
+        <div data-bulk-table="orders">
+        <div class="admin-table-toolbar d-none" data-bulk-toolbar>
+            <div class="small fw-bold text-primary"><i class="fas fa-check-square me-1"></i><span data-bulk-count>0 dipilih</span> <span class="text-muted fw-normal d-none d-sm-inline">— aksi massal siap</span></div>
+            <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" data-bulk-delete><i class="fas fa-trash me-1"></i>Hapus Terpilih (<span data-bulk-count-num>0</span>)</button>
+        </div>
         <div class="card border-0 shadow-sm">
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table align-middle">
+                <div class="table-responsive table-responsive--no-scroll">
+                    <table class="table align-middle admin-compact mb-0">
                         <thead>
                             <tr>
+                                <th class="col-check"><input type="checkbox" class="bulk-select-all js-bulk-select-all" title="Pilih semua"></th>
                                 <th>Order ID</th>
                                 <th>Pelanggan</th>
-                                <th>Kategori & Kelas</th>
-                                <th class="text-center">Mode</th>
-                                <th>Instruktur</th>
-                                <th>Total</th>
+                                <th>Info Kelas</th>
+                                <th class="text-end">Total</th>
                                 <th class="text-center">Pembayaran</th>
                                 <th class="text-center">Status</th>
                                 <th class="text-end">Aksi</th>
@@ -50,33 +54,38 @@
                         </thead>
                         <tbody id="ordersTableBody">
                             <?php if (empty($orders)): ?>
-                                <tr><td colspan="9" class="text-center py-5 text-muted">Data tidak ditemukan.</td></tr>
+                                <tr><td colspan="8" class="text-center py-5 text-muted">Data tidak ditemukan.</td></tr>
                             <?php else: ?>
                                 <?php foreach ($orders as $o): ?>
                                     <tr>
-                                        <td class="text-secondary fw-bold small"><?php echo htmlspecialchars($o['order_number']); ?></td>
+                                        <td class="col-check"><input type="checkbox" class="bulk-row-check js-bulk-row" value="<?php echo (int)$o['id']; ?>"></td>
+                                        <td class="text-secondary fw-bold small"><span class="cell-ellipsis" title="<?php echo htmlspecialchars($o['order_number']); ?>" style="max-width:110px;"><?php echo htmlspecialchars($o['order_number']); ?></span></td>
                                         <td>
-                                            <div class="fw-bold text-dark"><?php echo htmlspecialchars($o['customer_name']); ?></div>
-                                            <div class="small text-muted d-flex align-items-center mt-1">
-                                                <i class="fab fa-whatsapp me-1 text-success"></i><?php echo htmlspecialchars($o['customer_phone']); ?>
+                                            <div class="cell-stack" style="max-width:160px;">
+                                                <span class="line-main" title="<?php echo htmlspecialchars($o['customer_name']); ?>"><?php echo htmlspecialchars($o['customer_name']); ?></span>
+                                                <span class="line-sub"><i class="fab fa-whatsapp me-1 text-success"></i><?php echo htmlspecialchars($o['customer_phone']); ?></span>
                                             </div>
                                         </td>
                                         <td>
-                                            <div class="small text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;"><?php echo htmlspecialchars($o['class_category']); ?></div>
-                                            <div class="fw-bold text-primary"><?php echo htmlspecialchars($o['class_name']); ?></div>
+                                            <div class="cell-stack" style="max-width:210px;">
+                                                <span class="line-main text-primary" title="<?php echo htmlspecialchars($o['class_name']); ?>"><?php echo htmlspecialchars($o['class_name']); ?></span>
+                                                <span class="line-sub d-flex align-items-center gap-1 flex-wrap">
+                                                    <span class="small text-uppercase fw-bold" style="font-size:0.62rem; letter-spacing:0.4px;"><?php echo htmlspecialchars($o['class_category']); ?></span>
+                                                    <?php $cm = strtolower($o['class_mode'] ?? 'offline'); if ($cm === 'online') echo '<span class="badge bg-info bg-opacity-10 text-info" style="font-size:0.62rem;"><i class="fas fa-laptop me-1"></i>Online</span>'; else echo '<span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.62rem;"><i class="fas fa-chalkboard-teacher me-1"></i>Offline</span>'; ?>
+                                                </span>
+                                                <span class="line-sub" title="<?php echo htmlspecialchars($o['instructor_name'] ?? ''); ?>"><?php echo $o['instructor_name'] ? '<i class="fas fa-user-tie me-1"></i>'.htmlspecialchars($o['instructor_name']) : '<span class="text-muted">Tanpa instruktur</span>'; ?></span>
+                                            </div>
                                         </td>
-                                        <td class="text-center"><?php $cm = strtolower($o['class_mode'] ?? 'offline'); if ($cm === 'online') echo '<span class="badge bg-info bg-opacity-10 text-info"><i class="fas fa-laptop me-1"></i>Online</span>'; else echo '<span class="badge bg-success bg-opacity-10 text-success"><i class="fas fa-chalkboard-teacher me-1"></i>Offline</span>'; ?></td>
-                                        <td class="small text-muted"><?php echo $o['instructor_name'] ? htmlspecialchars($o['instructor_name']) : '<span class="text-muted">-</span>'; ?></td>
-                                        <td class="fw-bold text-dark">Rp <?php echo number_format($o['amount'], 0, ',', '.'); ?></td>
+                                        <td class="text-end fw-bold text-dark text-nowrap">Rp <?php echo number_format($o['amount'], 0, ',', '.'); ?></td>
                                         <td class="text-center">
                                             <?php
                                             $pay = $o['payment_status'] ?? 'unpaid';
                                             $payBadge = [
                                                 'paid' => ['badge-soft-success', 'fas fa-check-circle', 'Lunas'],
-                                                'unpaid' => ['badge-soft-secondary', 'fas fa-hourglass-half', 'Belum Bayar'],
+                                                'unpaid' => ['badge-soft-secondary', 'fas fa-hourglass-half', 'Belum'],
                                                 'pending' => ['badge-soft-warning', 'fas fa-clock', 'Proses'],
                                                 'failed' => ['badge-soft-danger', 'fas fa-times-circle', 'Gagal'],
-                                                'expired' => ['badge-soft-danger', 'fas fa-clock', 'Kedaluwarsa'],
+                                                'expired' => ['badge-soft-danger', 'fas fa-clock', 'Kadaluwarsa'],
                                             ][$pay] ?? ['badge-soft-secondary', 'fas fa-circle', $pay];
                                             ?>
                                             <span class="badge <?php echo $payBadge[0]; ?>"><i class="<?php echo $payBadge[1]; ?> me-1"></i><?php echo $payBadge[2]; ?></span>
@@ -91,7 +100,7 @@
                                             <?php endif; ?>
                                         </td>
                                         <td class="text-end">
-                                            <div class="d-flex justify-content-end gap-2">
+                                            <div class="d-flex justify-content-end gap-1">
                                                 <button class="btn btn-action btn-soft-primary" data-bs-toggle="modal" data-bs-target="#detailPesananModal" 
                                                     data-order="<?php echo htmlspecialchars($o['order_number']); ?>"
                                                     data-name="<?php echo htmlspecialchars($o['customer_name']); ?>"
@@ -119,6 +128,7 @@
                     </table>
                 </div>
             </div>
+        </div>
         </div>
 <script>
 (function(){

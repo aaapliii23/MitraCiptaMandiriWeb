@@ -162,10 +162,13 @@ CREATE TABLE IF NOT EXISTS `chat_messages` (
   `user_id` int DEFAULT NULL,
   `wa_number` varchar(20) NOT NULL,
   `direction` enum('in','out') NOT NULL DEFAULT 'in',
+  `sender_type` enum('visitor','bot','admin') NOT NULL DEFAULT 'visitor',
   `message` text NOT NULL,
   `matched_intent` varchar(50) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_chat_wa_number` (`wa_number`),
+  KEY `idx_chat_sender_type` (`sender_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --

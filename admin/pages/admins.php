@@ -11,13 +11,19 @@
             </div>
         </div>
 
-        <div class="card border-0 shadow-sm">
+        <div data-bulk-table="admins">
+        <div class="admin-table-toolbar d-none" data-bulk-toolbar>
+            <div class="small fw-bold text-primary"><i class="fas fa-check-square me-1"></i><span data-bulk-count>0 dipilih</span></div>
+            <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" data-bulk-delete><i class="fas fa-trash me-1"></i>Hapus Terpilih (<span data-bulk-count-num>0</span>)</button>
+        </div>
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table align-middle">
+                <div class="table-responsive table-responsive--no-scroll">
+                    <table class="table align-middle admin-compact mb-0">
                         <thead>
                             <tr>
-                                <th class="ps-4">Admin ID</th>
+                                <th class="col-check"><input type="checkbox" class="bulk-select-all js-bulk-select-all"></th>
+                                <th>Admin ID</th>
                                 <th>Username</th>
                                 <th>Terdaftar Pada</th>
                                 <th class="text-end pe-4">Aksi</th>
@@ -26,7 +32,8 @@
                         <tbody>
                             <?php foreach ($admins as $ad): ?>
                                 <tr>
-                                    <td class="ps-4 text-secondary fw-bold">#<?php echo $ad['id']; ?></td>
+                                    <td class="col-check"><?php if ($ad['username'] !== $_SESSION['admin_username']): ?><input type="checkbox" class="bulk-row-check js-bulk-row" value="<?php echo (int)$ad['id']; ?>"><?php endif; ?></td>
+                                    <td class="ps-2 text-secondary fw-bold small">#<?php echo $ad['id']; ?></td>
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 38px; height: 38px;">
@@ -56,4 +63,5 @@
                     </table>
                 </div>
             </div>
+        </div>
         </div>

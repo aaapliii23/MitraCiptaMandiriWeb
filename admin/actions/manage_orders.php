@@ -23,6 +23,21 @@ if ($action === 'delete') {
     } else {
         echo json_encode(['status' => 'error', 'message' => 'ID tidak valid.']);
     }
+} elseif ($action === 'bulk_delete') {
+    $raw = $_POST['ids'] ?? '';
+    $ids = [];
+    if (is_array($raw)) $ids = $raw;
+    elseif (is_string($raw) && $raw !== '') { $decoded = json_decode($raw, true); $ids = is_array($decoded) ? $decoded : array_filter(array_map('trim', explode(',', $raw))); }
+    $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+    if (empty($ids)) { echo json_encode(['status'=>'error','message'=>'Tidak ada data terpilih.']); exit; }
+    if (count($ids) > 100) { echo json_encode(['status'=>'error','message'=>'Maksimal 100 data sekaligus.']); exit; }
+    try {
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $pdo->prepare("DELETE FROM orders WHERE id IN ($ph)");
+        $stmt->execute($ids);
+        $deleted = $stmt->rowCount();
+        echo json_encode(['status'=>'success','message'=> $deleted.' pesanan berhasil dihapus.']);
+    } catch (PDOException $e) { echo json_encode(['status'=>'error','message'=>'Gagal hapus massal: '.$e->getMessage()]); }
 } else {
     echo json_encode(['status' => 'error', 'message' => 'Aksi tidak diizinkan.']);
 }

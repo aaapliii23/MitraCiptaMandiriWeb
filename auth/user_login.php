@@ -103,6 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <form method="POST" action="user_login.php" id="authLoginForm" novalidate>
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                    <input type="hidden" name="chat_visitor_id" id="chatVisitorId" value="">
 
                     <div class="auth-field">
                         <label class="auth-label" for="authEmail"><i class="fas fa-envelope"></i> Email</label>
@@ -132,7 +133,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-<<<<<<< HEAD
     var email = document.getElementById('authEmail');
     var pass = document.getElementById('password');
     var toggleBtn = document.getElementById('togglePassword');
@@ -208,6 +208,10 @@ document.addEventListener('DOMContentLoaded', function() {
             var okE = validateEmail(false);
             var okP = validatePass();
             if(!okE || !okP){ e.preventDefault(); var firstInvalid = form.querySelector('.is-invalid'); if(firstInvalid) firstInvalid.focus(); return; }
+            // sync chat visitor id before submit
+            var cv = localStorage.getItem('mcmChatVid') || (document.cookie.match(/(?:^|; )mcmChatVid=([a-f0-9]{12})/) || [])[1] || '';
+            var hiddenCv = document.getElementById('chatVisitorId');
+            if (hiddenCv) hiddenCv.value = cv;
             var txt = submitBtn.querySelector('.btn-text');
             submitBtn.disabled = true;
             if(txt) txt.textContent = 'Memproses...';
@@ -216,24 +220,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    var firstEmpty = form ? form.querySelector('.auth-input') : null;
-    if(firstEmpty && !firstEmpty.value) { /* keep focus natural */ }
-=======
-    var btn = document.getElementById('togglePassword');
-    var input = document.getElementById('password');
-    if (btn && input) {
-        btn.addEventListener('click', function() {
-            var isPassword = input.getAttribute('type') === 'password';
-            input.setAttribute('type', isPassword ? 'text' : 'password');
-            var icon = this.querySelector('i');
-            icon.classList.toggle('fa-eye');
-            icon.classList.toggle('fa-eye-slash');
-        });
-    }
-    var cv = localStorage.getItem('mcmChatVid') || (document.cookie.match(/(?:^|; )mcmChatVid=([a-f0-9]{12})/) || [])[1] || '';
-    var el = document.getElementById('chatVisitorId');
-    if (el) el.value = cv;
->>>>>>> FinalV1G
+    // init hidden chat visitor id on load
+    var cvInit = localStorage.getItem('mcmChatVid') || (document.cookie.match(/(?:^|; )mcmChatVid=([a-f0-9]{12})/) || [])[1] || '';
+    var elInit = document.getElementById('chatVisitorId');
+    if (elInit) elInit.value = cvInit;
 });
 </script>
 

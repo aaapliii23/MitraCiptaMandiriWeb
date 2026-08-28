@@ -78,4 +78,14 @@ if ($action === 'delete') {
     }
     exit;
 }
+if ($action === 'bulk_delete') {
+    $raw=$_POST['ids']??''; $ids=[]; if(is_array($raw))$ids=$raw; elseif(is_string($raw)&&$raw!==''){ $d=json_decode($raw,true); $ids=is_array($d)?$d:array_filter(array_map('trim',explode(',',$raw))); }
+    $ids=array_values(array_unique(array_filter(array_map('intval',$ids))));
+    if(empty($ids)){ echo json_encode(['status'=>'error','message'=>'Tidak ada data terpilih']); exit; }
+    if(count($ids)>100){ echo json_encode(['status'=>'error','message'=>'Maksimal 100']); exit; }
+    $deleted=0; $fail=[]; foreach($ids as $id){ try{ $stmt=$pdo->prepare("DELETE FROM class_categories WHERE id=?"); $stmt->execute([$id]); $deleted+=$stmt->rowCount(); }catch(PDOException $e){ $fail[]=$id; } }
+    if($fail) echo json_encode(['status'=>'error','message'=> $deleted.' terhapus, '.count($fail).' gagal (masih dipakai kelas)']);
+    else echo json_encode(['status'=>'success','message'=> $deleted.' kategori berhasil dihapus']);
+    exit;
+}
 ?>

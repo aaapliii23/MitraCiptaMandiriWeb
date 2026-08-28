@@ -12,8 +12,8 @@
         </div>
 
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-            <div class="table-responsive">
-                <table class="table align-middle mb-0">
+            <div class="table-responsive table-responsive--no-scroll">
+                <table class="table align-middle admin-compact mb-0">
                     <thead>
                         <tr>
                             <th>#</th>

@@ -231,6 +231,30 @@ if ($action === 'create' || $action === 'update') {
             echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus kelas: ' . $e->getMessage()]);
         }
     }
+
+} elseif ($action === 'bulk_delete') {
+    $raw = $_POST['ids'] ?? '';
+    $ids = [];
+    if (is_array($raw)) $ids = $raw;
+    elseif (is_string($raw) && $raw !== '') { $d=json_decode($raw,true); $ids=is_array($d)?$d:array_filter(array_map('trim',explode(',',$raw))); }
+    $ids = array_values(array_unique(array_filter(array_map('intval',$ids))));
+    if (empty($ids)) { echo json_encode(['status'=>'error','message'=>'Tidak ada data terpilih']); exit; }
+    if (count($ids)>100) { echo json_encode(['status'=>'error','message'=>'Maksimal 100']); exit; }
+    $deleted=0; $fail=[]; foreach($ids as $id) {
+        try {
+            // ambil image untuk cleanup
+            try { $st=$pdo->prepare("SELECT image, image_public_id FROM classes WHERE id=?"); $st->execute([$id]); $cls=$st->fetch(); } catch (PDOException $e) { $st=$pdo->prepare("SELECT image FROM classes WHERE id=?"); $st->execute([$id]); $cls=$st->fetch(); if($cls) $cls['image_public_id']=''; }
+            $del=$pdo->prepare("DELETE FROM classes WHERE id=?"); $del->execute([$id]);
+            if($del->rowCount()>0){
+                $deleted++;
+                if($cls && (!empty($cls['image_public_id']) || str_contains($cls['image']??'','res.cloudinary.com'))){ $pid=$cls['image_public_id']?:$cls['image']; $res=deleteImageFromCloudinary($pid); if(!$res['ok']) error_log("[Cloudinary bulk classes $id] ".$res['error']); }
+                if($cls && !empty($cls['image']) && strpos($cls['image'],'http')!==0 && file_exists('../../'.$cls['image'])) @unlink('../../'.$cls['image']);
+            }
+        } catch (PDOException $e) { if($e->getCode()==23000) $fail[]=$id; }
+    }
+    if($fail) echo json_encode(['status'=>'error','message'=> $deleted.' terhapus, '.count($fail).' gagal (masih punya relasi)']);
+    else echo json_encode(['status'=>'success','message'=> $deleted.' data berhasil dihapus']);
+    exit;
 } else {
     echo json_encode(['status' => 'error', 'message' => 'Aksi tidak valid.']);
 }

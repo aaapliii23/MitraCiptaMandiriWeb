@@ -104,5 +104,24 @@ if ($action === 'delete') {
     }
     exit;
 }
+if ($action === 'bulk_delete') {
+    $raw=$_POST['ids']??''; $ids=[]; if(is_array($raw))$ids=$raw; elseif(is_string($raw)&&$raw!==''){ $d=json_decode($raw,true); $ids=is_array($d)?$d:array_filter(array_map('trim',explode(',',$raw))); }
+    $ids=array_values(array_unique(array_filter(array_map('intval',$ids))));
+    if(empty($ids)){ echo json_encode(['status'=>'error','message'=>'Tidak ada data terpilih']); exit; }
+    if(count($ids)>100){ echo json_encode(['status'=>'error','message'=>'Maksimal 100']); exit; }
+    try{
+        $ph=implode(',',array_fill(0,count($ids),'?'));
+        // cleanup images per row
+        $stmt=$pdo->prepare("SELECT bg_image, bg_image_public_id FROM certificate_templates WHERE id IN ($ph)");
+        $stmt->execute($ids); $rows=$stmt->fetchAll();
+        $del=$pdo->prepare("DELETE FROM certificate_templates WHERE id IN ($ph)"); $del->execute($ids);
+        foreach($rows as $row){
+            if(!empty($row['bg_image_public_id'])||str_contains($row['bg_image']??'','res.cloudinary.com')){ $pid=$row['bg_image_public_id']?:$row['bg_image']; $r=deleteImageFromCloudinary($pid); if(!$r['ok']) error_log("[Cloudinary bulk cert_tpl] ".$r['error']); }
+            if(!empty($row['bg_image']) && strpos($row['bg_image'],'http')!==0 && file_exists('../../'.$row['bg_image'])) @unlink('../../'.$row['bg_image']);
+        }
+        echo json_encode(['status'=>'success','message'=>$del->rowCount().' template dihapus']);
+    }catch(PDOException $e){ echo json_encode(['status'=>'error','message'=>'Gagal hapus massal']); }
+    exit;
+}
 
 echo json_encode(['status' => 'error', 'message' => 'Aksi tidak dikenali']);
