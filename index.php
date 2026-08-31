@@ -1,4 +1,23 @@
 <?php
+// --- 404 publik: tangkap URL/file tidak ada yang fallback ke index.php (php -S tanpa router) ---
+$__reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$__reqPath = urldecode($__reqPath);
+if ($__reqPath !== '/' && $__reqPath !== '/index.php' && $__reqPath !== '/404.php' && $__reqPath !== '/router.php') {
+    $__real = __DIR__ . $__reqPath;
+    // hanya untuk path publik (bukan api/admin/lms yang punya handler sendiri)
+    $isAsset = str_starts_with($__reqPath, '/assets/') || str_starts_with($__reqPath, '/uploads/');
+    if (!$isAsset && !file_exists($__real)) {
+        // file benar-benar tidak ada -> 404 publik
+        http_response_code(404);
+        // hindari loop jika 404.php sendiri yang di-request
+        if (file_exists(__DIR__ . '/404.php')) {
+            include __DIR__ . '/404.php';
+            exit;
+        }
+    }
+}
+unset($__reqPath, $__real, $isAsset);
+
 session_start();
 // Generate CSRF Token for the form
 if (empty($_SESSION['csrf_token'])) {
@@ -7,6 +26,13 @@ if (empty($_SESSION['csrf_token'])) {
 $csrf_token = $_SESSION['csrf_token'];
 
 require_once 'config/database.php';
+
+// Tangani ?page= yang tidak dikenal di publik (index hanya homepage, tidak ada router ?page)
+if (isset($_GET['page'])) {
+    http_response_code(404);
+    include __DIR__ . '/404.php';
+    exit;
+}
 
 // Fetch Gallery
 try {

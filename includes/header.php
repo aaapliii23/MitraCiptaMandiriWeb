@@ -9,6 +9,11 @@ if ($script_file !== '' && strpos($script_file, $app_root) === 0) {
     $base_url = ($script_dir === '/' || $script_dir === '' || $script_dir === '\\') ? '' : str_repeat('../', substr_count(rtrim($script_dir, '/'), '/'));
 }
 $is_home = basename($_SERVER['SCRIPT_FILENAME'] ?? '') === 'index.php';
+// absolute home untuk cegah double "index.php/index.php" saat URL punya path-info (/index.php/xxx)
+$__homeAbs = '/index.php';
+if (!empty($_SERVER['SCRIPT_NAME']) && str_contains($_SERVER['SCRIPT_NAME'], '/MitraCiptaMandiriWeb/')) {
+    $__homeAbs = '/MitraCiptaMandiriWeb/index.php';
+}
 if (!isset($csrf_token)) {
     if (session_status() === PHP_SESSION_NONE) session_start();
     if (empty($_SESSION['csrf_token'])) {
@@ -55,7 +60,7 @@ $headerLogo = function_exists('mcm_setting') ? mcm_setting('logo_url', $base_url
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg fixed-top<?php echo $is_home ? '' : ' navbar-solid'; ?>" style="transition: all 0.4s ease;">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="<?php echo $base_url; ?>index.php">
+            <a class="navbar-brand d-flex align-items-center" href="<?php echo htmlspecialchars($__homeAbs); ?>">
                 <img src="<?php echo htmlspecialchars($headerLogo); ?>" alt="MCM Logo" style="height: 40px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
                 <div class="ms-2 ps-2 border-start border-2 brand-divider d-flex flex-column justify-content-center" style="height: 35px;">
                     <span class="fw-bold brand-text" style="font-size: 0.75rem; letter-spacing: 1px; line-height: 1.1;">MITRA CIPTA</span>
@@ -79,7 +84,7 @@ $headerLogo = function_exists('mcm_setting') ? mcm_setting('logo_url', $base_url
                 <?php $nav_sections = [['beranda', 'Beranda'], ['tentang', 'Tentang'], ['galeri', 'Galeri'], ['paket', 'Paket'], ['testimoni', 'Testimoni']]; ?>
                 <ul class="navbar-nav mx-auto align-items-center gap-2">
                     <?php foreach ($nav_sections as $ns): ?>
-                        <?php $href = ($ns[0] === 'tentang') ? $base_url . 'pages/about.php' : ($is_home ? '#' . $ns[0] : $base_url . 'index.php#' . $ns[0]); ?>
+                        <?php $href = ($ns[0] === 'tentang') ? $base_url . 'pages/about.php' : ($is_home ? '#' . $ns[0] : $__homeAbs . '#' . $ns[0]); ?>
                         <li class="nav-item"><a class="nav-link" href="<?php echo $href; ?>"><?php echo $ns[1]; ?></a></li>
                     <?php endforeach; ?>
                 </ul>

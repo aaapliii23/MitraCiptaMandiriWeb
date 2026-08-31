@@ -27,7 +27,7 @@
                 <div class="col-md-4">
                     <h5 class="fw-bold mb-4">Tautan Cepat</h5>
                     <ul class="list-unstyled text-white-50">
-                        <li><a href="<?php echo $base_url; ?>index.php" class="text-white-50 text-decoration-none mb-2 d-block">Beranda</a></li>
+                        <li><a href="<?php $__fHome='/index.php'; if(!empty($_SERVER['SCRIPT_NAME'])&&str_contains($_SERVER['SCRIPT_NAME'],'/MitraCiptaMandiriWeb/')) $__fHome='/MitraCiptaMandiriWeb/index.php'; echo htmlspecialchars($__fHome); ?>" class="text-white-50 text-decoration-none mb-2 d-block">Beranda</a></li>
                         <li><a href="<?php echo $base_url; ?>pages/about.php" class="text-white-50 text-decoration-none mb-2 d-block">Tentang Kami</a></li>
                         <li><a href="<?php echo $base_url; ?>pages/programs.php" class="text-white-50 text-decoration-none mb-2 d-block">Program Pelatihan</a></li>
                     </ul>

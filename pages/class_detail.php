@@ -4,7 +4,8 @@ require_once '../config/database.php';
 // Get class ID from URL
 $class_id = $_GET['id'] ?? null;
 if (!$class_id) {
-    header("Location: programs.php");
+    http_response_code(404);
+    include __DIR__ . '/../404.php';
     exit;
 }
 
@@ -14,7 +15,8 @@ try {
     $class = $stmt->fetch();
     
     if (!$class) {
-        header("Location: programs.php");
+        http_response_code(404);
+        include __DIR__ . '/../404.php';
         exit;
     }
     
@@ -30,7 +32,8 @@ try {
     // Default mode: offline jika both/offline, online jika hanya online
     $defaultMode = $modeAvailable === 'online' ? 'online' : 'offline';
 } catch(PDOException $e) {
-    header("Location: programs.php");
+    http_response_code(404);
+    include __DIR__ . '/../404.php';
     exit;
 }
 

@@ -20,6 +20,9 @@ function getImgSrc($path) {
 $adminBase = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
 
 $page = $_GET['page'] ?? 'dashboard';
+$validPages = ['dashboard','orders','classes','gallery','facilities','instructors','certs','reports','finance','admins','settings','categories','testimonials','materials','chat','chatbot','users'];
+$isValidPage = in_array($page, $validPages, true);
+if (!$isValidPage) http_response_code(404);
 
 // Greeting logic
 date_default_timezone_set('Asia/Jakarta');
@@ -379,6 +382,7 @@ if ($page === 'facilities') {
 
 <?php require __DIR__ . '/includes/head.php'; ?>
 
+<?php if ($isValidPage): ?>
 <?php if ($page === 'dashboard') include __DIR__ . '/pages/dashboard.php'; ?>
 <?php if ($page === 'orders') include __DIR__ . '/pages/orders.php'; ?>
 <?php if ($page === 'classes') include __DIR__ . '/pages/classes.php'; ?>
@@ -396,6 +400,9 @@ if ($page === 'facilities') {
 <?php if ($page === 'chat') include __DIR__ . '/pages/chat.php'; ?>
 <?php if ($page === 'chatbot') include __DIR__ . '/pages/chatbot.php'; ?>
 <?php if ($page === 'users') include __DIR__ . '/pages/users.php'; ?>
+<?php else: ?>
+<?php include __DIR__ . '/pages/404.php'; ?>
+<?php endif; ?>
 
 <?php require __DIR__ . '/includes/modals.php'; ?>
 

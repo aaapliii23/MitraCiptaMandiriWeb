@@ -1,0 +1,7 @@
+ErrorDocument 404 /404.php
+# cegah listing direktori
+Options -Indexes
+# amankan file sensitif bila ada
+<FilesMatch "^\.(env|git)">
+  Require all denied
+</FilesMatch>
