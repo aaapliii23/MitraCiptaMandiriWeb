@@ -754,36 +754,52 @@ function getBulkEndpoint(type){
     window.initBulkTables = initBulkTables;
     window.getBulkEndpoint = getBulkEndpoint;
 
-// AJAX Form Submission
-document.querySelectorAll('.ajax-form').forEach(form => {
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+// AJAX Form Submission — delegated (fix: forms injected via loadContent + finance/facility/settings)
+document.addEventListener('submit', function(e) {
+    const form = e.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    const isAjaxForm = form.classList.contains('ajax-form');
+    const action = form.getAttribute('action') || '';
+    const isAdminAction = action.includes('admin/actions/');
+    // tangani: semua .ajax-form + safety net untuk form admin/actions tanpa class (kecuali yang sudah punya handler inline)
+    if (!isAjaxForm && !isAdminAction) return;
+    // skip form yang sudah punya handler khusus (chatReplyForm, onsubmit="submitAjaxForm", quizForm)
+    if (form.id === 'chatReplyForm' || form.id === 'quizForm') return;
+    if (form.getAttribute('onsubmit') && form.getAttribute('onsubmit').includes('submitAjaxForm')) return;
+    if (form.getAttribute('onsubmit') && form.getAttribute('onsubmit').includes('submitQuizQuestionForm')) return;
 
-        fetch(this.getAttribute('action'), {
-            method: this.getAttribute('method') || 'POST',
-            body: new FormData(this)
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'success') {
-                Swal.fire('Berhasil!', data.message, 'success').then(() => {
-                    window.location.reload();
-                });
-            } else {
-                Swal.fire('Gagal', data.message, 'error');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
-            }
-        })
-        .catch(err => {
-            Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');
+    e.preventDefault();
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (!submitBtn) return;
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+
+    fetch(form.getAttribute('action'), {
+        method: form.getAttribute('method') || 'POST',
+        body: new FormData(form)
+    })
+    .then(res => res.text())
+    .then(text => {
+        let data;
+        try { data = JSON.parse(text); } catch(err) { throw new Error('Respons tidak valid: ' + text.slice(0,120)); }
+        return data;
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire('Berhasil!', data.message, 'success').then(() => {
+                window.location.reload();
+            });
+        } else {
+            Swal.fire('Gagal', data.message || 'Gagal menyimpan', 'error');
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalText;
-        });
+        }
+    })
+    .catch(err => {
+        Swal.fire('Error', err.message || 'Terjadi kesalahan sistem.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
     });
 });
 </script>
