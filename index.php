@@ -1,22 +1,37 @@
 <?php
 // --- 404 publik: tangkap URL/file tidak ada yang fallback ke index.php (php -S tanpa router) ---
+// Catatan: pakai DOCUMENT_ROOT agar benar untuk 2 mode deploy:
+// - docroot = repo root (/index.php) dan
+// - docroot = parent htdocs (/MitraCiptaMandiriWeb/index.php via XAMPP/subfolder)
 $__reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $__reqPath = urldecode($__reqPath);
-if ($__reqPath !== '/' && $__reqPath !== '/index.php' && $__reqPath !== '/404.php' && $__reqPath !== '/router.php') {
-    $__real = __DIR__ . $__reqPath;
-    // hanya untuk path publik (bukan api/admin/lms yang punya handler sendiri)
-    $isAsset = str_starts_with($__reqPath, '/assets/') || str_starts_with($__reqPath, '/uploads/');
-    if (!$isAsset && !file_exists($__real)) {
-        // file benar-benar tidak ada -> 404 publik
-        http_response_code(404);
-        // hindari loop jika 404.php sendiri yang di-request
-        if (file_exists(__DIR__ . '/404.php')) {
-            include __DIR__ . '/404.php';
-            exit;
+// normalisasi: hilangkan trailing slash kecuali root
+$__reqPathNorm = rtrim($__reqPath, '/');
+if ($__reqPathNorm === '') $__reqPathNorm = '/';
+if ($__reqPathNorm !== '/' && $__reqPathNorm !== '/index.php' && $__reqPathNorm !== '/404.php' && $__reqPathNorm !== '/router.php') {
+    $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? __DIR__;
+    // untuk php -S tanpa DOCUMENT_ROOT yang akurat, fallback ke __DIR__ jika path tidak diawali subfolder
+    $__real = rtrim($docRoot, '/') . $__reqPath;
+    // jika docRoot tidak mengandung file (kasus subfolder), coba __DIR__ + basename
+    if (!file_exists($__real) && !str_starts_with($__reqPath, '/MitraCiptaMandiriWeb')) {
+        // coba cek relatif terhadap repo (untuk docroot = repo)
+        $__alt = __DIR__ . $__reqPath;
+        if (file_exists($__alt)) $__real = $__alt;
+    }
+    $isAsset = str_contains($__reqPath, '/assets/') || str_contains($__reqPath, '/uploads/');
+    // hanya 404 jika file benar-benar tidak ada DAN bukan asset yang memang tidak ada (biarkan 404 untuk asset juga, tapi jangan false-positive untuk file valid)
+    if (!$isAsset && !file_exists($__real) && !is_dir($__real)) {
+        // pastikan bukan halaman valid tanpa file fisik (misal /index.php?page=xxx sudah ditangani di bawah)
+        if (!isset($_GET['page'])) {
+            http_response_code(404);
+            if (file_exists(__DIR__ . '/404.php')) {
+                include __DIR__ . '/404.php';
+                exit;
+            }
         }
     }
 }
-unset($__reqPath, $__real, $isAsset);
+unset($__reqPath, $__reqPathNorm, $__real, $__alt, $docRoot, $isAsset);
 
 session_start();
 // Generate CSRF Token for the form
