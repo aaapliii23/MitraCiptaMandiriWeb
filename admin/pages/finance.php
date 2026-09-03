@@ -396,17 +396,18 @@ function syncPaidOrders() {
                 method: 'POST',
                 body: formData
             })
-            .then(res => res.json())
+            .then(res => res.text()).then(t=>{ let d; try{ d=JSON.parse(t);}catch(e){ throw new Error('Respons tidak valid: '+t.slice(0,120)); } return d; })
             .then(data => {
                 if (data.status === 'success') {
-                    Swal.fire('Berhasil!', data.message, 'success').then(() => window.location.reload());
+                    Swal.fire({ icon:'success', title:'Berhasil!', text:data.message, timer:1500, showConfirmButton:false }).then(() => {
+                        if (typeof window.mcmCloseModalsAndRefresh==='function') window.mcmCloseModalsAndRefresh();
+                        else if (typeof loadContent==='function'){ loadContent('?page=finance', false); }
+                    });
                 } else {
-                    Swal.fire('Gagal!', data.message, 'error');
+                    Swal.fire('Gagal!', data.message || 'Gagal', 'error');
                 }
             })
-            .catch(() => {
-                Swal.fire('Gagal!', 'Terjadi kesalahan saat memproses data.', 'error');
-            });
+            .catch(err => Swal.fire('Gagal!', err.message || 'Terjadi kesalahan saat memproses data.', 'error'));
         }
     });
 }

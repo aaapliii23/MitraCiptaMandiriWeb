@@ -242,10 +242,10 @@ async function submitAjaxForm(formId) {
                     icon: 'success',
                     title: 'Berhasil!',
                     text: successMsg,
-                    timer: 2000,
+                    timer: 1800,
                     showConfirmButton: false
                 }).then(() => {
-                    location.reload();
+                    window.mcmCloseModalsAndRefresh();
                 });
             } else {
                 Swal.fire({
@@ -285,7 +285,7 @@ async function submitAjaxForm(formId) {
                 timer: 1500,
                 showConfirmButton: false
             }).then(() => {
-                location.reload();
+                window.mcmCloseModalsAndRefresh();
             });
         } else {
             Swal.fire({
@@ -310,6 +310,22 @@ async function submitAjaxForm(formId) {
         }
     });
 }
+
+// Partial refresh helper — tutup modal & reload konten tanpa full page reload (konsisten dengan loadContent)
+window.mcmCloseModalsAndRefresh = function() {
+    document.querySelectorAll('.modal.show').forEach(function(el){
+        const m = bootstrap.Modal.getInstance(el);
+        if (m) m.hide();
+    });
+    document.querySelectorAll('.modal-backdrop').forEach(function(el){ el.remove(); });
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+    const page = new URLSearchParams(window.location.search).get('page') || 'dashboard';
+    if (typeof loadContent === 'function') {
+        loadContent('?page=' + page, false);
+    }
+};
 
 // Debounce util: tunda eksekusi fn sampai user berhenti memicu selama `ms` ms.
 // Pemakaian: input.addEventListener('input', window.debounce(function(){...}, 400));

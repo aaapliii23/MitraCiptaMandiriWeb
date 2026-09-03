@@ -70,17 +70,18 @@ function deleteFacilityCategory(id, name) {
                 method: 'POST',
                 body: formData
             })
-            .then(res => res.json())
+            .then(res => res.text()).then(t=>{ let d; try{ d=JSON.parse(t);}catch(e){ throw new Error('Respons tidak valid: '+t.slice(0,120)); } return d; })
             .then(data => {
                 if (data.status === 'success') {
-                    Swal.fire('Terhapus!', data.message, 'success').then(() => window.location.reload());
+                    Swal.fire({ icon:'success', title:'Terhapus!', text:data.message, timer:1500, showConfirmButton:false }).then(() => {
+                        if (typeof window.mcmCloseModalsAndRefresh==='function') window.mcmCloseModalsAndRefresh();
+                        else if (typeof loadContent==='function'){ const p=new URLSearchParams(window.location.search).get('page')||'dashboard'; loadContent('?page='+p,false); }
+                    });
                 } else {
-                    Swal.fire('Gagal!', data.message, 'error');
+                    Swal.fire('Gagal!', data.message || 'Gagal', 'error');
                 }
             })
-            .catch(() => {
-                Swal.fire('Gagal!', 'Terjadi kesalahan sistem.', 'error');
-            });
+            .catch(err => Swal.fire('Gagal!', err.message || 'Terjadi kesalahan sistem.', 'error'));
         }
     });
 }
@@ -228,12 +229,16 @@ function setTestimonialStatus(id, action) {
     formData.append('action', action);
     formData.append('id', id);
     fetch(adminBase + '/actions/manage_testimonials.php', { method: 'POST', body: formData })
-    .then(res => res.json())
+    .then(res => res.text()).then(t=>{ let d; try{ d=JSON.parse(t);}catch(e){ throw new Error('Respons tidak valid: '+t.slice(0,120)); } return d; })
     .then(data => {
-        Swal.fire(data.status === 'success' ? 'Berhasil!' : 'Gagal', data.message, data.status).then(() => {
-            if (data.status === 'success') window.location.reload();
+        const ok = data.status === 'success';
+        Swal.fire(ok ? 'Berhasil!' : 'Gagal', data.message, data.status).then(() => {
+            if (ok) {
+                if (typeof window.mcmCloseModalsAndRefresh==='function') window.mcmCloseModalsAndRefresh();
+                else if (typeof loadContent==='function'){ const p=new URLSearchParams(window.location.search).get('page')||'dashboard'; loadContent('?page='+p,false); }
+            }
         });
-    });
+    }).catch(err=> Swal.fire('Gagal', err.message || 'Terjadi kesalahan', 'error'));
 }
 
 function materialTypeChanged() {
@@ -570,14 +575,22 @@ function deleteItem(type, id) {
             formData.append('id', id);
             
             fetch(endpoint, { method: 'POST', body: formData })
-            .then(res => res.json())
+            .then(res => res.text()).then(t => { let d; try{ d=JSON.parse(t);}catch(e){ throw new Error('Respons tidak valid: '+t.slice(0,120)); } return d; })
             .then(data => {
                 if(data.status === 'success') {
-                    Swal.fire('Terhapus!', data.message, 'success').then(() => window.location.reload());
+                    Swal.fire({ icon:'success', title:'Terhapus!', text:data.message, timer:1500, showConfirmButton:false }).then(() => {
+                        if (typeof window.mcmCloseModalsAndRefresh === 'function') window.mcmCloseModalsAndRefresh();
+                        else if (typeof loadContent === 'function') { const p=new URLSearchParams(window.location.search).get('page')||'dashboard'; loadContent('?page='+p,false); }
+                        else { // fallback: hapus baris/card terkait tanpa reload penuh
+                            let sel = 'button[onclick*="deleteItem(\''+type+'\', '+id+')"], button[onclick*="deleteItem(\\''+type+'\\','+id+')"]';
+                            let btn = document.querySelector(sel);
+                            if (btn) { const row = btn.closest('tr') || btn.closest('[data-bulk-card]') || btn.closest('.col-md-4') || btn.closest('.card'); if (row) row.remove(); }
+                        }
+                    });
                 } else {
-                    Swal.fire('Gagal!', data.message, 'error');
+                    Swal.fire('Gagal!', data.message || 'Gagal menghapus', 'error');
                 }
-            });
+            }).catch(err => Swal.fire('Error', err.message || 'Terjadi kesalahan sistem.', 'error'));
         }
     });
 }
@@ -717,10 +730,18 @@ function getBulkEndpoint(type){
                         const orig = delBtn.innerHTML;
                         delBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menghapus...';
                         fetch(ep, { method:'POST', body: fd })
-                        .then(r=>r.json())
+                        .then(r=>r.text()).then(t=>{ let d; try{ d=JSON.parse(t);}catch(e){ throw new Error('Respons tidak valid: '+t.slice(0,120)); } return d; })
                         .then(d=>{
                             if (d.status==='success'){
-                                Swal.fire('Terhapus!', d.message || (sendIds.length+' data berhasil dihapus.'), 'success').then(()=> window.location.reload());
+                                Swal.fire({ icon:'success', title:'Terhapus!', text:d.message || (sendIds.length+' data berhasil dihapus.'), timer:1500, showConfirmButton:false }).then(()=> {
+                                    if (typeof window.mcmCloseModalsAndRefresh==='function') window.mcmCloseModalsAndRefresh();
+                                    else if (typeof loadContent==='function'){ const p=new URLSearchParams(window.location.search).get('page')||'dashboard'; loadContent('?page='+p,false); }
+                                    else {
+                                        // fallback partial: hapus baris terpilih dari DOM
+                                        checked.forEach(function(cb){ const row=cb.closest('tr')||cb.closest('[data-bulk-card]'); if(row) row.remove(); });
+                                        if (typeof updateToolbar==='function') updateToolbar();
+                                    }
+                                });
                             } else {
                                 Swal.fire('Gagal', d.message || 'Gagal menghapus', 'error');
                             }
@@ -754,36 +775,88 @@ function getBulkEndpoint(type){
     window.initBulkTables = initBulkTables;
     window.getBulkEndpoint = getBulkEndpoint;
 
-// AJAX Form Submission
-document.querySelectorAll('.ajax-form').forEach(form => {
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+// AJAX Form Submission — delegated (fix redirect JSON + partial-render for updateStatus)
+document.addEventListener('submit', function(e) {
+    const form = e.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    const isAjaxForm = form.classList.contains('ajax-form');
+    const action = form.getAttribute('action') || '';
+    const isAdminAction = action.includes('admin/actions/');
+    if (!isAjaxForm && !isAdminAction) return;
+    if (form.id === 'chatReplyForm' || form.id === 'quizForm') return;
+    const onSubmitAttr = form.getAttribute('onsubmit') || '';
+    if (onSubmitAttr.includes('submitAjaxForm') || onSubmitAttr.includes('submitQuizQuestionForm')) return;
 
-        fetch(this.getAttribute('action'), {
-            method: this.getAttribute('method') || 'POST',
-            body: new FormData(this)
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'success') {
-                Swal.fire('Berhasil!', data.message, 'success').then(() => {
-                    window.location.reload();
-                });
+    // khusus updateStatusForm -> partial-render tanpa reload
+    if (form.id === 'updateStatusForm') {
+        e.preventDefault();
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (!submitBtn) return;
+        const orig = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
+        const fd = new FormData(form);
+        const orderId = fd.get('order_id');
+        const newStatus = fd.get('status');
+        fetch(form.getAttribute('action'), { method: form.getAttribute('method') || 'POST', body: fd })
+        .then(r => r.text()).then(t => { let d; try{ d=JSON.parse(t);}catch(e){ throw new Error('Respons tidak valid: '+t.slice(0,120)); } return d; })
+        .then(d => {
+            if (d.status === 'success') {
+                // tutup modal
+                const modalEl = document.getElementById('updateStatusModal');
+                if (modalEl) { const m = bootstrap.Modal.getInstance(modalEl); if (m) m.hide(); }
+                // update badge di baris yang sesuai (tanpa reload)
+                const btn = document.querySelector('button[data-bs-target="#updateStatusModal"][data-id="'+orderId+'"]');
+                const row = btn ? btn.closest('tr') : null;
+                if (row) {
+                    const badgeCell = row.querySelector('td:nth-child(7)');
+                    if (badgeCell) {
+                        let html = '';
+                        if (newStatus === 'pending') html = '<span class="badge badge-soft-warning"><i class="fas fa-clock me-1"></i>Pending</span>';
+                        else if (newStatus === 'confirmed') html = '<span class="badge badge-soft-success"><i class="fas fa-check-circle me-1"></i>Lunas</span>';
+                        else html = '<span class="badge badge-soft-danger"><i class="fas fa-times-circle me-1"></i>Batal</span>';
+                        badgeCell.innerHTML = html;
+                        // sync data-status pada tombol edit agar modal berikutnya benar
+                        btn.setAttribute('data-status', newStatus);
+                    }
+                }
+                Swal.fire({ icon:'success', title:'Berhasil!', text:d.message, timer:1500, showConfirmButton:false });
             } else {
-                Swal.fire('Gagal', data.message, 'error');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
+                Swal.fire('Gagal', d.message || 'Gagal menyimpan', 'error');
             }
         })
-        .catch(err => {
-            Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');
+        .catch(err => Swal.fire('Error', err.message || 'Terjadi kesalahan sistem.', 'error'))
+        .finally(() => { submitBtn.disabled = false; submitBtn.innerHTML = orig; });
+        return;
+    }
+
+    // generic ajax-form (delegated) — untuk finance, facility, settings, dll.
+    e.preventDefault();
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (!submitBtn) return;
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+    fetch(form.getAttribute('action'), { method: form.getAttribute('method') || 'POST', body: new FormData(form) })
+    .then(res => res.text()).then(t => { let d; try{ d=JSON.parse(t);}catch(e){ throw new Error('Respons tidak valid: '+t.slice(0,120)); } return d; })
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({ icon:'success', title:'Berhasil!', text:data.message, timer:1500, showConfirmButton:false }).then(() => {
+                if (typeof window.mcmCloseModalsAndRefresh==='function') window.mcmCloseModalsAndRefresh();
+                else if (typeof loadContent==='function'){ const p=new URLSearchParams(window.location.search).get('page')||'dashboard'; loadContent('?page='+p,false); }
+            });
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalText;
-        });
+        } else {
+            Swal.fire('Gagal', data.message || 'Gagal', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    })
+    .catch(err => {
+        Swal.fire('Error', err.message || 'Terjadi kesalahan sistem.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
     });
 });
 </script>

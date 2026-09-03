@@ -261,12 +261,21 @@ if (empty($threadNumber)) {
                         formData.append('action', 'delete_thread');
                         formData.append('wa_number', number);
                         fetch(adminBase + '/actions/manage_chat.php', { method: 'POST', body: formData })
-                        .then(res => res.json())
+                        .then(res => res.text()).then(t=>{ let d; try{ d=JSON.parse(t);}catch(e){ throw new Error('Respons tidak valid: '+t.slice(0,120)); } return d; })
                         .then(data => {
-                            Swal.fire(data.status === 'success' ? 'Terhapus!' : 'Gagal', data.message, data.status).then(() => {
-                                if (data.status === 'success') window.location.href = '?page=chat';
+                            const ok = data.status === 'success';
+                            Swal.fire({ icon: ok?'success':'error', title: ok?'Terhapus!':'Gagal', text:data.message, timer: ok?1500:undefined, showConfirmButton: !ok }).then(() => {
+                                if (ok) {
+                                    if (typeof window.mcmCloseModalsAndRefresh==='function') window.mcmCloseModalsAndRefresh();
+                                    else if (typeof loadContent==='function') loadContent('?page=chat', false);
+                                    else {
+                                        const r=document.querySelector('tr[data-kind]'); // fallback hapus baris
+                                        const tr=document.querySelector('a[href*="thread='+encodeURIComponent(number)+'"]')?.closest('tr');
+                                        if (tr) tr.remove();
+                                    }
+                                }
                             });
-                        });
+                        }).catch(err=> Swal.fire('Gagal', err.message || 'Gagal', 'error'));
                     }
                 });
             }
