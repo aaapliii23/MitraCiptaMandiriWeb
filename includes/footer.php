@@ -13,8 +13,19 @@
     <!-- Footer -->
     <footer class="pt-5 pb-4" style="background-color: #0f172a !important; color: white;">
         <div class="container">
+            <?php
+            // Data dinamis footer — dipakai di kolom Office & Ikuti Kami
+            $fAddress = mcm_setting('admin_address', 'Jl. Khp Hasan Mustopa No.57, Neglasari, Kec. Cibeunying Kaler, Kota Bandung, Jawa Barat 40124');
+            $fWa      = preg_replace('/\D/', '', mcm_setting('admin_whatsapp', '6285793935707'));
+            $fEmail   = mcm_setting('admin_email', '');
+            $fIg      = trim(mcm_setting('social_ig', ''));
+            $fFb      = trim(mcm_setting('social_fb', ''));
+            $fTt      = trim(mcm_setting('social_tt', ''));
+            $fMaps    = trim(mcm_setting('maps_url', ''));
+            $__fHome = '/index.php'; if(!empty($_SERVER['SCRIPT_NAME'])&&str_contains($_SERVER['SCRIPT_NAME'],'/MitraCiptaMandiriWeb/')) $__fHome='/MitraCiptaMandiriWeb/index.php';
+            ?>
             <div class="row g-4">
-                <div class="col-md-4">
+                <div class="col-lg-3 col-md-6">
                     <div class="d-flex align-items-center mb-4">
                         <img src="<?php echo htmlspecialchars($footerLogo); ?>" alt="MCM Logo" style="height: 45px; filter: brightness(0) invert(1);">
                         <div class="ms-2 ps-2 border-start border-2 border-light d-flex flex-column justify-content-center" style="height: 35px;">
@@ -24,43 +35,37 @@
                     </div>
                     <p class="text-white-50">MCM - Mitra Cipta Mandiri adalah lembaga pelatihan vokasi premium yang berfokus pada pengembangan skill praktis untuk kemandirian ekonomi.</p>
                 </div>
-                <div class="col-md-4">
-                    <h5 class="fw-bold mb-4">Tautan Cepat</h5>
+                <div class="col-lg-2 col-md-6">
+                    <h5 class="fw-bold mb-4">Menu</h5>
                     <ul class="list-unstyled text-white-50">
-                        <li><a href="<?php $__fHome='/index.php'; if(!empty($_SERVER['SCRIPT_NAME'])&&str_contains($_SERVER['SCRIPT_NAME'],'/MitraCiptaMandiriWeb/')) $__fHome='/MitraCiptaMandiriWeb/index.php'; echo htmlspecialchars($__fHome); ?>" class="text-white-50 text-decoration-none mb-2 d-block">Beranda</a></li>
+                        <li><a href="<?php echo htmlspecialchars($__fHome); ?>" class="text-white-50 text-decoration-none mb-2 d-block">Beranda</a></li>
                         <li><a href="<?php echo $base_url; ?>pages/about.php" class="text-white-50 text-decoration-none mb-2 d-block">Tentang Kami</a></li>
                         <li><a href="<?php echo $base_url; ?>pages/programs.php" class="text-white-50 text-decoration-none mb-2 d-block">Program Pelatihan</a></li>
                     </ul>
                 </div>
-                <div class="col-md-4 text-start text-md-end">
-                    <h5 class="fw-bold mb-4">Hubungi Kami</h5>
-                    <?php
-                    // Data dinamis dari Pengaturan Web (tabel settings) — fallback ke nilai lama
-                    $fAddress = mcm_setting('admin_address', 'Jl. Khp Hasan Mustopa No.57, Neglasari, Kec. Cibeunying Kaler, Kota Bandung, Jawa Barat 40124');
-                    $fWa      = preg_replace('/\D/', '', mcm_setting('admin_whatsapp', '6285793935707'));
-                    $fEmail   = mcm_setting('admin_email', '');
-                    $fIg      = trim(mcm_setting('social_ig', ''));
-                    $fFb      = trim(mcm_setting('social_fb', ''));
-                    $fTt      = trim(mcm_setting('social_tt', ''));
-                    $fMaps    = trim(mcm_setting('maps_url', ''));
-                    ?>
-                    <?php if ($fAddress !== ''): ?>
-                    <p class="text-white-50 mb-1">
-                        <a href="<?php echo $fMaps !== '' ? htmlspecialchars($fMaps) : 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode($fAddress); ?>" target="_blank" rel="noopener" class="text-white-50 text-decoration-none" style="line-height: 1.6;">
-                            <i class="fas fa-map-marker-alt me-2"></i><?php echo htmlspecialchars($fAddress); ?>
-                        </a>
-                    </p>
-                    <?php endif; ?>
-                    <p class="text-white-50 mb-3"><i class="fas fa-phone-alt me-2"></i> +<?php echo htmlspecialchars($fWa); ?></p>
-                    <?php if ($fEmail !== ''): ?>
-                    <p class="text-white-50 mb-3"><i class="fas fa-envelope me-2"></i> <?php echo htmlspecialchars($fEmail); ?></p>
-                    <?php endif; ?>
-                    <div class="d-flex justify-content-md-end gap-3">
+                <div class="col-lg-3 col-md-6">
+                    <h5 class="fw-bold mb-4">Ikuti Kami</h5>
+                    <div class="d-flex gap-3">
                         <?php if ($fIg !== '' && $fIg !== '#'): ?><a href="<?php echo htmlspecialchars($fIg); ?>" target="_blank" rel="noopener" class="text-white fs-4" title="Instagram"><i class="fab fa-instagram"></i></a><?php endif; ?>
                         <?php if ($fFb !== '' && $fFb !== '#'): ?><a href="<?php echo htmlspecialchars($fFb); ?>" target="_blank" rel="noopener" class="text-white fs-4" title="Facebook"><i class="fab fa-facebook"></i></a><?php endif; ?>
                         <?php if ($fTt !== '' && $fTt !== '#'): ?><a href="<?php echo htmlspecialchars($fTt); ?>" target="_blank" rel="noopener" class="text-white fs-4" title="TikTok"><i class="fab fa-tiktok"></i></a><?php endif; ?>
                         <a href="https://wa.me/<?php echo htmlspecialchars($fWa); ?>" target="_blank" rel="noopener" class="text-white fs-4" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                     </div>
+                    <p class="small text-white-50 mt-3 mb-0" style="line-height: 1.6;">Dapatkan update terbaru seputar program & kegiatan MCM.</p>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <h5 class="fw-bold mb-4">Office</h5>
+                    <?php if ($fAddress !== ''): ?>
+                    <p class="text-white-50 mb-2">
+                        <a href="<?php echo $fMaps !== '' ? htmlspecialchars($fMaps) : 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode($fAddress); ?>" target="_blank" rel="noopener" class="text-white-50 text-decoration-none" style="line-height: 1.6;">
+                            <i class="fas fa-map-marker-alt me-2"></i><?php echo htmlspecialchars($fAddress); ?>
+                        </a>
+                    </p>
+                    <?php endif; ?>
+                    <p class="text-white-50 mb-2"><i class="fas fa-phone-alt me-2"></i> +<?php echo htmlspecialchars($fWa); ?></p>
+                    <?php if ($fEmail !== ''): ?>
+                    <p class="text-white-50 mb-0"><i class="fas fa-envelope me-2"></i> <?php echo htmlspecialchars($fEmail); ?></p>
+                    <?php endif; ?>
                 </div>
             </div>
             <hr class="mt-5 border-white-50">
@@ -112,6 +117,50 @@
             });
             return false;
         }
+    </script>
+
+    <!-- Scroll to Top — progress ring biru MCM -->
+    <button type="button" id="mcmScrollTop" class="mcm-scrolltop" aria-label="Kembali ke atas">
+        <svg class="mcm-scrolltop-svg" width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">
+            <circle class="mcm-scrolltop-track" cx="24" cy="24" r="20" fill="none" stroke="#e2e8f0" stroke-width="3"/>
+            <circle class="mcm-scrolltop-progress" cx="24" cy="24" r="20" fill="none" stroke="#0ea5e9" stroke-width="3" stroke-linecap="round" transform="rotate(-90 24 24)" stroke-dasharray="125.66" stroke-dashoffset="125.66"/>
+        </svg>
+        <i class="fas fa-arrow-up"></i>
+    </button>
+    <style>
+        .mcm-scrolltop{position:fixed;right:24px;bottom:96px;z-index:1041;width:48px;height:48px;border:none;border-radius:50%;background:#fff;color:#0c4a6e;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(15,23,42,0.12),0 2px 8px rgba(15,23,42,0.08);opacity:0;visibility:hidden;transform:translateY(8px) scale(0.96);transition:opacity 0.3s ease,visibility 0.3s ease,transform 0.3s ease,box-shadow 0.2s ease;cursor:pointer}
+        .mcm-scrolltop.visible{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
+        .mcm-scrolltop:hover{box-shadow:0 12px 28px rgba(14,165,233,0.22),0 4px 12px rgba(15,23,42,0.10);transform:translateY(-1px) scale(1.02)}
+        .mcm-scrolltop:active{transform:scale(0.97)}
+        .mcm-scrolltop-svg{position:absolute;inset:0;width:48px;height:48px;pointer-events:none}
+        .mcm-scrolltop-progress{transition:stroke-dashoffset 0.15s linear}
+        .mcm-scrolltop i{position:relative;z-index:1;font-size:14px}
+        @media(max-width:991.98px){.mcm-scrolltop{right:16px;bottom:88px;width:44px;height:44px}.mcm-scrolltop-svg{width:44px;height:44px}}
+        @media(max-width:575.98px){.mcm-scrolltop{bottom:84px}}
+    </style>
+    <script>
+    (function(){
+        const btn=document.getElementById('mcmScrollTop');
+        if(!btn) return;
+        const progress=btn.querySelector('.mcm-scrolltop-progress');
+        const circumference=2*Math.PI*20; // 125.66
+        let ticking=false;
+        function update(){
+            const scrollTop=window.scrollY||document.documentElement.scrollTop;
+            const docHeight=document.documentElement.scrollHeight - window.innerHeight;
+            const pct=docHeight>0?Math.min(scrollTop/docHeight,1):0;
+            if(progress) progress.style.strokeDashoffset=(circumference - pct*circumference).toFixed(2);
+            if(scrollTop>300) btn.classList.add('visible');
+            else btn.classList.remove('visible');
+            ticking=false;
+        }
+        function onScroll(){ if(!ticking){ ticking=true; requestAnimationFrame(update); } }
+        window.addEventListener('scroll', onScroll, {passive:true});
+        window.addEventListener('resize', onScroll);
+        btn.addEventListener('click', function(){ window.scrollTo({top:0, behavior:'smooth'}); });
+        // init
+        update();
+    })();
     </script>
 
     <?php $mcmChatCsrf = json_encode($_SESSION['csrf_token'] ?? ''); ?>
