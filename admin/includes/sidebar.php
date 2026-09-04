@@ -1,6 +1,6 @@
 <!-- Sidebar -->
 <?php
-$groupMap = ['dashboard' => 'utama', 'classes' => 'program', 'categories' => 'program', 'instructors' => 'program', 'materials' => 'program', 'users' => 'program', 'gallery' => 'program', 'facilities' => 'program', 'certs' => 'program', 'orders' => 'penjualan', 'finance' => 'penjualan', 'testimonials' => 'penjualan', 'chat' => 'penjualan', 'chatbot' => 'penjualan', 'reports' => 'laporan', 'admins' => 'sistem', 'settings' => 'sistem'];
+$groupMap = ['dashboard' => 'utama', 'classes' => 'program', 'categories' => 'program', 'instructors' => 'program', 'materials' => 'program', 'users' => 'program', 'gallery' => 'program', 'facilities' => 'program', 'certs' => 'program', 'orders' => 'penjualan', 'finance' => 'penjualan', 'testimonials' => 'penjualan', 'chat' => 'penjualan', 'chatbot' => 'penjualan', 'reports' => 'laporan', 'admins' => 'sistem', 'settings' => 'sistem', 'doku_channels' => 'sistem'];
 $activeGroup = $groupMap[$page] ?? 'utama';
 function mcm_group($id, $label, $key, $activeGroup) {
     $open = $activeGroup === $key ? ' show' : '';
@@ -78,6 +78,7 @@ function mcm_item($page, $target, $icon, $label) {
         <ul class="nav flex-column px-2">
             <?php echo mcm_item($page, 'admins', 'fas fa-users-cog', 'Kelola Admin'); ?>
             <?php echo mcm_item($page, 'settings', 'fas fa-cog', 'Pengaturan Web'); ?>
+            <?php echo mcm_item($page, 'doku_channels', 'fas fa-credit-card', 'Cek Channel DOKU'); ?>
         </ul>
         </div>
     </div>

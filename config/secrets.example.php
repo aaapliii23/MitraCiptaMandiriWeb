@@ -3,10 +3,22 @@
 // config/secrets.php TIDAK di-commit ke VCS (ada di .gitignore).
 
 // --- Payment Gateway ---
+// Mode: 'mock' = simulasi lokal (tanpa API), 'sandbox' = uji coba, 'production' = live
 define('PAYMENT_MODE', 'sandbox'); // 'mock' | 'sandbox' | 'production'
-define('PAYMENT_SERVER_KEY', '');
-define('PAYMENT_CLIENT_KEY', '');
-define('PAYMENT_WEBHOOK_SIGNATURE_KEY', '');
+
+// Cukup isi 3 field di bawah — kode akan otomatis pakai ketiganya.
+// Contoh: Midtrans, Xendit, Tripay, atau gateway lain yang pakai Client ID / API Key / Secret.
+define('PAYMENT_GATEWAY_CLIENT_ID', 'your_client_id_here');   // Client ID — untuk frontend (Snap.js / checkout JS)
+define('PAYMENT_GATEWAY_API_KEY', 'your_api_key_here');       // API Key / Server Key — untuk auth server-to-server
+define('PAYMENT_GATEWAY_SECRET_KEY', 'your_secret_key_here'); // Secret Key — untuk verifikasi webhook/signature
+
+// Opsional: URL endpoint gateway. Kosongkan jika pakai Midtrans (otomatis), atau isi untuk gateway custom.
+define('PAYMENT_GATEWAY_API_URL', ''); // ex: https://api.sandbox.midtrans.com/v1/transactions atau https://api.xendit.co/v2/invoices
+
+// Fallback lama (tetap didukung, tidak perlu diisi jika sudah pakai yang baru di atas):
+define('PAYMENT_SERVER_KEY', ''); // alias untuk API Key
+define('PAYMENT_CLIENT_KEY', ''); // alias untuk Client ID
+define('PAYMENT_WEBHOOK_SIGNATURE_KEY', ''); // alias untuk Secret Key
 
 // --- WhatsApp Cloud API ---
 define('WA_PHONE_NUMBER_ID', '');

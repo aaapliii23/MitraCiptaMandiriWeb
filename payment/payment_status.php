@@ -141,8 +141,9 @@ $meta = $statusMeta[$order['payment_status'] ?? 'unpaid'] ?? $statusMeta['unpaid
                         </div>
                     <?php elseif (in_array($order['payment_status'], ['failed', 'expired', 'unpaid'])): ?>
                         <div class="d-grid gap-2">
-                            <a href="payment_mock.php?order=<?php echo urlencode($order['order_number']); ?>&token=retry" class="btn rounded-pill py-2 fw-bold text-white" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9);">
-                                <i class="fas fa-redo me-2"></i>Coba Bayar Lagi
+                            <p class="small text-muted">Pembayaran belum selesai. Silakan hubungi admin atau buat pesanan baru.</p>
+                            <a href="../index.php#paket" class="btn rounded-pill py-2 fw-bold text-white" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9);">
+                                <i class="fas fa-redo me-2"></i>Pesan Ulang
                             </a>
                         </div>
                     <?php else: ?>

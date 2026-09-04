@@ -1,4 +1,9 @@
+# 404 kustom — support 2 mode deploy (docroot = repo dan docroot = parent htdocs)
+# Apache 2.4+: pakai <If> untuk deteksi subfolder, fallback ke /404.php untuk repo-root
 ErrorDocument 404 /404.php
+<If "%{REQUEST_URI} =~ m#^/MitraCiptaMandiriWeb/#">
+    ErrorDocument 404 /MitraCiptaMandiriWeb/404.php
+</If>
 # cegah listing direktori
 Options -Indexes
 # amankan file sensitif bila ada
