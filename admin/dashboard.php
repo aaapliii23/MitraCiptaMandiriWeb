@@ -20,7 +20,7 @@ function getImgSrc($path) {
 $adminBase = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
 
 $page = $_GET['page'] ?? 'dashboard';
-$validPages = ['dashboard','orders','classes','gallery','facilities','instructors','certs','reports','finance','admins','settings','categories','testimonials','materials','chat','chatbot','users'];
+$validPages = ['dashboard','orders','classes','gallery','facilities','instructors','certs','reports','finance','admins','settings','categories','testimonials','materials','chat','chatbot','users','doku_channels'];
 $isValidPage = in_array($page, $validPages, true);
 if (!$isValidPage) http_response_code(404);
 
@@ -400,6 +400,7 @@ if ($page === 'facilities') {
 <?php if ($page === 'chat') include __DIR__ . '/pages/chat.php'; ?>
 <?php if ($page === 'chatbot') include __DIR__ . '/pages/chatbot.php'; ?>
 <?php if ($page === 'users') include __DIR__ . '/pages/users.php'; ?>
+<?php if ($page === 'doku_channels') include __DIR__ . '/pages/doku_channels.php'; ?>
 <?php else: ?>
 <?php include __DIR__ . '/pages/404.php'; ?>
 <?php endif; ?>
