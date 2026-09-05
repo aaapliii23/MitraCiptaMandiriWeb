@@ -7,6 +7,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="certTemplateForm" action="<?php echo $adminBase; ?>/actions/manage_cert_templates.php" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault(); submitAjaxForm('certTemplateForm');">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(mcm_csrf_token()); ?>">
                 <div class="modal-body p-4">
                     <input type="hidden" name="action" id="certTemplateAction" value="create">
                     <input type="hidden" name="id" id="certTemplateId">

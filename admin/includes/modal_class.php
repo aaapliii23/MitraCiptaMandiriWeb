@@ -7,6 +7,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 <form id="classForm" action="<?php echo $adminBase; ?>/actions/manage_classes.php" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault(); submitAjaxForm('classForm');">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(mcm_csrf_token()); ?>">
                 <div class="modal-body p-4">
                     <input type="hidden" name="action" id="classAction" value="create">
                     <input type="hidden" name="id" id="classId">

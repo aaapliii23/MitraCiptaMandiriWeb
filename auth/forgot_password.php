@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/security.php';
 
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -27,6 +28,12 @@ $messageType = ''; // success / error
 $isSuccess = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $rateKey = 'forgot_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . '_' . strtolower(trim($_POST['email'] ?? ''));
+    $rl = mcm_rate_limit($rateKey, 3, 900);
+    if (!$rl['allowed']) {
+        $message = $rl['message'];
+        $messageType = 'error';
+    } else {
     $email = trim($_POST['email'] ?? '');
     $postedToken = $_POST['csrf_token'] ?? '';
 
@@ -106,12 +113,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             error_log("[FORGOT] Error: " . $e->getMessage());
         }
 
+        mcm_rate_limit_hit($rateKey);
         // Selalu sukses di mata user
         $message = $successMsg;
         $messageType = 'success';
         $isSuccess = true;
+    } // end rate limit else
     }
-}
 ?>
 <?php include '../includes/header.php'; ?>
 <link rel="stylesheet" href="<?php echo $base_url; ?>assets/css/auth.css?v=<?php echo time(); ?>">

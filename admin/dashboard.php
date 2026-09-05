@@ -6,7 +6,11 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     header("Location: ../auth/admin_login.php");
     exit;
 }
-
+require_once '../includes/security.php';
+if (!mcm_check_session_timeout(1800)) {
+    header("Location: ../auth/admin_login.php?timeout=1");
+    exit;
+}
 require_once '../config/database.php';
 
 function getImgSrc($path) {

@@ -5,7 +5,7 @@
                     <div class="p-2 rounded-3 me-3 bg-white shadow-sm border" style="color: <?php echo $greetColor; ?>;">
                         <i class="fas <?php echo $greetIcon; ?> fs-4"></i>
                     </div>
-                    <h2 class="fw-bold mb-0 text-dark"><?php echo $greeting; ?>, <span class="gradient-text"><?php echo explode(' ', $_SESSION['admin_username'])[0]; ?>!</span></h2>
+                    <h2 class="fw-bold mb-0 text-dark"><?php echo $greeting; ?>, <span class="gradient-text"><?php echo htmlspecialchars(explode(' ', $_SESSION['admin_username'])[0]); ?>!</span></h2>
                 </div>
                 <p class="text-muted mb-0 ps-5 ms-2">Platform MCM berjalan optimal hari ini. Berikut ringkasan performa terbaru.</p>
                 <div class="greet-line ms-5 ps-2"></div>

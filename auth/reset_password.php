@@ -1,6 +1,12 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../includes/security.php';
+mcm_cors_headers();
+// Rate limit reset: 5x per 15 menit per IP
+$rateKey = 'reset_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+$rl = mcm_rate_limit($rateKey, 5, 900);
+if (!$rl['allowed']) { http_response_code(429); die($rl['message']); }
 
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));

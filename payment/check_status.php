@@ -7,6 +7,11 @@ session_start();
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/payment_gateway.php';
+require_once __DIR__ . '/../includes/security.php';
+mcm_cors_headers();
+$rateKey = 'check_status_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+$rl = mcm_rate_limit($rateKey, 30, 60);
+if (!$rl['allowed']) { http_response_code(429); ob_clean(); echo json_encode(['status'=>'error','message'=>$rl['message']]); exit; }
 
 $orderNumber = trim($_GET['order'] ?? $_POST['order'] ?? '');
 if ($orderNumber === '') {

@@ -7,6 +7,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="changePasswordForm" action="<?php echo $adminBase; ?>/actions/manage_admins.php" method="POST" onsubmit="event.preventDefault(); submitAjaxForm('changePasswordForm');">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(mcm_csrf_token()); ?>">
                 <div class="modal-body p-4">
                     <input type="hidden" name="action" value="change_password">
                     <div class="mb-3">

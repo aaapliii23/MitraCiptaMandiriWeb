@@ -7,6 +7,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="materialForm" action="<?php echo $adminBase; ?>/actions/manage_materials.php" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault(); submitAjaxForm('materialForm');">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(mcm_csrf_token()); ?>">
                 <div class="modal-body p-4">
                     <input type="hidden" name="action" id="materialAction" value="create">
                     <input type="hidden" name="id" id="materialId">

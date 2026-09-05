@@ -5,6 +5,7 @@ if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) 
     exit;
 }
 require_once '../config/database.php';
+require_once '../includes/security.php';
 
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -15,6 +16,12 @@ $errorMessage = '';
 $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Rate limiting 5x / 15 menit per IP+email
+    $rateKey = 'user_login_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . '_' . strtolower(trim($_POST['email'] ?? ''));
+    $rl = mcm_rate_limit($rateKey, 5, 900);
+    if (!$rl['allowed']) {
+        $errorMessage = $rl['message'];
+    } else {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $postedToken = $_POST['csrf_token'] ?? '';
@@ -29,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$email]);
             $user = $stmt->fetch();
             if ($user && password_verify($password, $user['password'])) {
+                mcm_rate_limit_reset($rateKey);
                 session_regenerate_id(true);
                 $_SESSION['user_logged_in'] = true;
                 $_SESSION['user_id'] = $user['id'];
@@ -48,12 +56,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: ../lms/dashboard.php');
                 exit;
             } else {
+                mcm_rate_limit_hit($rateKey);
                 $errorMessage = 'Email atau password salah.';
             }
         } catch (PDOException $e) {
+            mcm_rate_limit_hit($rateKey);
             $errorMessage = 'Terjadi kesalahan sistem.';
         }
     }
+    } // end rate limit allowed
 
     if ($isAjax) {
         header('Content-Type: application/json');

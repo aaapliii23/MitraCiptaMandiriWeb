@@ -7,6 +7,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="chatbotIntentForm" action="<?php echo $adminBase; ?>/actions/manage_chatbot.php" method="POST" onsubmit="event.preventDefault(); submitAjaxForm('chatbotIntentForm');">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(mcm_csrf_token()); ?>">
                 <div class="modal-body p-4">
                     <input type="hidden" name="action" value="create" id="chatbotIntentAction">
                     <input type="hidden" name="id" id="chatbotIntentId">

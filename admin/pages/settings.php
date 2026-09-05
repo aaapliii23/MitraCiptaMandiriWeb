@@ -17,6 +17,7 @@
                     </div>
                     <div class="card-body p-4 pt-0">
                         <form action="<?php echo $adminBase; ?>/actions/save_settings.php" method="POST" class="ajax-form">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(mcm_csrf_token()); ?>">
                             <div class="row g-4">
                                 <div class="col-md-6">
                                     <label class="form-label small fw-bold text-muted text-uppercase">WhatsApp Bisnis</label>
@@ -76,6 +77,7 @@
                             <p class="small text-muted mb-0">Logo saat ini (.png)</p>
                         </div>
                         <form action="<?php echo $adminBase; ?>/actions/save_settings.php" method="POST" enctype="multipart/form-data" class="ajax-form">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(mcm_csrf_token()); ?>">
                             <div class="mb-3">
                                 <input type="file" class="form-control" name="logo" accept="image/png">
                             </div>
