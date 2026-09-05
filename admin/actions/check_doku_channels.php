@@ -36,7 +36,7 @@ try {
     // Buat order dummy beneran di DB agar pg_create_transaction bisa pakai (seperti test_doku.php)
     $orderNum = 'CHECK-GENERAL-'.uniqid();
     $pdo->exec("CREATE TABLE IF NOT EXISTS `orders` (`id` int(11) NOT NULL AUTO_INCREMENT, `order_number` varchar(50) NOT NULL, `amount` int(11) DEFAULT 0, `payment_gateway_ref` varchar(100) DEFAULT NULL, `payment_status` varchar(20) DEFAULT 'unpaid', `status` varchar(20) DEFAULT 'pending', PRIMARY KEY (`id`), UNIQUE KEY `order_number` (`order_number`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-    $pdo->prepare("INSERT INTO orders (order_number, amount, status, payment_status) VALUES (?, 10000, 'pending','unpaid')")->execute([$orderNum]);
+    $pdo->prepare("INSERT INTO orders (order_number, customer_name, customer_phone, customer_email, customer_address, class_id, amount, status, payment_status) VALUES (?, 'Test Checker', '628123456789', 'check@mcm.id', 'Jl Test', 1, 10000, 'pending','unpaid')")->execute([$orderNum]);
     $orderId = (int)$pdo->lastInsertId();
     $order = ['id'=>$orderId,'order_number'=>$orderNum,'amount'=>10000];
     $class = ['id'=>1,'name'=>'Test'];

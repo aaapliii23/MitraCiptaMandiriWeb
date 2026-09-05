@@ -581,9 +581,8 @@ function deleteItem(type, id) {
                     Swal.fire({ icon:'success', title:'Terhapus!', text:data.message, timer:1500, showConfirmButton:false }).then(() => {
                         if (typeof window.mcmCloseModalsAndRefresh === 'function') window.mcmCloseModalsAndRefresh();
                         else if (typeof loadContent === 'function') { const p=new URLSearchParams(window.location.search).get('page')||'dashboard'; loadContent('?page='+p,false); }
-                        else { // fallback: hapus baris/card terkait tanpa reload penuh
-                            let sel = 'button[onclick*="deleteItem(\''+type+'\', '+id+')"], button[onclick*="deleteItem(\\''+type+'\\','+id+')"]';
-                            let btn = document.querySelector(sel);
+                        else {
+                            const btn = document.querySelector('button[onclick*="deleteItem"][onclick*="'+id+'"]');
                             if (btn) { const row = btn.closest('tr') || btn.closest('[data-bulk-card]') || btn.closest('.col-md-4') || btn.closest('.card'); if (row) row.remove(); }
                         }
                     });

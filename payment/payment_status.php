@@ -148,7 +148,7 @@ $meta = $statusMeta[$order['payment_status'] ?? 'unpaid'] ?? $statusMeta['unpaid
                         </div>
                     <?php else: ?>
                         <div class="d-grid gap-2">
-                            <a href="../index.php" class="btn btn-outline-primary rounded-pill py-2 fw-bold">Kembali ke Beranda</a>
+                            <a href="<?php echo (str_contains($_SERVER['SCRIPT_NAME']??'','/MitraCiptaMandiriWeb/') ? '/MitraCiptaMandiriWeb/index.php' : '/index.php'); ?>" class="btn btn-outline-primary rounded-pill py-2 fw-bold">Kembali ke Beranda</a>
                         </div>
                     <?php endif; ?>
                 <?php else: ?>
@@ -157,7 +157,7 @@ $meta = $statusMeta[$order['payment_status'] ?? 'unpaid'] ?? $statusMeta['unpaid
                     </div>
                     <h4 class="fw-bold mb-2 text-dark">Order Tidak Ditemukan</h4>
                     <p class="text-muted small mb-4">Tidak ada transaksi dengan nomor tersebut.</p>
-                    <a href="../index.php" class="btn btn-primary rounded-pill px-4 fw-bold">Kembali ke Beranda</a>
+                    <a href="<?php echo (str_contains($_SERVER['SCRIPT_NAME']??'','/MitraCiptaMandiriWeb/') ? '/MitraCiptaMandiriWeb/index.php' : '/index.php'); ?>" class="btn btn-primary rounded-pill px-4 fw-bold">Kembali ke Beranda</a>
                 <?php endif; ?>
             </div>
         </div>

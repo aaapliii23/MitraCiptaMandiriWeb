@@ -557,73 +557,81 @@ h1, h2, h3, h4, h5, h6 {
     background: var(--secondary-color) !important;
 }
 
-/* Custom Swiper Navigation (PC & Mobile) */
-.swiper-button-next, .swiper-button-prev {
+/* Paket carousel — swipe manual, tanpa nav (controls di-hidden) */
+.paket-slider-container {
+    position: relative;
+    padding: 10px 8px 12px;
+    overflow: hidden;
+}
+.paket-slider-container::after {
+    content: '';
+    position: absolute;
+    top: 10px; right: 0; bottom: 12px;
+    width: 48px;
+    background: linear-gradient(to right, transparent, #f8fafc);
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0.85;
+}
+@media (max-width: 768px) {
+    .paket-slider-container::after { width: 28px; }
+}
+.paketSwiper { overflow: visible !important; }
+.paketSwiper .swiper-wrapper { align-items: stretch; }
+.paketSwiper .swiper-slide {
+    height: auto !important;
+    display: flex !important;
+    scroll-snap-align: start;
+}
+/* Controls di-hidden sesuai request — tetap swipe/drag manual */
+.paket-controls,
+.paket-controls .paket-nav,
+.paket-controls .paket-pagination,
+.paket-pagination { display: none !important; }
+.paket-controls .paket-nav {
+    position: static !important;
+    transform: none !important;
+    margin: 0 !important;
     background-color: var(--white);
     color: var(--secondary-color);
-    width: 50px;
-    height: 50px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     box-shadow: var(--shadow-md);
     transition: all 0.3s ease;
     border: 1px solid #E2E8F0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
-.swiper-button-next:hover, .swiper-button-prev:hover {
+.paket-controls .paket-nav:hover {
     background-color: var(--secondary-color);
     color: var(--white);
-    transform: scale(1.1);
+    transform: scale(1.06);
 }
-.swiper-button-next::after {
-    content: '\f061'; /* FontAwesome fa-arrow-right */
+.paket-controls .paket-nav::after {
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
-    font-size: 1.2rem;
+    font-size: 0.95rem;
 }
-.swiper-button-prev::after {
-    content: '\f060'; /* FontAwesome fa-arrow-left */
-    font-family: 'Font Awesome 6 Free';
-    font-weight: 900;
-    font-size: 1.2rem;
-}
-/* Hide buttons when they reach the end */
+.paket-controls .swiper-button-prev.paket-nav::after { content: '\f060'; }
+.paket-controls .swiper-button-next.paket-nav::after { content: '\f061'; }
 .swiper-button-disabled {
-    opacity: 0 !important;
-    visibility: hidden;
+    opacity: 0.35 !important;
+    visibility: visible !important;
     pointer-events: none;
 }
-
-/* Move buttons outside the card area and center vertically */
-.swiper-button-next, .swiper-button-prev {
-    top: 35%;
-    transform: translateY(-50%);
-    margin-top: 0;
+.paket-pagination .swiper-pagination-bullet {
+    width: 8px; height: 8px;
+    background: #cbd5e1;
+    opacity: 1;
+    transition: all 0.3s ease;
 }
-.swiper-button-next { right: -25px; }
-.swiper-button-prev { left: -25px; }
-
-.swiper-button-next:hover { transform: translateY(-50%) scale(1.1); }
-.swiper-button-prev:hover { transform: translateY(-50%) scale(1.1); }
-
-@media (min-width: 992px) {
-    .paket-slider-container {
-        padding: 20px 40px 60px; /* Make some room for buttons */
-    }
-}
-/* Mobile: show smaller buttons inside the slider edges */
-@media (max-width: 991px) {
-    .swiper-button-next, .swiper-button-prev {
-        width: 40px;
-        height: 40px;
-        top: 38%;
-    }
-    .swiper-button-next { right: 6px; }
-    .swiper-button-prev { left: 6px; }
-    .swiper-button-next::after, .swiper-button-prev::after {
-        font-size: 1rem;
-    }
-    .paket-slider-container {
-        padding: 20px 0 60px;
-    }
+.paket-pagination .swiper-pagination-bullet-active {
+    background: var(--secondary-color) !important;
+    width: 22px;
+    border-radius: 999px;
 }
 
 /* ==== Footer ==== */

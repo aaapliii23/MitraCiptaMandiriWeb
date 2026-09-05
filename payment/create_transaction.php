@@ -159,10 +159,7 @@ try {
     }
 } catch (Throwable $e) { error_log("[Fonnte admin notif] " . $e->getMessage()); }
 
-$res = pg_create_transaction($pdo, ['id' => $orderId, 'order_number' => $orderNumber, 'amount' => $amount], $class);
-if ($res['status'] !== 'success') {
-    echo json_encode(['status' => 'error', 'message' => 'Gagal membuat transaksi pembayaran.']);
-    exit;
-}
-
-echo json_encode(['status' => 'success', 'payment_url' => $res['payment_url'], 'order_number' => $orderNumber]);
+// Tahap custom payment: arahkan ke halaman pembayaran custom (VA/QRIS/E-wallet), bukan langsung ke hosted DOKU
+// Kartu kredit tetap via hosted DOKU, tapi ditangani di custom_payment.php (method cc) — pakai URL absolut agar benar dari halaman mana pun (index.php atau pages/class_detail.php)
+$customUrl = pg_base_url() . '/payment/custom_payment.php?order=' . urlencode($orderNumber);
+echo json_encode(['status' => 'success', 'payment_url' => $customUrl, 'order_number' => $orderNumber]);

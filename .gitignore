@@ -1,1 +1,3 @@
 config/secrets.php
+config/mail_config.php
+logs/

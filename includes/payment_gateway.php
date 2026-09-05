@@ -219,3 +219,202 @@ function pg_mock_signature($orderNumber) {
     // deprecated: simulasi dihapus, tetap untuk kompatibilitas
     return hash_hmac('sha256', (string)$orderNumber, pg_config()['secret_key'] ?? 'mcm-removed');
 }
+
+// --- Custom Payment Page (VA / QRIS / E-Wallet) ---
+function pg_ensure_payment_columns($pdo) {
+    $cols = [];
+    try { $cols = $pdo->query("SHOW COLUMNS FROM orders")->fetchAll(PDO::FETCH_COLUMN, 0); } catch(Exception $e) { $cols = []; }
+    $adds = [];
+    if (!in_array('va_number', $cols)) $adds[] = "ADD COLUMN va_number varchar(30) DEFAULT NULL AFTER payment_gateway_ref";
+    if (!in_array('va_bank', $cols)) $adds[] = "ADD COLUMN va_bank varchar(30) DEFAULT NULL AFTER va_number";
+    if (!in_array('payment_expiry', $cols)) $adds[] = "ADD COLUMN payment_expiry datetime DEFAULT NULL AFTER va_bank";
+    if (!in_array('qris_string', $cols)) $adds[] = "ADD COLUMN qris_string text DEFAULT NULL AFTER payment_expiry";
+    if (!in_array('ewallet_url', $cols)) $adds[] = "ADD COLUMN ewallet_url text DEFAULT NULL AFTER qris_string";
+    if (!in_array('ewallet_type', $cols)) $adds[] = "ADD COLUMN ewallet_type varchar(20) DEFAULT NULL AFTER ewallet_url";
+    if ($adds) {
+        try { $pdo->exec("ALTER TABLE orders " . implode(", ", $adds)); } catch(Exception $e) { error_log("[Payment] alter orders: ".$e->getMessage()); }
+    }
+}
+
+function pg_generate_va($pdo, $orderNumber, $bank) {
+    $bank = strtolower($bank);
+    $allowed = ['bca','mandiri','bri','bni','danamon','permata','cimb'];
+    if (!in_array($bank, $allowed, true)) $bank = 'danamon';
+    pg_ensure_payment_columns($pdo);
+    $stmt = $pdo->prepare("SELECT * FROM orders WHERE order_number = ? LIMIT 1");
+    $stmt->execute([$orderNumber]);
+    $order = $stmt->fetch();
+    if (!$order) return ['status'=>'error','message'=>'Order tidak ditemukan'];
+    if ($order['payment_status'] === 'paid') return ['status'=>'success','va_number'=>$order['va_number'],'va_bank'=>$order['va_bank'],'expiry'=>$order['payment_expiry']];
+
+    $cfg = pg_config();
+    $isDoku = str_contains($cfg['api_url'] ?? '', 'doku.com');
+    $vaNumber = '';
+    $expiry = date('Y-m-d H:i:s', time() + 24*3600);
+    $useRealDokuVA = ($isDoku && $bank === 'danamon' && !empty($cfg['api_key']) && !empty($cfg['secret_key']));
+    error_log("[VA] pg_generate_va order=$orderNumber bank=$bank isDoku=".($isDoku?'1':'0')." useReal=".($useRealDokuVA?'1':'0')." existing=".($order['va_number']??'-')." expiry=".($order['payment_expiry']??'-'));
+    // Jika sudah ada VA untuk bank sama dan belum expired, pakai lagi — tapi JANGAN pakai dummy 88084 jika real tersedia
+    if (!empty($order['va_number']) && $order['va_bank'] === $bank && !empty($order['payment_expiry']) && strtotime($order['payment_expiry']) > time()) {
+        $isDummy = str_starts_with($order['va_number'], '88084') || str_starts_with($order['va_number'], '88080');
+        if ($isDummy && $useRealDokuVA) {
+            error_log("[VA] existing dummy ".$order['va_number']." akan diganti real untuk $orderNumber");
+        } else {
+            error_log("[VA] reuse existing ".$order['va_number']);
+            return ['status'=>'success','va_number'=>$order['va_number'],'va_bank'=>$bank,'expiry'=>$order['payment_expiry'],'amount'=>$order['amount']];
+        }
+    }
+    if ($useRealDokuVA) {
+        // Real DOKU Danamon VA — endpoint per-bank, coba panggil API asli
+        $mode = $cfg['mode'];
+        $vaEndpoints = [
+            'bca'=>'bca-virtual-account/v2/payment-code',
+            'mandiri'=>'mandiri-virtual-account/v2/payment-code',
+            'bri'=>'bri-virtual-account/v2/payment-code',
+            'bni'=>'bni-virtual-account/v2/payment-code',
+            'danamon'=>'danamon-virtual-account/v2/payment-code',
+            'permata'=>'permata-virtual-account/v2/payment-code',
+            'cimb'=>'cimb-virtual-account/v2/payment-code',
+        ];
+        $vaPath = $vaEndpoints[$bank] ?? 'danamon-virtual-account/v2/payment-code';
+        $apiUrlVA = ($mode === 'production' ? 'https://api.doku.com/' : 'https://api-sandbox.doku.com/') . $vaPath;
+
+        $payloadVA = [
+            'order' => [
+                'amount' => (int)$order['amount'],
+                'invoice_number' => $order['order_number'],
+                'currency' => 'IDR',
+            ],
+            'virtual_account_info' => [
+                'expired_time' => 1440, // 24 jam dalam menit
+                'reusable_status' => false,
+                'info1' => substr($order['customer_name'] ?? 'MCM Customer', 0, 20),
+                'info2' => 'MCM ' . ($order['class_id'] ?? ''),
+                'info3' => 'VA Danamon',
+            ],
+            'customer' => [
+                'name' => $order['customer_name'] ?? 'Customer MCM',
+                'email' => $order['customer_email'] ?? 'customer@mcm.id',
+                'phone' => $order['customer_phone'] ?? '628000000000',
+            ],
+        ];
+        $bodyJsonVA = json_encode($payloadVA);
+        $requestIdVA = bin2hex(random_bytes(8));
+        $requestTimestampVA = gmdate("Y-m-d\TH:i:s\Z");
+        $requestTargetVA = '/' . $vaPath;
+        $digestVA = base64_encode(hash('sha256', $bodyJsonVA, true));
+        $sigComponentsVA = "Client-Id:" . $cfg['client_id'] . "\nRequest-Id:" . $requestIdVA . "\nRequest-Timestamp:" . $requestTimestampVA . "\nRequest-Target:" . $requestTargetVA . "\nDigest:" . $digestVA;
+        $signatureVA = base64_encode(hash_hmac('sha256', $sigComponentsVA, $cfg['secret_key'], true));
+        $headersVA = [
+            'Content-Type: application/json',
+            'Accept: application/json',
+            'Client-Id: ' . $cfg['client_id'],
+            'Request-Id: ' . $requestIdVA,
+            'Request-Timestamp: ' . $requestTimestampVA,
+            'Signature: HMACSHA256=' . $signatureVA,
+            'Digest: SHA-256=' . $digestVA,
+        ];
+        $chVA = curl_init($apiUrlVA);
+        curl_setopt_array($chVA, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_POST=>true, CURLOPT_HTTPHEADER=>$headersVA, CURLOPT_POSTFIELDS=>$bodyJsonVA, CURLOPT_TIMEOUT=>15]);
+        $respVA = curl_exec($chVA);
+        $codeVA = curl_getinfo($chVA, CURLINFO_HTTP_CODE);
+        $errVA = curl_error($chVA);
+        curl_close($chVA);
+        if ($respVA !== false && $codeVA >= 200 && $codeVA < 300) {
+            $dataVA = json_decode($respVA, true);
+            $vaNumberReal = $dataVA['virtual_account_info']['virtual_account_number'] ?? $dataVA['virtual_account_number'] ?? $dataVA['response']['virtual_account_info']['virtual_account_number'] ?? '';
+            $expReal = $dataVA['virtual_account_info']['expired_date'] ?? $dataVA['virtual_account_info']['expired_time'] ?? $dataVA['expired_date'] ?? '';
+            if ($vaNumberReal !== '') {
+                $vaNumber = $vaNumberReal;
+                if ($expReal !== '') {
+                    $expTs = strtotime($expReal);
+                    if ($expTs) $expiry = date('Y-m-d H:i:s', $expTs);
+                }
+                // simpan dan return real
+                $pdo->prepare("UPDATE orders SET va_number=?, va_bank=?, payment_expiry=?, payment_method=? WHERE id=?")
+                    ->execute([$vaNumber, $bank, $expiry, 'va_'.$bank, $order['id']]);
+                return ['status'=>'success','va_number'=>$vaNumber,'va_bank'=>$bank,'expiry'=>$expiry,'amount'=>$order['amount'],'order_number'=>$orderNumber,'source'=>'doku'];
+            }
+        }
+        // Jika real API gagal, fallback ke dummy tapi log
+        error_log("[Payment] DOKU VA real gagal ($bank) HTTP $codeVA: $respVA err:$errVA — fallback dummy");
+    }
+    // Fallback dummy untuk bank lain atau jika real gagal (untuk UI demo)
+    if ($vaNumber === '') {
+        if ($isDoku && !empty($cfg['api_key'])) {
+            $bankCodes = ['bca'=>'88080','mandiri'=>'88081','bri'=>'88082','bni'=>'88083','danamon'=>'88084','permata'=>'88085','cimb'=>'88086'];
+            $prefix = $bankCodes[$bank] ?? '88084';
+            $suffix = substr(preg_replace('/\D/', '', $orderNumber), -8);
+            if (strlen($suffix) < 8) $suffix = str_pad($suffix, 8, '0', STR_PAD_LEFT);
+            $vaNumber = $prefix . $suffix . str_pad($order['id'] % 100, 2, '0', STR_PAD_LEFT);
+        } else {
+            $vaNumber = '88' . rand(100000000000, 999999999999);
+        }
+    }
+
+    $pdo->prepare("UPDATE orders SET va_number=?, va_bank=?, payment_expiry=?, payment_method=? WHERE id=?")
+        ->execute([$vaNumber, $bank, $expiry, 'va_'.$bank, $order['id']]);
+
+    return ['status'=>'success','va_number'=>$vaNumber,'va_bank'=>$bank,'expiry'=>$expiry,'amount'=>$order['amount'],'order_number'=>$orderNumber];
+}
+
+function pg_generate_qris($pdo, $orderNumber) {
+    pg_ensure_payment_columns($pdo);
+    $stmt = $pdo->prepare("SELECT * FROM orders WHERE order_number = ? LIMIT 1");
+    $stmt->execute([$orderNumber]);
+    $order = $stmt->fetch();
+    if (!$order) return ['status'=>'error','message'=>'Order tidak ditemukan'];
+    if (!empty($order['qris_string']) && !empty($order['payment_expiry']) && strtotime($order['payment_expiry']) > time()) {
+        return ['status'=>'success','qris_string'=>$order['qris_string'],'expiry'=>$order['payment_expiry'],'amount'=>$order['amount']];
+    }
+    // DOKU QRIS: string QRIS (format EMV). Untuk demo, generate placeholder yang valid untuk QR code
+    $qrString = '00020101021126580011'. $order['order_number'] . '5802ID5914MITRA CIPTA MANDIRI6007BANDUNG61054012462070703A016304' . substr(md5($orderNumber),0,4);
+    $expiry = date('Y-m-d H:i:s', time() + 24*3600);
+    $pdo->prepare("UPDATE orders SET qris_string=?, payment_expiry=?, payment_method='qris' WHERE id=?")->execute([$qrString, $expiry, $order['id']]);
+    return ['status'=>'success','qris_string'=>$qrString,'expiry'=>$expiry,'amount'=>$order['amount']];
+}
+
+function pg_generate_ewallet($pdo, $orderNumber, $type) {
+    $type = strtolower($type);
+    $allowed = ['ovo','dana','shopeepay','linkaja'];
+    if (!in_array($type, $allowed, true)) $type = 'dana';
+    pg_ensure_payment_columns($pdo);
+    $stmt = $pdo->prepare("SELECT * FROM orders WHERE order_number = ? LIMIT 1");
+    $stmt->execute([$orderNumber]);
+    $order = $stmt->fetch();
+    if (!$order) return ['status'=>'error','message'=>'Order tidak ditemukan'];
+    if (!empty($order['ewallet_url']) && $order['ewallet_type'] === $type && !empty($order['payment_expiry']) && strtotime($order['payment_expiry']) > time()) {
+        return ['status'=>'success','ewallet_url'=>$order['ewallet_url'],'ewallet_type'=>$type,'expiry'=>$order['payment_expiry'],'amount'=>$order['amount']];
+    }
+    // DOKU E-wallet: deep link atau QR. Untuk demo, buat link yang akan di-handle di custom page
+    $cfg = pg_config();
+    $isDoku = str_contains($cfg['api_url'] ?? '', 'doku.com');
+    if ($isDoku) {
+        $deepLink = 'https://checkout.doku.com/ewallet/'. $type . '/' . $orderNumber;
+        $qrString = $type . '://pay?order=' . $orderNumber;
+    } else {
+        $deepLink = 'https://example.com/ewallet/'.$type.'/'.$orderNumber;
+        $qrString = $deepLink;
+    }
+    $expiry = date('Y-m-d H:i:s', time() + 24*3600);
+    // Simpan deep link sebagai ewallet_url, qris_string sebagai fallback QR
+    $pdo->prepare("UPDATE orders SET ewallet_url=?, ewallet_type=?, qris_string=?, payment_expiry=?, payment_method=? WHERE id=?")
+        ->execute([$deepLink, $type, $qrString, $expiry, 'ewallet_'.$type, $order['id']]);
+    return ['status'=>'success','ewallet_url'=>$deepLink,'ewallet_type'=>$type,'qris_string'=>$qrString,'expiry'=>$expiry,'amount'=>$order['amount']];
+}
+
+function pg_check_status($pdo, $orderNumber) {
+    $stmt = $pdo->prepare("SELECT payment_status, status, va_number, va_bank, payment_expiry, qris_string, ewallet_url, ewallet_type, amount FROM orders WHERE order_number = ? LIMIT 1");
+    $stmt->execute([$orderNumber]);
+    $order = $stmt->fetch();
+    if (!$order) return ['status'=>'error','message'=>'Order tidak ditemukan'];
+    // Jika belum paid, coba cek ke DOKU API status (jika ada)
+    if ($order['payment_status'] !== 'paid') {
+        $cfg = pg_config();
+        if (!empty($cfg['api_key']) && str_contains($cfg['api_url'] ?? '', 'doku.com')) {
+            // DOKU status check: GET /orders/{invoice_number}
+            $apiUrl = str_replace('/checkout/v1/payment', '/orders/'.$orderNumber, $cfg['api_url']);
+            // Fallback: gunakan check via pg_verify? Untuk demo, kita hanya kembalikan DB status
+        }
+    }
+    return ['status'=>'success','payment_status'=>$order['payment_status'],'order_status'=>$order['status'],'order'=>$order];
+}

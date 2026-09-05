@@ -25,10 +25,10 @@ include __DIR__ . '/includes/header.php';
         Periksa kembali alamat URL atau kembali ke beranda untuk melanjutkan.
       </p>
       <div class="mcm-404-actions">
-        <a href="<?php echo htmlspecialchars(rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') === '' ? '/index.php' : rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/index.php'); ?>" class="btn text-white" style="background:linear-gradient(135deg,#0c4a6e,#0ea5e9);border:none;box-shadow:0 10px 20px -5px rgba(14,165,233,.4);">
+        <a href="<?php echo htmlspecialchars($__homeAbs ?? '/index.php'); ?>" class="btn text-white" style="background:linear-gradient(135deg,#0c4a6e,#0ea5e9);border:none;box-shadow:0 10px 20px -5px rgba(14,165,233,.4);">
           <i class="fas fa-home me-2"></i>Kembali ke Beranda
         </a>
-        <a href="javascript:history.back()" class="btn btn-outline-secondary">
+        <a href="javascript:history.back()" class="btn btn-outline-secondary" onclick="if(history.length>1){history.back();return false;}">
           <i class="fas fa-arrow-left me-2"></i>Kembali
         </a>
       </div>

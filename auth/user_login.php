@@ -111,13 +111,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="auth-feedback" id="emailFeedback"></div>
                     </div>
 
-                    <div class="auth-field mb-lg">
+                    <div class="auth-field">
                         <label class="auth-label" for="password"><i class="fas fa-lock"></i> Password</label>
                         <div class="auth-input-group">
                             <input type="password" class="form-control auth-input" name="password" id="password" required autocomplete="current-password" placeholder="Masukkan password Anda">
                             <button class="auth-eye-btn" type="button" id="togglePassword" tabindex="-1" aria-label="Lihat password"><i class="fas fa-eye"></i></button>
                         </div>
                         <div class="auth-feedback" id="passFeedback"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-end mb-3" style="margin-top:-8px;">
+                        <a href="forgot_password.php" class="small" style="color:#0ea5e9; font-weight:600; text-decoration:none; font-size:0.82rem;">Lupa password?</a>
                     </div>
 
                     <button type="submit" class="btn auth-btn" id="authSubmitBtn"><span class="btn-text">Masuk</span> <i class="fas fa-arrow-right"></i></button>

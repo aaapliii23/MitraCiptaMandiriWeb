@@ -337,26 +337,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
-        // Swiper Initialization
+        // Swiper — smooth, snap, tidak potong card
         const swiper = new Swiper('.paketSwiper', {
             slidesPerView: 1,
-            spaceBetween: 30,
-            autoHeight: false, 
+            spaceBetween: 16,
+            autoHeight: false,
             observer: true,
             observeParents: true,
             resizeObserver: true,
             loop: false,
+            speed: 420,
+            grabCursor: true,
             pagination: {
-                el: '.swiper-pagination',
+                el: '.paket-pagination',
                 clickable: true,
+                dynamicBullets: false,
             },
             navigation: {
-                nextEl: '.swiper-button-next',
-                prevEl: '.swiper-button-prev',
+                nextEl: '.paket-controls .swiper-button-next',
+                prevEl: '.paket-controls .swiper-button-prev',
             },
             breakpoints: {
-                768: { slidesPerView: 2 },
-                1024: { slidesPerView: 3 }
+                576: { slidesPerView: 1.1, spaceBetween: 16 },
+                768: { slidesPerView: 2, spaceBetween: 18 },
+                1024: { slidesPerView: 3, spaceBetween: 20 }
             }
         });
 

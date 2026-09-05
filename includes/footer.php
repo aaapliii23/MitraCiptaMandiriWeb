@@ -128,8 +128,9 @@
         <i class="fas fa-arrow-up"></i>
     </button>
     <style>
-        .mcm-scrolltop{position:fixed;right:24px;bottom:96px;z-index:1041;width:48px;height:48px;border:none;border-radius:50%;background:#fff;color:#0c4a6e;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(15,23,42,0.12),0 2px 8px rgba(15,23,42,0.08);opacity:0;visibility:hidden;transform:translateY(8px) scale(0.96);transition:opacity 0.3s ease,visibility 0.3s ease,transform 0.3s ease,box-shadow 0.2s ease;cursor:pointer}
+        .mcm-scrolltop{position:fixed;right:24px;bottom:96px;z-index:1035;width:48px;height:48px;border:none;border-radius:50%;background:#fff;color:#0c4a6e;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(15,23,42,0.12),0 2px 8px rgba(15,23,42,0.08);opacity:0;visibility:hidden;transform:translateY(8px) scale(0.96);transition:opacity 0.3s ease,visibility 0.3s ease,transform 0.3s ease,box-shadow 0.2s ease;cursor:pointer}
         .mcm-scrolltop.visible{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
+        .mcm-scrolltop.chat-open{opacity:0 !important;visibility:hidden !important;transform:translateY(8px) scale(0.96) !important;pointer-events:none}
         .mcm-scrolltop:hover{box-shadow:0 12px 28px rgba(14,165,233,0.22),0 4px 12px rgba(15,23,42,0.10);transform:translateY(-1px) scale(1.02)}
         .mcm-scrolltop:active{transform:scale(0.97)}
         .mcm-scrolltop-svg{position:absolute;inset:0;width:48px;height:48px;pointer-events:none}
@@ -137,27 +138,41 @@
         .mcm-scrolltop i{position:relative;z-index:1;font-size:14px}
         @media(max-width:991.98px){.mcm-scrolltop{right:16px;bottom:88px;width:44px;height:44px}.mcm-scrolltop-svg{width:44px;height:44px}}
         @media(max-width:575.98px){.mcm-scrolltop{bottom:84px}}
+        /* chat input send button selalu di atas */
+        #mcmChatWidget .mcm-chat-input button{position:relative;z-index:2}
+        #mcmChatWidget{z-index:1040}
+        #mcmChatWidget .mcm-chat-panel{z-index:1041}
+        #mcmChatWidget .mcm-chat-fab{z-index:1040}
     </style>
     <script>
     (function(){
         const btn=document.getElementById('mcmScrollTop');
         if(!btn) return;
         const progress=btn.querySelector('.mcm-scrolltop-progress');
+        const panel=document.getElementById('mcmChatPanel');
         const circumference=2*Math.PI*20; // 125.66
         let ticking=false;
+        function isChatOpen(){ return panel && panel.classList.contains('open'); }
         function update(){
             const scrollTop=window.scrollY||document.documentElement.scrollTop;
             const docHeight=document.documentElement.scrollHeight - window.innerHeight;
             const pct=docHeight>0?Math.min(scrollTop/docHeight,1):0;
             if(progress) progress.style.strokeDashoffset=(circumference - pct*circumference).toFixed(2);
-            if(scrollTop>300) btn.classList.add('visible');
+            if(scrollTop>300 && !isChatOpen()) btn.classList.add('visible');
             else btn.classList.remove('visible');
+            if(isChatOpen()) btn.classList.add('chat-open');
+            else btn.classList.remove('chat-open');
             ticking=false;
         }
         function onScroll(){ if(!ticking){ ticking=true; requestAnimationFrame(update); } }
         window.addEventListener('scroll', onScroll, {passive:true});
         window.addEventListener('resize', onScroll);
         btn.addEventListener('click', function(){ window.scrollTo({top:0, behavior:'smooth'}); });
+        // pantau buka/tutup chat
+        if(panel){
+            const obs=new MutationObserver(update);
+            obs.observe(panel, {attributes:true, attributeFilter:['class']});
+        }
         // init
         update();
     })();

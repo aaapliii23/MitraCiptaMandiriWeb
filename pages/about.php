@@ -115,9 +115,11 @@ include '../includes/header.php';
             <p class="text-muted">Metodologi kami dalam mentransformasi potensi menjadi kompetensi nyata</p>
         </div>
 
-        <div class="row g-4 position-relative mb-5">
-            <!-- Connection Line (Desktop) -->
-            <div class="position-absolute top-50 start-0 end-0 d-none d-lg-block" style="height: 2px; background: linear-gradient(90deg, #0c4a6e 0%, #0ea5e9 100%); transform: translateY(-50%); z-index: 0; opacity: 0.2;"></div>
+        <div class="row g-4 position-relative mb-5 alur-row">
+            <!-- Arrow connectors desktop (→) — between 1-2, 2-3, 3-4 -->
+            <div class="alur-arrow d-none d-lg-flex" style="left: 25%;"><i class="fas fa-arrow-right"></i></div>
+            <div class="alur-arrow d-none d-lg-flex" style="left: 50%;"><i class="fas fa-arrow-right"></i></div>
+            <div class="alur-arrow d-none d-lg-flex" style="left: 75%;"><i class="fas fa-arrow-right"></i></div>
             
             <div class="col-lg-3 col-md-6">
                 <div class="card border-0 shadow-sm rounded-5 p-4 text-center h-100 bg-white position-relative" style="z-index: 1;">
@@ -128,6 +130,7 @@ include '../includes/header.php';
                     <p class="small text-muted mb-0">Identifikasi minat dan pemilihan program pelatihan yang tepat.</p>
                 </div>
             </div>
+            <div class="col-12 d-lg-none d-flex justify-content-center my-1"><div class="alur-arrow-mobile"><i class="fas fa-arrow-down"></i></div></div>
             
             <div class="col-lg-3 col-md-6">
                 <div class="card border-0 shadow-sm rounded-5 p-4 text-center h-100 bg-white position-relative" style="z-index: 1;">
@@ -138,6 +141,7 @@ include '../includes/header.php';
                     <p class="small text-muted mb-0">Penguasaan keahlian melalui praktik langsung dengan alat standar industri.</p>
                 </div>
             </div>
+            <div class="col-12 d-lg-none d-flex justify-content-center my-1"><div class="alur-arrow-mobile"><i class="fas fa-arrow-down"></i></div></div>
             
             <div class="col-lg-3 col-md-6">
                 <div class="card border-0 shadow-sm rounded-5 p-4 text-center h-100 bg-white position-relative" style="z-index: 1;">
@@ -148,6 +152,7 @@ include '../includes/header.php';
                     <p class="small text-muted mb-0">Uji kompetensi menyeluruh untuk memastikan standar penguasaan materi.</p>
                 </div>
             </div>
+            <div class="col-12 d-lg-none d-flex justify-content-center my-1"><div class="alur-arrow-mobile"><i class="fas fa-arrow-down"></i></div></div>
             
             <div class="col-lg-3 col-md-6">
                 <div class="card border-0 shadow-sm rounded-5 p-4 text-center h-100 bg-white position-relative" style="z-index: 1;">
@@ -159,6 +164,33 @@ include '../includes/header.php';
                 </div>
             </div>
         </div>
+        <style>
+            .alur-row { overflow: visible; }
+            .alur-arrow {
+                position: absolute;
+                top: 52px;
+                width: 36px; height: 36px;
+                background: #fff;
+                border: 1px solid #e2e8f0;
+                border-radius: 50%;
+                display: flex; align-items: center; justify-content: center;
+                color: #0c4a6e;
+                box-shadow: 0 4px 12px rgba(12,74,110,0.10);
+                z-index: 2;
+                transform: translateX(-50%);
+            }
+            .alur-arrow i { font-size: 0.85rem; color: #0ea5e9; }
+            .alur-arrow-mobile {
+                width: 32px; height: 32px;
+                background: #fff;
+                border: 1px solid #e2e8f0;
+                border-radius: 50%;
+                display: flex; align-items: center; justify-content: center;
+                color: #0ea5e9;
+                box-shadow: 0 2px 8px rgba(12,74,110,0.08);
+            }
+            .alur-arrow-mobile i { font-size: 0.8rem; }
+        </style>
 
         <hr class="my-5 opacity-10">
 

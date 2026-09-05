@@ -67,9 +67,7 @@
                         <?php endforeach; ?>
                     </div>
                 </div>
-                <!-- Swiper Navigation -->
-                <div class="swiper-button-next"></div>
-                <div class="swiper-button-prev"></div>
+
             </div>
         </div>
     </section>
