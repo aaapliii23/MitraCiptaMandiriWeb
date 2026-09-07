@@ -7,7 +7,7 @@ pg_ensure_payment_columns($pdo);
 $orderNumber = trim($_GET['order'] ?? '');
 if ($orderNumber === '') { http_response_code(404); include __DIR__ . '/../404.php'; exit; }
 
-$stmt = $pdo->prepare("SELECT o.*, c.name AS class_name, c.category AS class_category FROM orders o LEFT JOIN classes c ON o.class_id = c.id WHERE o.order_number = ? LIMIT 1");
+$stmt = $pdo->prepare("SELECT o.*, c.name AS class_name, c.category AS class_category, i.name AS instructor_name, i.specialization AS instructor_spec FROM orders o LEFT JOIN classes c ON o.class_id = c.id LEFT JOIN instructors i ON o.instructor_id = i.id WHERE o.order_number = ? LIMIT 1");
 $stmt->execute([$orderNumber]);
 $order = $stmt->fetch();
 if (!$order) { http_response_code(404); include __DIR__ . '/../404.php'; exit; }
@@ -16,6 +16,8 @@ $className = $order['class_name'] ?? 'Program Pelatihan MCM';
 $amount = (int)$order['amount'];
 $customerName = $order['customer_name'];
 $customerEmail = $order['customer_email'];
+$instructorName = $order['instructor_name'] ?? null;
+$instructorSpec = $order['instructor_spec'] ?? null;
 $isPaid = ($order['payment_status'] === 'paid');
 
 // Jika sudah paid, langsung ke status
@@ -82,6 +84,7 @@ $isEwalletValid = !empty($existingEwalletUrl) && !empty($existingExpiry) && strt
           <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted small">Program</span><span class="fw-bold small text-end" style="max-width:180px;"><?php echo htmlspecialchars($className); ?></span></div>
           <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted small">Peserta</span><span class="fw-bold small"><?php echo htmlspecialchars($customerName); ?></span></div>
           <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted small">Email</span><span class="fw-bold small text-break"><?php echo htmlspecialchars($customerEmail); ?></span></div>
+          <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted small">Instruktur</span><span class="fw-bold small text-end" style="max-width:180px;"><?php echo $instructorName ? htmlspecialchars($instructorName) . '<br><span class="fw-normal text-muted" style="font-size:0.72rem;">'.htmlspecialchars($instructorSpec??'').'</span>' : '<span class="text-muted">Instruktur akan ditentukan oleh admin</span>'; ?></span></div>
           <div class="d-flex justify-content-between py-2"><span class="text-muted small">Mode</span><span class="badge bg-<?php echo strtolower($order['class_mode']??'offline')==='online'?'info':'success'; ?> bg-opacity-10 text-<?php echo strtolower($order['class_mode']??'offline')==='online'?'info':'success'; ?>"><?php echo htmlspecialchars(ucfirst($order['class_mode']??'offline')); ?></span></div>
           <div class="bg-light rounded-4 p-3 mt-3 text-center">
             <div class="small text-muted">Total Tagihan</div>

@@ -65,6 +65,8 @@ function deleteFacilityCategory(id, name) {
             const formData = new FormData();
             formData.append('action', 'delete_category');
             formData.append('id', id);
+            const csrfFacCat = document.querySelector('input[name="csrf_token"]')?.value || window.MCM_CSRF_TOKEN || '';
+            if (csrfFacCat) formData.append('csrf_token', csrfFacCat);
 
             fetch('<?php echo $adminBase; ?>/actions/manage_facilities.php', {
                 method: 'POST',
@@ -228,6 +230,8 @@ function setTestimonialStatus(id, action) {
     const formData = new FormData();
     formData.append('action', action);
     formData.append('id', id);
+    const csrfTesti = document.querySelector('input[name="csrf_token"]')?.value || window.MCM_CSRF_TOKEN || '';
+    if (csrfTesti) formData.append('csrf_token', csrfTesti);
     fetch(adminBase + '/actions/manage_testimonials.php', { method: 'POST', body: formData })
     .then(res => res.text()).then(t=>{ let d; try{ d=JSON.parse(t);}catch(e){ throw new Error('Respons tidak valid: '+t.slice(0,120)); } return d; })
     .then(data => {
@@ -486,6 +490,8 @@ function deleteQuizQuestion(id) {
         const fd = new FormData();
         fd.append('action', 'delete');
         fd.append('id', id);
+        const csrfDQ = document.querySelector('input[name="csrf_token"]')?.value || window.MCM_CSRF_TOKEN || '';
+        if (csrfDQ) fd.append('csrf_token', csrfDQ);
         fetch(adminBase + '/actions/manage_quiz.php', { method: 'POST', body: fd })
         .then(res => res.json())
         .then(data => {
@@ -573,6 +579,9 @@ function deleteItem(type, id) {
             const formData = new FormData();
             formData.append('action', 'delete');
             formData.append('id', id);
+            // CSRF untuk delete
+            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || window.MCM_CSRF_TOKEN || '';
+            if (csrfToken) formData.append('csrf_token', csrfToken);
             
             fetch(endpoint, { method: 'POST', body: formData })
             .then(res => res.text()).then(t => { let d; try{ d=JSON.parse(t);}catch(e){ throw new Error('Respons tidak valid: '+t.slice(0,120)); } return d; })
@@ -723,6 +732,8 @@ function getBulkEndpoint(type){
                         fd.append('action', type==='chat' ? 'bulk_delete_thread' : 'bulk_delete');
                         if (type==='chat') fd.append('wa_numbers', JSON.stringify(sendIds));
                         else fd.append('ids', JSON.stringify(sendIds));
+                        const csrfBulk = document.querySelector('input[name="csrf_token"]')?.value || window.MCM_CSRF_TOKEN || '';
+                        if (csrfBulk) fd.append('csrf_token', csrfBulk);
                         const ep = endpoint || getBulkEndpoint(type);
                         if (!ep){ Swal.fire('Gagal','Endpoint tidak ditemukan','error'); return; }
                         delBtn.disabled = true;

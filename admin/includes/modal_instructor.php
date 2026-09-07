@@ -29,6 +29,11 @@
                         <label class="form-label small fw-bold">Spesialisasi / Gelar</label>
                         <input type="text" class="form-control" name="specialization" id="instructorSpec" required placeholder="Contoh: Ahli Tata Rias">
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Sertifikasi / Lisensi</label>
+                        <textarea class="form-control" name="certifications" id="instructorCerts" rows="3" placeholder="Certified Social Media Strategist, TikTok E-commerce Specialist"></textarea>
+                        <small class="text-muted">Pisahkan dengan koma atau baris baru — akan tampil sebagai badge di halaman publik.</small>
+                    </div>
                     <div class="mb-1">
                         <label class="form-label small fw-bold">Foto Profil</label>
                         <input type="file" class="form-control" name="image" id="instructorImage" accept="image/*">

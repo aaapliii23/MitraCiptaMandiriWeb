@@ -112,6 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Exception $e) {
             error_log("[FORGOT] Error: " . $e->getMessage());
         }
+        }
 
         mcm_rate_limit_hit($rateKey);
         // Selalu sukses di mata user

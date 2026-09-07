@@ -7,9 +7,9 @@
         <!-- Background Photo Slider -->
         <div class="hero-swiper swiper" id="heroSwiper">
             <div class="swiper-wrapper">
-                <?php foreach ($heroSlides as $gs): ?>
+                <?php foreach ($heroSlides as $idx => $gs): ?>
                 <div class="swiper-slide">
-                    <img src="<?php echo htmlspecialchars(asset_src($gs['image'])); ?>" alt="<?php echo htmlspecialchars($gs['title']); ?>" onerror="this.onerror=null;this.src='<?php echo htmlspecialchars(asset_src('assets/img/hero-bg.jpg')); ?>';">
+                    <img src="<?php echo htmlspecialchars(asset_src($gs['image'])); ?>" alt="<?php echo htmlspecialchars($gs['title']); ?>" <?php echo $idx === 0 ? 'fetchpriority="high" decoding="async"' : 'loading="lazy" decoding="async"'; ?> onerror="this.onerror=null;this.src='<?php echo htmlspecialchars(asset_src('assets/img/hero-bg.jpg')); ?>';">
                 </div>
                 <?php endforeach; ?>
             </div>
@@ -79,9 +79,9 @@
                         <!-- Clean Photo Frame -->
                         <div class="swiper activitySwiper rounded-5 overflow-hidden position-relative" style="height: 440px; border: 3px solid rgba(255, 255, 255, 0.25); box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6);">
                             <div class="swiper-wrapper">
-                                <?php foreach ($slideImages as $img): ?>
+                                <?php foreach ($slideImages as $idx => $img): ?>
                                 <div class="swiper-slide">
-                                    <img src="<?php echo htmlspecialchars(asset_src($img)); ?>" alt="Kegiatan MCM" class="w-100 h-100" style="object-fit: cover;" onerror="this.onerror=null;this.src='<?php echo htmlspecialchars(asset_src('assets/img/hero-bg.jpg')); ?>';">
+                                    <img src="<?php echo htmlspecialchars(asset_src($img)); ?>" alt="Kegiatan MCM" class="w-100 h-100" style="object-fit: cover; background:#e2e8f0;" <?php echo $idx === 0 ? 'fetchpriority="high" decoding="async"' : 'loading="lazy" decoding="async"'; ?> width="440" height="440" onerror="this.onerror=null;this.src='<?php echo htmlspecialchars(asset_src('assets/img/hero-bg.jpg')); ?>';">
                                 </div>
                                 <?php endforeach; ?>
                             </div>

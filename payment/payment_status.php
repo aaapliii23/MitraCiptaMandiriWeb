@@ -8,11 +8,11 @@ try { $pdo->query("SELECT class_mode FROM orders LIMIT 1"); } catch (Exception $
 $hasWaCol = true;
 try { $pdo->query("SELECT whatsapp_group_link FROM classes LIMIT 1"); } catch (Exception $e) { $hasWaCol = false; }
 if ($hasMode && $hasWaCol) {
-    $stmt = $pdo->prepare("SELECT o.*, c.name AS class_name, c.whatsapp_group_link FROM orders o LEFT JOIN classes c ON o.class_id = c.id WHERE o.order_number = ?");
+    $stmt = $pdo->prepare("SELECT o.*, c.name AS class_name, c.whatsapp_group_link, i.name AS instructor_name, i.specialization AS instructor_spec FROM orders o LEFT JOIN classes c ON o.class_id = c.id LEFT JOIN instructors i ON o.instructor_id = i.id WHERE o.order_number = ?");
 } elseif ($hasMode) {
-    $stmt = $pdo->prepare("SELECT o.*, c.name AS class_name FROM orders o LEFT JOIN classes c ON o.class_id = c.id WHERE o.order_number = ?");
+    $stmt = $pdo->prepare("SELECT o.*, c.name AS class_name, i.name AS instructor_name, i.specialization AS instructor_spec FROM orders o LEFT JOIN classes c ON o.class_id = c.id LEFT JOIN instructors i ON o.instructor_id = i.id WHERE o.order_number = ?");
 } else {
-    $stmt = $pdo->prepare("SELECT o.*, c.name AS class_name FROM orders o LEFT JOIN classes c ON o.class_id = c.id WHERE o.order_number = ?");
+    $stmt = $pdo->prepare("SELECT o.*, c.name AS class_name, i.name AS instructor_name, i.specialization AS instructor_spec FROM orders o LEFT JOIN classes c ON o.class_id = c.id LEFT JOIN instructors i ON o.instructor_id = i.id WHERE o.order_number = ?");
 }
 $stmt->execute([$orderNumber]);
 $order = $stmt->fetch();
@@ -87,6 +87,10 @@ $meta = $statusMeta[$order['payment_status'] ?? 'unpaid'] ?? $statusMeta['unpaid
                         <div class="d-flex justify-content-between py-1">
                             <span class="text-muted small">Program</span>
                             <span class="fw-bold small"><?php echo htmlspecialchars($order['class_name'] ?? '-'); ?></span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span class="text-muted small">Instruktur</span>
+                            <span class="fw-bold small text-end" style="max-width:160px;"><?php echo !empty($order['instructor_name']) ? htmlspecialchars($order['instructor_name']) . '<br><span class="fw-normal text-muted" style="font-size:0.7rem;">'.htmlspecialchars($order['instructor_spec']??'').'</span>' : '<span class="text-muted">Instruktur akan ditentukan oleh admin</span>'; ?></span>
                         </div>
                         <div class="d-flex justify-content-between py-1">
                             <span class="text-muted small">Mode</span>

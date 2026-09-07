@@ -520,5 +520,28 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
         });
+
+        // Lazy load for background-image via data-bg (native loading="lazy" tidak berlaku untuk CSS background)
+        const lazyBgs = document.querySelectorAll('[data-bg]');
+        if (lazyBgs.length) {
+            if ('IntersectionObserver' in window) {
+                const bgObserver = new IntersectionObserver((entries, obs) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const el = entry.target;
+                            el.style.backgroundImage = "url('" + el.dataset.bg + "')";
+                            el.removeAttribute('data-bg');
+                            obs.unobserve(el);
+                        }
+                    });
+                }, { rootMargin: '200px' });
+                lazyBgs.forEach(el => bgObserver.observe(el));
+            } else {
+                lazyBgs.forEach(el => {
+                    el.style.backgroundImage = "url('" + el.dataset.bg + "')";
+                    el.removeAttribute('data-bg');
+                });
+            }
+        }
     });
 });

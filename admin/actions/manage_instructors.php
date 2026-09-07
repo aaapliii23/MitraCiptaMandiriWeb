@@ -19,10 +19,13 @@ try { $cols = $pdo->query("SHOW COLUMNS FROM instructors")->fetchAll(PDO::FETCH_
 
 $action = $_POST['action'] ?? '';
 
+try { $cols = $pdo->query("SHOW COLUMNS FROM instructors")->fetchAll(PDO::FETCH_COLUMN); if (!in_array('certifications', $cols)) $pdo->exec("ALTER TABLE instructors ADD COLUMN certifications TEXT DEFAULT NULL AFTER bio"); } catch (Throwable $e) {}
 if ($action === 'create') {
     $name = trim($_POST['name'] ?? '');
     $category = trim($_POST['category'] ?? '');
     $spec = trim($_POST['specialization'] ?? '');
+    $certsRaw = trim($_POST['certifications'] ?? '');
+    $certs = implode(', ', array_filter(array_map('trim', preg_split('/[\r\n,]+/', $certsRaw))));
     
     if (empty($name) || empty($category) || empty($spec)) {
         echo json_encode(['status' => 'error', 'message' => 'Nama, Kategori, dan Spesialisasi wajib diisi.']);
@@ -38,20 +41,22 @@ if ($action === 'create') {
         $res = uploadImageToCloudinary($_FILES['image'], 'mcm/instructors');
         if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
         $imagePublicId = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']);
-        $stmt = $pdo->prepare("INSERT INTO instructors (name, category, specialization, image, image_public_id) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$name, $category, $spec, $res['url'], $imagePublicId]);
+        $stmt = $pdo->prepare("INSERT INTO instructors (name, category, specialization, certifications, image, image_public_id) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$name, $category, $spec, $certs, $res['url'], $imagePublicId]);
         echo json_encode(['status'=>'success','message'=>'Instruktur berhasil ditambahkan.']); exit;
     }
     
     // Default fallback if no image selected
-    $stmt = $pdo->prepare("INSERT INTO instructors (name, category, specialization, image) VALUES (?, ?, ?, ?)");
-    $stmt->execute([$name, $category, $spec, 'assets/img/logo.png']);
+    $stmt = $pdo->prepare("INSERT INTO instructors (name, category, specialization, certifications, image) VALUES (?, ?, ?, ?, ?)");
+    $stmt->execute([$name, $category, $spec, $certs, 'assets/img/logo.png']);
     echo json_encode(['status' => 'success', 'message' => 'Instruktur berhasil ditambahkan (tanpa foto).']);
 } elseif ($action === 'update') {
     $id = $_POST['id'] ?? null;
     $name = trim($_POST['name'] ?? '');
     $category = trim($_POST['category'] ?? '');
     $spec = trim($_POST['specialization'] ?? '');
+    $certsRaw = trim($_POST['certifications'] ?? '');
+    $certs = implode(', ', array_filter(array_map('trim', preg_split('/[\r\n,]+/', $certsRaw))));
 
     if (!$id || empty($name) || empty($category) || empty($spec)) {
         echo json_encode(['status' => 'error', 'message' => 'Data tidak lengkap.']);
@@ -69,11 +74,11 @@ if ($action === 'create') {
     }
 
     if ($image) {
-        $stmt = $pdo->prepare("UPDATE instructors SET name = ?, category = ?, specialization = ?, image = ?, image_public_id = ? WHERE id = ?");
-        $stmt->execute([$name, $category, $spec, $image, $imagePublicId, $id]);
+        $stmt = $pdo->prepare("UPDATE instructors SET name = ?, category = ?, specialization = ?, certifications = ?, image = ?, image_public_id = ? WHERE id = ?");
+        $stmt->execute([$name, $category, $spec, $certs, $image, $imagePublicId, $id]);
     } else {
-        $stmt = $pdo->prepare("UPDATE instructors SET name = ?, category = ?, specialization = ? WHERE id = ?");
-        $stmt->execute([$name, $category, $spec, $id]);
+        $stmt = $pdo->prepare("UPDATE instructors SET name = ?, category = ?, specialization = ?, certifications = ? WHERE id = ?");
+        $stmt->execute([$name, $category, $spec, $certs, $id]);
     }
     echo json_encode(['status' => 'success', 'message' => 'Data instruktur diperbarui.']);
 } elseif ($action === 'delete') {

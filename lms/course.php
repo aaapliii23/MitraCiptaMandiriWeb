@@ -86,7 +86,7 @@ try {
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
                     <div class="row g-0">
                         <div class="col-md-4">
-                            <img src="<?php echo htmlspecialchars(asset_src($class['image'])); ?>" alt="<?php echo htmlspecialchars($class['name']); ?>" style="width: 100%; height: 100%; min-height: 180px; object-fit: cover;" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
+                            <img src="<?php echo htmlspecialchars(asset_src($class['image'])); ?>" alt="<?php echo htmlspecialchars($class['name']); ?>" style="width: 100%; height: 100%; min-height: 180px; object-fit: cover; background:#e2e8f0;" width="400" height="180" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
                         </div>
                         <div class="col-md-8">
                             <div class="p-4">

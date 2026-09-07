@@ -14,8 +14,8 @@
                         ?>
                         <div class="swiper-slide d-flex align-items-stretch">
                             <div class="paket-card w-100 border-0 rounded-4 bg-white d-flex flex-column">
-                                <div class="position-relative" style="height: 190px; flex-shrink: 0; border-top-left-radius: 1.25rem; border-top-right-radius: 1.25rem; overflow: hidden;">
-                                    <img src="<?php echo htmlspecialchars(asset_src($c['image'])); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="w-100 h-100" style="object-fit: cover;" onerror="this.onerror=null;this.src='assets/img/logo.png';">
+                                <div class="position-relative" style="height: 190px; flex-shrink: 0; border-top-left-radius: 1.25rem; border-top-right-radius: 1.25rem; overflow: hidden; background:#e2e8f0;">
+                                    <img src="<?php echo htmlspecialchars(asset_src($c['image'])); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="w-100 h-100" style="object-fit: cover; aspect-ratio: 16/9;" loading="lazy" decoding="async" width="400" height="190" onerror="this.onerror=null;this.src='assets/img/logo.png';">
                                     <div class="position-absolute top-0 end-0 m-3">
                                         <span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm" style="font-size: 0.7rem; font-weight: 600;">MCM Official</span>
                                     </div>

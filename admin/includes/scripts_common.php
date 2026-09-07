@@ -149,6 +149,8 @@ function editInstructor(data) {
     document.getElementById('instructorName').value = data.name;
     document.getElementById('instructorCategory').value = data.category;
     document.getElementById('instructorSpec').value = data.specialization;
+    const certEl = document.getElementById('instructorCerts');
+    if (certEl) certEl.value = (data.certifications || '').replace(/,\s*/g, ', ');
     document.getElementById('instructorImage').required = false;
     document.getElementById('instructorModalTitle').textContent = 'Edit Data Instruktur';
     new bootstrap.Modal(document.getElementById('instructorModal')).show();
