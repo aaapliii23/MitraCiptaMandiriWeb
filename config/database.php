@@ -3,7 +3,7 @@ if (file_exists(__DIR__ . '/secrets.php')) require_once __DIR__ . '/secrets.php'
 $host = defined('DB_HOST') ? DB_HOST : (getenv('DB_HOST') ?: 'localhost');
 $dbname = defined('DB_NAME') ? DB_NAME : (getenv('DB_NAME') ?: 'mcm_db');
 $username = defined('DB_USER') ? DB_USER : (getenv('DB_USER') ?: 'root');
-$password = defined('DB_PASS') ? DB_PASS : (getenv('DB_PASS') ?: 'password');
+$password = defined('DB_PASS') ? DB_PASS : (getenv('DB_PASS') ?: '');
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);

@@ -391,6 +391,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 const imgEl = document.getElementById('detailModalImage');
                 if (imgEl) imgEl.src = data.image;
+                const imgBgEl = document.getElementById('detailModalImageBg');
+                if (imgBgEl) imgBgEl.style.backgroundImage = 'url("' + data.image + '")';
                 
                 const featuresContainer = document.getElementById('detailModalFeatures');
                 featuresContainer.innerHTML = '';

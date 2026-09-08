@@ -23,7 +23,7 @@
                                     <label class="form-label small fw-bold text-muted text-uppercase">WhatsApp Bisnis</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light border-0"><i class="fab fa-whatsapp text-success"></i></span>
-                                        <input type="text" class="form-control bg-light border-0 py-2" name="admin_whatsapp" value="<?php echo htmlspecialchars(mcm_setting('admin_whatsapp', '6285793935707')); ?>">
+                                        <input type="text" class="form-control bg-light border-0 py-2" name="admin_whatsapp" value="<?php echo htmlspecialchars(mcm_setting('admin_whatsapp', '628978902864')); ?>">
                                     </div>
                                 </div>
                                 <div class="col-md-6">

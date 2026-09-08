@@ -16,7 +16,7 @@
             <?php
             // Data dinamis footer — dipakai di kolom Office & Ikuti Kami
             $fAddress = mcm_setting('admin_address', 'Jl. Khp Hasan Mustopa No.57, Neglasari, Kec. Cibeunying Kaler, Kota Bandung, Jawa Barat 40124');
-            $fWa      = preg_replace('/\D/', '', mcm_setting('admin_whatsapp', '6285793935707'));
+            $fWa      = preg_replace('/\D/', '', mcm_setting('admin_whatsapp', '628978902864'));
             $fEmail   = mcm_setting('admin_email', '');
             $fIg      = trim(mcm_setting('social_ig', ''));
             $fFb      = trim(mcm_setting('social_fb', ''));

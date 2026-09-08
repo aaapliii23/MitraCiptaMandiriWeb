@@ -68,6 +68,11 @@ async function loadContent(url, pushState = true) {
             if (pageName === 'finance' && typeof initGrafikArusKas === 'function') {
                 initGrafikArusKas();
             }
+
+            // Clear notification badge when admin opens chat or orders
+            if (typeof window.MCMNotifClearBadges === 'function') {
+                window.MCMNotifClearBadges(pageName);
+            }
             
             window.scrollTo(0, 0);
         }

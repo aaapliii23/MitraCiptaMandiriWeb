@@ -60,11 +60,11 @@ $headerLogo = function_exists('mcm_setting') ? mcm_setting('logo_url', $base_url
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg fixed-top<?php echo $is_home ? '' : ' navbar-solid'; ?>" style="transition: all 0.4s ease;">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="<?php echo htmlspecialchars($__homeAbs); ?>">
-                <img src="<?php echo htmlspecialchars($headerLogo); ?>" alt="MCM Logo" style="height: 40px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
-                <div class="ms-2 ps-2 border-start border-2 brand-divider d-flex flex-column justify-content-center" style="height: 35px;">
-                    <span class="fw-bold brand-text" style="font-size: 0.75rem; letter-spacing: 1px; line-height: 1.1;">MITRA CIPTA</span>
-                    <span class="fw-bold brand-text" style="font-size: 0.75rem; letter-spacing: 1px; line-height: 1.1;">MANDIRI</span>
+            <a class="navbar-brand d-flex align-items-center text-decoration-none" href="<?php echo htmlspecialchars($__homeAbs); ?>">
+                <img src="<?php echo htmlspecialchars($headerLogo); ?>" alt="MCM Logo" style="height: 48px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" onerror="this.onerror=null;this.src='<?php echo $base_url; ?>assets/img/logo.png';">
+                <div class="ms-2 ps-2 border-start border-2 brand-divider d-flex flex-column justify-content-center" style="height: 42px;">
+                    <span class="fw-bold brand-text" style="font-size: 0.95rem; font-weight: 800; letter-spacing: 1.2px; line-height: 1.15;">MITRA CIPTA</span>
+                    <span class="fw-bold brand-text" style="font-size: 0.95rem; font-weight: 800; letter-spacing: 1.2px; line-height: 1.15;">MANDIRI</span>
                 </div>
             </a>
             <button class="navbar-toggler" type="button" id="mcmMainToggler">

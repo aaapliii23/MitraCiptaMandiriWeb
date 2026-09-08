@@ -66,9 +66,23 @@
                             <input type="text" class="form-control" name="features" id="classFeatures" placeholder="Materi 1, Materi 2, Sertifikat..." required>
                         </div>
                         <div class="col-12">
-                            <label class="form-label small fw-medium">Gambar Cover</label>
+                            <label class="form-label small fw-medium">Gambar Cover Pelatihan</label>
                             <input type="file" class="form-control" name="image" id="classImage" accept="image/*">
-                            <small class="text-muted d-block mt-1">Biarkan kosong jika tidak ingin mengubah gambar (saat edit).</small>
+                            <small class="text-muted d-block mt-1">Format: JPG, PNG, WEBP. Biarkan kosong jika tidak ingin mengubah gambar (saat edit).</small>
+                            
+                            <!-- Pratinjau Foto Utuh -->
+                            <div id="classImagePreviewContainer" class="mt-3 p-3 rounded-4 border bg-light text-center" style="display: none;">
+                                <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                                    <span class="small fw-bold text-dark" id="classImagePreviewLabel"><i class="fas fa-image me-1 text-primary"></i>Pratinjau Foto</span>
+                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-0" id="classImageClearBtn" style="display: none; font-size: 0.75rem;" onclick="clearClassImagePreview()"><i class="fas fa-times me-1"></i>Batal Ganti</button>
+                                </div>
+                                <div id="classImagePreviewBox" class="position-relative d-flex align-items-center justify-content-center p-2" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; overflow: hidden; min-height: 160px; max-height: 280px;">
+                                    <img id="classImagePreview" src="" alt="Pratinjau Foto" class="img-fluid" style="max-height: 260px; max-width: 100%; width: auto; height: auto; object-fit: contain; border-radius: 0.5rem;">
+                                </div>
+                                <div class="small text-muted mt-2" style="font-size: 0.75rem;">
+                                    <i class="fas fa-check-circle text-success me-1"></i>Foto ditampilkan 100% utuh proporsional tanpa terpotong
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

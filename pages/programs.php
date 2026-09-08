@@ -27,10 +27,10 @@ try {
             <!-- Logo directly above badge -->
             <div class="mb-4">
                 <a class="d-flex align-items-center text-decoration-none" href="../index.php">
-                    <img src="../assets/img/logo.png" alt="MCM Logo" style="height: 45px; width: auto;">
-                    <div class="ms-2 ps-2 border-start border-2 border-dark d-flex flex-column justify-content-center" style="height: 35px;">
-                        <span class="fw-bold text-dark" style="font-size: 0.8rem; letter-spacing: 1px; line-height: 1.1;">MITRA CIPTA</span>
-                        <span class="fw-bold text-dark" style="font-size: 0.8rem; letter-spacing: 1px; line-height: 1.1;">MANDIRI</span>
+                    <img src="<?php echo htmlspecialchars($headerLogo); ?>" alt="MCM Logo" style="height: 52px; width: auto; object-fit: contain;" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
+                    <div class="ms-3 ps-3 border-start border-2 border-primary d-flex flex-column justify-content-center" style="height: 42px;">
+                        <span class="fw-bold text-dark" style="font-size: 1rem; font-weight: 800; letter-spacing: 1.2px; line-height: 1.15;">MITRA CIPTA</span>
+                        <span class="fw-bold" style="font-size: 1rem; font-weight: 800; letter-spacing: 1.2px; line-height: 1.15; color: #0c4a6e;">MANDIRI</span>
                     </div>
                 </a>
             </div>
@@ -88,14 +88,18 @@ try {
             ?>
             <div class="col-lg-4 col-md-6 class-item" data-category="<?php echo htmlspecialchars($c['category']); ?>" data-name="<?php echo strtolower(htmlspecialchars($c['name'])); ?>">
                 <div class="paket-card h-100 shadow-sm border rounded-4 overflow-hidden bg-white">
-                    <div class="position-relative" style="height: 200px; background:#e2e8f0;">
-                        <img src="<?php echo htmlspecialchars(asset_src($c['image'])); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="w-100 h-100" style="object-fit: cover; aspect-ratio: 4/3;" loading="lazy" decoding="async" width="400" height="200" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
-                        <div class="position-absolute top-0 end-0 m-3">
-                            <span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm">MCM Official</span>
+                    <a href="class_detail.php?id=<?php echo $c['id']; ?>&from=programs" class="text-decoration-none d-block">
+                        <div class="position-relative w-100 overflow-hidden" style="height: 220px; border-top-left-radius: 1.25rem; border-top-right-radius: 1.25rem; background: #e2e8f0;">
+                            <img src="<?php echo htmlspecialchars(asset_src($c['image'])); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="w-100 h-100" style="object-fit: cover; object-position: top center; display: block;" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
+                            <div class="position-absolute top-0 end-0 m-3" style="z-index: 2;">
+                                <span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm">MCM Official</span>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                     <div class="paket-card-content p-4">
-                        <h4 class="fw-bold mb-2"><?php echo htmlspecialchars($c['name']); ?></h4>
+                        <a href="class_detail.php?id=<?php echo $c['id']; ?>&from=programs" class="text-decoration-none text-dark">
+                            <h4 class="fw-bold mb-2"><?php echo htmlspecialchars($c['name']); ?></h4>
+                        </a>
                         <p class="text-muted small mb-4" style="height: 4.5em; overflow: hidden;"><?php echo substr(strip_tags($c['description']), 0, 120); ?>...</p>
                         <?php
                         $pLegacy = (int)($c['price'] ?? 0);

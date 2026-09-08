@@ -57,11 +57,8 @@ try {
             // warna kategori — purpose: diferensiasi sekilas
             function mcmCatStyle($cat){
                 $c = strtolower(trim($cat ?? ''));
-                if (str_contains($c, 'digital')) return 'background:rgba(99,102,241,0.10);color:#4f46e5;border-color:rgba(99,102,241,0.18);';
-                if (str_contains($c, 'kesehatan')) return 'background:rgba(20,184,166,0.10);color:#0f766e;border-color:rgba(20,184,166,0.18);';
-                if (str_contains($c, 'pariwisata')) return 'background:rgba(249,115,22,0.10);color:#c2410c;border-color:rgba(249,115,22,0.18);';
-                if (str_contains($c, 'kecantikan')) return 'background:rgba(236,72,153,0.10);color:#be185d;border-color:rgba(236,72,153,0.18);';
-                if (str_contains($c, 'kuliner')) return 'background:rgba(245,158,11,0.12);color:#92400e;border-color:rgba(245,158,11,0.20);';
+                if (str_contains($c, 'public') || str_contains($c, 'speaking') || str_contains($c, 'metodologi')) return 'background:rgba(14,165,233,0.12);color:#0369a1;border-color:rgba(14,165,233,0.22);';
+                if (str_contains($c, 'rias') || str_contains($c, 'tata') || str_contains($c, 'kecantikan')) return 'background:rgba(236,72,153,0.10);color:#be185d;border-color:rgba(236,72,153,0.18);';
                 return 'background:rgba(14,165,233,0.08);color:#0c4a6e;border-color:rgba(14,165,233,0.14);';
             }
             function mcmInitials($name){

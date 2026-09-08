@@ -124,7 +124,11 @@ try {
                     ?>
                         <div class="col-md-6 col-lg-4">
                             <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
-                                <img src="<?php echo htmlspecialchars(asset_src($c['image'])); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="card-img-top" style="height: 160px; object-fit: cover; background:#e2e8f0; aspect-ratio: 16/9;" width="400" height="160" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
+                                <div class="position-relative d-flex align-items-center justify-content-center" style="height: 180px; background:#0f172a; overflow: hidden;">
+                                    <?php $imgUrl = htmlspecialchars(asset_src($c['image'])); ?>
+                                    <div style="position: absolute; inset: -15px; background-image: url('<?php echo $imgUrl; ?>'); background-size: cover; background-position: center; filter: blur(16px) brightness(0.4); opacity: 0.65;"></div>
+                                    <img src="<?php echo $imgUrl; ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="position-relative" style="max-height: 180px; max-width: 100%; object-fit: contain; z-index: 1; padding: 6px;" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
+                                </div>
                                 <div class="card-body p-4 d-flex flex-column">
                                     <div class="d-flex flex-wrap gap-2 mb-2">
                                         <span class="badge bg-soft-primary text-primary rounded-pill px-3"><?php echo htmlspecialchars($c['category']); ?></span>
@@ -172,7 +176,11 @@ try {
                     <?php foreach ($offline as $c): ?>
                         <div class="col-md-6 col-lg-4">
                             <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
-                                <img src="<?php echo htmlspecialchars(asset_src($c['image'])); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="card-img-top" style="height: 160px; object-fit: cover; background:#e2e8f0; aspect-ratio: 16/9;" width="400" height="160" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
+                                <div class="position-relative d-flex align-items-center justify-content-center" style="height: 180px; background:#0f172a; overflow: hidden;">
+                                    <?php $imgUrl = htmlspecialchars(asset_src($c['image'])); ?>
+                                    <div style="position: absolute; inset: -15px; background-image: url('<?php echo $imgUrl; ?>'); background-size: cover; background-position: center; filter: blur(16px) brightness(0.4); opacity: 0.65;"></div>
+                                    <img src="<?php echo $imgUrl; ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="position-relative" style="max-height: 180px; max-width: 100%; object-fit: contain; z-index: 1; padding: 6px;" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
+                                </div>
                                 <div class="card-body p-4 d-flex flex-column">
                                     <div class="d-flex flex-wrap gap-2 mb-2">
                                         <span class="badge bg-soft-primary text-primary rounded-pill px-3"><?php echo htmlspecialchars($c['category']); ?></span>

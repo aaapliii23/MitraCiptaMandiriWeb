@@ -1,10 +1,15 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 header('Content-Type: application/json');
-if (!isset($_SESSION['admin_logged_in'])) exit;
+if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+    echo json_encode(['status' => 'error', 'message' => 'Akses ditolak.']);
+    exit;
+}
 
-require_once '../../config/database.php';
-require_once '../../includes/security.php';
+require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../includes/security.php';
 mcm_cors_headers();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!mcm_csrf_verify($_POST['csrf_token'] ?? $_POST['_token'] ?? '')) {
@@ -14,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $rl = mcm_rate_limit($rateKey, 30, 60);
     if (!$rl['allowed']) { echo json_encode(['status'=>'error','message'=>$rl['message']]); exit; }
 }
-require_once '../../includes/whatsapp_client.php';
+require_once __DIR__ . '/../../includes/whatsapp_client.php';
 
 $action = $_POST['action'] ?? '';
 
@@ -39,24 +44,25 @@ if ($action === 'send_reply') {
 
     $isAnon = str_starts_with($waNumber, 'web-');
     try {
-        $ok = wa_send_message($pdo, $waNumber, $message, 'admin', 'admin');
+        $ok = wa_send_message($pdo, $waNumber, $message, null, 'admin');
         if ($isAnon) {
-            echo json_encode(['status' => 'success', 'message' => 'Balasan tersimpan — hanya di widget', 'wa_sent' => false]);
+            echo json_encode(['status' => 'success', 'message' => 'Balasan tersimpan (widget web)', 'wa_sent' => false]);
         } else {
             if ($ok) {
                 echo json_encode(['status' => 'success', 'message' => 'Balasan terkirim ke WhatsApp', 'wa_sent' => true]);
             } else {
-                echo json_encode(['status' => 'success', 'message' => 'Balasan tersimpan, tapi gagal terkirim ke WhatsApp. Cek koneksi Fonnte.', 'wa_sent' => false, 'wa_error' => 'Fonnte gagal']);
+                echo json_encode(['status' => 'success', 'message' => 'Balasan tersimpan di sistem.', 'wa_sent' => false, 'wa_error' => 'Gateway offline/mock']);
             }
         }
     } catch (PDOException $e) {
-        echo json_encode(['status' => 'error', 'message' => 'Gagal mengirim balasan.']);
+        echo json_encode(['status' => 'error', 'message' => 'Gagal mengirim balasan: ' . $e->getMessage()]);
     }
 } elseif ($action === 'delete_thread') {
     $waNumber = trim($_POST['wa_number'] ?? '');
     if ($waNumber) {
-        $stmt = $pdo->prepare("DELETE FROM chat_messages WHERE wa_number = ?");
-        $stmt->execute([$waNumber]);
+        $cleanDigits = preg_replace('/\D+/', '', $waNumber);
+        $stmt = $pdo->prepare("DELETE FROM chat_messages WHERE wa_number = ? OR wa_number = ? OR wa_number = ?");
+        $stmt->execute([$waNumber, '+' . $waNumber, $cleanDigits]);
         echo json_encode(['status' => 'success', 'message' => 'Percakapan dihapus.']);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Nomor tidak valid.']);

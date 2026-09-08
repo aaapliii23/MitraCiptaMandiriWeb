@@ -74,6 +74,45 @@ function toggleWaLinkVisibility() {
         input.value = '';
     }
 }
+let currentEditingClassImage = null;
+
+function resolveAdminImgSrc(path) {
+    if (!path) return '../assets/img/logo.png';
+    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('../') || path.startsWith('data:')) {
+        return path;
+    }
+    return '../' + path.replace(/^\/+/, '');
+}
+
+function showClassImagePreview(src, label, isNew) {
+    const container = document.getElementById('classImagePreviewContainer');
+    const imgEl = document.getElementById('classImagePreview');
+    const bgEl = document.getElementById('classImagePreviewBg');
+    const lblEl = document.getElementById('classImagePreviewLabel');
+    const clearBtn = document.getElementById('classImageClearBtn');
+    if (!container || !imgEl) return;
+    
+    imgEl.src = src;
+    if (bgEl) bgEl.style.backgroundImage = 'url("' + src.replace(/"/g, '\\"') + '")';
+    if (lblEl) lblEl.innerHTML = '<i class="fas fa-image me-1 text-primary"></i>' + (label || 'Pratinjau Foto');
+    if (clearBtn) clearBtn.style.display = isNew ? '' : 'none';
+    container.style.display = '';
+}
+
+function clearClassImagePreview() {
+    const fileInput = document.getElementById('classImage');
+    if (fileInput) fileInput.value = '';
+    
+    if (currentEditingClassImage) {
+        showClassImagePreview(resolveAdminImgSrc(currentEditingClassImage), 'Foto Saat Ini (Utuh)', false);
+    } else {
+        const container = document.getElementById('classImagePreviewContainer');
+        const imgEl = document.getElementById('classImagePreview');
+        if (container) container.style.display = 'none';
+        if (imgEl) imgEl.src = '';
+    }
+}
+
 function resetClassForm() {
     document.getElementById('classForm').reset();
     document.getElementById('classAction').value = 'create';
@@ -91,6 +130,8 @@ function resetClassForm() {
     if (ma) ma.value = 'both';
     if (wa) wa.value = '';
     toggleWaLinkVisibility();
+    currentEditingClassImage = null;
+    clearClassImagePreview();
 }
 
 function editClass(data) {
@@ -130,6 +171,12 @@ function editClass(data) {
     document.getElementById('classImage').required = false;
     document.getElementById('classModalTitle').textContent = 'Edit Paket Pelatihan';
     
+    // Tampilkan foto saat ini (secara utuh tanpa terpotong)
+    currentEditingClassImage = data.image || null;
+    if (data.image) {
+        showClassImagePreview(resolveAdminImgSrc(data.image), 'Foto Saat Ini (Utuh)', false);
+    }
+    
     new bootstrap.Modal(document.getElementById('classModal')).show();
 }
 document.addEventListener('DOMContentLoaded', function(){
@@ -140,6 +187,20 @@ document.addEventListener('DOMContentLoaded', function(){
     const ma = document.getElementById('classModeAvailable');
     if (ma) ma.addEventListener('change', toggleWaLinkVisibility);
     toggleWaLinkVisibility();
+
+    // Listener ganti foto pelatihan (instant preview utuh)
+    const classImgInput = document.getElementById('classImage');
+    if (classImgInput) {
+        classImgInput.addEventListener('change', function(){
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    showClassImagePreview(e.target.result, 'Pratinjau Foto Baru (Tampak Utuh)', true);
+                };
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    }
 });
 
 function editInstructor(data) {

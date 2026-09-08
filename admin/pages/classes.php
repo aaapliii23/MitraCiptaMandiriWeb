@@ -40,16 +40,16 @@
                             <div class="position-absolute top-0 start-0 m-2" style="z-index:2;">
                                 <input type="checkbox" class="bulk-row-check js-bulk-row" value="<?php echo (int)$c['id']; ?>" style="width:18px;height:18px;accent-color:#2563eb; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
                             </div>
-                            <div class="position-relative">
+                            <div class="position-relative w-100 overflow-hidden" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
                                 <?php if (!empty($c['image'])): ?>
-                                    <img src="<?php echo htmlspecialchars(getImgSrc($c['image'])); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($c['name']); ?>" style="height: 180px; object-fit: cover;">
+                                    <img src="<?php echo htmlspecialchars(getImgSrc($c['image'])); ?>" class="w-100 d-block" alt="<?php echo htmlspecialchars($c['name']); ?>" style="height: auto; max-height: 380px; object-fit: contain;">
                                 <?php else: ?>
-                                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 180px;">
+                                    <div class="bg-light d-flex align-items-center justify-content-center w-100" style="height: 180px;">
                                         <i class="fas fa-book-open fa-3x text-muted opacity-25"></i>
                                     </div>
                                 <?php endif; ?>
-                                <div class="position-absolute top-0 end-0 p-3">
-                                    <span class="badge bg-white text-primary shadow-sm rounded-pill"><?php echo htmlspecialchars($c['category']); ?></span>
+                                <div class="position-absolute top-0 end-0 p-3" style="z-index: 2;">
+                                    <span class="badge bg-white text-primary shadow-sm rounded-pill border"><?php echo htmlspecialchars($c['category']); ?></span>
                                 </div>
                             </div>
                             <div class="card-body p-4">

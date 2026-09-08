@@ -72,8 +72,8 @@ h1, h2, h3, h4, h5, h6 {
     padding: 5px 0;
 }
 .navbar.navbar-solid .navbar-brand img { filter: none; }
-.navbar.navbar-solid .navbar-brand .brand-text { color: #1e293b !important; text-shadow: none; }
-.navbar.navbar-solid .navbar-brand .brand-divider { border-color: #1e293b !important; }
+.navbar.navbar-solid .navbar-brand .brand-text { color: #0c4a6e !important; text-shadow: none; font-weight: 800; }
+.navbar.navbar-solid .navbar-brand .brand-divider { border-color: #0c4a6e !important; }
 .navbar.navbar-solid .nav-link { color: var(--text-main) !important; }
 .navbar-brand {
     font-weight: 700;
@@ -98,21 +98,23 @@ h1, h2, h3, h4, h5, h6 {
 /* Brand Text & Divider transition */
 .navbar-brand .brand-text {
     color: var(--white);
+    font-weight: 800;
     transition: color 0.3s ease;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 .navbar-brand .brand-divider {
-    border-color: rgba(255, 255, 255, 0.6) !important;
+    border-color: rgba(255, 255, 255, 0.7) !important;
     transition: border-color 0.3s ease;
 }
 
-/* On Scroll: Change to Dark */
+/* On Scroll: Change to Dark Navy */
 .navbar.scrolled .navbar-brand .brand-text {
-    color: #1e293b !important; /* Solid Dark Navy/Black */
+    color: #0c4a6e !important; /* Solid Dark Navy MCM */
+    font-weight: 800;
     text-shadow: none;
 }
 .navbar.scrolled .navbar-brand .brand-divider {
-    border-color: #1e293b !important;
+    border-color: #0c4a6e !important;
 }
 
 .navbar-brand span {
@@ -863,7 +865,10 @@ h1, h2, h3, h4, h5, h6 {
     }
 
     #detailModal img#detailModalImage {
-        height: 160px !important;
+        max-height: 200px !important;
+        height: auto !important;
+        width: auto !important;
+        object-fit: contain !important;
         border-radius: 0.75rem !important;
     }
 

@@ -14,14 +14,18 @@
                         ?>
                         <div class="swiper-slide d-flex align-items-stretch">
                             <div class="paket-card w-100 border-0 rounded-4 bg-white d-flex flex-column">
-                                <div class="position-relative" style="height: 190px; flex-shrink: 0; border-top-left-radius: 1.25rem; border-top-right-radius: 1.25rem; overflow: hidden; background:#e2e8f0;">
-                                    <img src="<?php echo htmlspecialchars(asset_src($c['image'])); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="w-100 h-100" style="object-fit: cover; aspect-ratio: 16/9;" loading="lazy" decoding="async" width="400" height="190" onerror="this.onerror=null;this.src='assets/img/logo.png';">
-                                    <div class="position-absolute top-0 end-0 m-3">
-                                        <span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm" style="font-size: 0.7rem; font-weight: 600;">MCM Official</span>
+                                <a href="pages/class_detail.php?id=<?php echo $c['id']; ?>&from=landing" class="text-decoration-none d-block">
+                                    <div class="position-relative w-100 overflow-hidden" style="height: 220px; flex-shrink: 0; border-top-left-radius: 1.25rem; border-top-right-radius: 1.25rem; background: #e2e8f0;">
+                                        <img src="<?php echo htmlspecialchars(asset_src($c['image'])); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="w-100 h-100" style="object-fit: cover; object-position: top center; display: block;" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='assets/img/logo.png';">
+                                        <div class="position-absolute top-0 end-0 m-3" style="z-index: 2;">
+                                            <span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm" style="font-size: 0.7rem; font-weight: 600;">MCM Official</span>
+                                        </div>
                                     </div>
-                                </div>
+                                </a>
                                 <div class="paket-card-content p-4 d-flex flex-column flex-grow-1 bg-white" style="border-bottom-left-radius: 1.25rem; border-bottom-right-radius: 1.25rem;">
-                                    <h4 class="fw-bold mb-2 text-dark" style="font-size: 1.2rem;"><?php echo htmlspecialchars($c['name']); ?></h4>
+                                    <a href="pages/class_detail.php?id=<?php echo $c['id']; ?>&from=landing" class="text-decoration-none text-dark">
+                                        <h4 class="fw-bold mb-2 text-dark hover-primary" style="font-size: 1.2rem;"><?php echo htmlspecialchars($c['name']); ?></h4>
+                                    </a>
                                     <div class="mb-3">
                                         <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill small fw-bold" style="background-color: rgba(14, 165, 233, 0.1) !important;">
                                             <i class="fas fa-calendar-alt me-2"></i>Mulai: <?php echo date('d M Y', strtotime($c['start_date'])); ?>

@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $pdo->prepare("INSERT INTO orders (order_number, customer_name, customer_phone, customer_email, customer_address, customer_institution, class_id, amount, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
     if ($stmt->execute([$orderNumber, $customerName, $customerPhone, $customerEmail, $customerAddress, $customerInstitution, $classId, $amount])) {
         // Prepare Formal WhatsApp Message
-        $adminPhone = '6285793935707';
+        $adminPhone = '628978902864';
         $message = "*KONFIRMASI PENDAFTARAN BARU - MCM*\n\n";
         $message .= "Halo Admin Mitra Cipta Mandiri,\n";
         $message .= "Saya ingin mengonfirmasi pendaftaran pelatihan saya dengan detail sebagai berikut:\n\n";

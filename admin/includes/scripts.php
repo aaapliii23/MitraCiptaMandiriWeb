@@ -8,6 +8,7 @@
 
 <?php include __DIR__ . '/scripts_navigation.php'; ?>
 <?php include __DIR__ . '/scripts_modals.php'; ?>
+<?php include __DIR__ . '/scripts_notifications.php'; ?>
 
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 

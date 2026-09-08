@@ -29,10 +29,10 @@ define('WA_VERIFY_TOKEN', '');
 define('MCM_WA_WEBHOOK_SECRET', '');
 
 // Nomor WhatsApp admin (alur checkout lama & notifikasi)
-define('MCM_WA_ADMIN', '6285793935707');
+define('MCM_WA_ADMIN', '628978902864');
 
 // Nomor WhatsApp chatbot (tombol mengambang & target balasan otomatis)
-define('MCM_WA_CHATBOT', '6285793935707');
+define('MCM_WA_CHATBOT', '628978902864');
 
 // --- Cloudinary (upload gambar) ---
 define('CLOUDINARY_CLOUD_NAME', 'your_cloud_name');

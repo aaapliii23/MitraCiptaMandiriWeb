@@ -85,7 +85,7 @@ Form admin punya `<input type="hidden" name="action">` dan `name="id"`. Named pr
 - `chatbot_webhook.php` method `POST` **wajib** memvalidasi bahwa payload berasal dari Meta (App Secret/signature header bila tersedia) sebelum diproses.
 - Pencocokan intent dilakukan dengan pencocokan kata kunci sederhana (bukan regex kompleks/AI eksternal) agar mudah dirawat tanpa Composer/SDK tambahan; daftar intent & balasan disimpan sebagai array PHP di `includes/whatsapp_client.php` atau tabel sederhana, bukan hardcode berulang di banyak file.
 - Semua pesan masuk/keluar dicatat ke `chat_messages` untuk audit — jangan menyimpan token akses di tabel ini.
-- Nomor WhatsApp bisnis untuk chatbot **sama** dengan nomor admin (`6285793935707`) yang sudah dipakai di alur checkout/notifikasi, agar konsisten satu kanal komunikasi resmi.
+- Nomor WhatsApp bisnis untuk chatbot **sama** dengan nomor admin (`628978902864`) yang sudah dipakai di alur checkout/notifikasi, agar konsisten satu kanal komunikasi resmi.
 
 ## 10. LMS — Materi/Modul (DIREVISI)
 - Akses materi (`lms/course.php`, `lms/material.php`) **wajib** memvalidasi kepemilikan `enrollments` milik `user_id` sesi aktif untuk `class_id` yang diminta — validasi di server, bukan hanya menyembunyikan tombol di UI.

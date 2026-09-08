@@ -127,7 +127,7 @@ try {
                     wa_send_message($pdo, $order['customer_phone'], $msg, 'pembayaran');
                     // Notifikasi ke admin karena link kosong
                     try {
-                        $adminNumber = preg_replace('/\D/', '', mcm_setting('admin_whatsapp', '6285793935707'));
+                        $adminNumber = preg_replace('/\D/', '', mcm_setting('admin_whatsapp', '628978902864'));
                         $adminMsg = "[NOTIF OFFLINE] Link WA kosong — Kelas: $className (ID {$order['class_id']}), Order: $orderNumber, Peserta: {$order['customer_name']} ({$order['customer_phone']}) — segera hubungi peserta.";
                         wa_send_message($pdo, $adminNumber, $adminMsg, 'admin_notif');
                     } catch (Exception $ae) {}
