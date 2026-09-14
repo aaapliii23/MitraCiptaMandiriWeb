@@ -99,6 +99,7 @@ $headerLogo = function_exists('mcm_setting') ? mcm_setting('logo_url', $base_url
                     <?php if (!empty($_SESSION['user_logged_in'])): ?>
                         <div class="d-flex align-items-center gap-2">
                             <a href="<?php echo $base_url; ?>lms/dashboard.php" class="btn rounded-pill fw-bold btn-premium" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: white; border: none; padding: 6px 18px; font-size: 0.875rem; box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3); display: inline-flex; align-items: center; justify-content: center;"><i class="fas fa-graduation-cap me-2"></i>LMS Saya</a>
+                            <a href="<?php echo $base_url; ?>lms/cart.php" class="btn btn-outline-primary rounded-pill fw-bold" style="padding: 5px 16px; font-size: 0.85rem;"><i class="fas fa-shopping-cart me-1"></i>Keranjang</a>
                             <span class="small text-muted d-none d-lg-inline-flex align-items-center" style="font-size: 0.85rem;"><?php echo htmlspecialchars($_SESSION['user_name'] ?? ''); ?></span>
                         </div>
                         <a href="<?php echo $base_url; ?>auth/user_logout.php" class="btn btn-outline-secondary rounded-pill fw-bold" style="padding: 5px 16px; font-size: 0.85rem;">Keluar</a>

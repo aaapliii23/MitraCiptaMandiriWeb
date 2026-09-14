@@ -68,6 +68,7 @@ try {
             <div class="d-flex align-items-center gap-2">
                 <span class="text-muted small d-none d-md-inline"><i class="fas fa-user me-1"></i><?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
                 <a href="profile.php" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-user-cog me-1"></i>Profil</a>
+                <a href="cart.php" class="btn btn-outline-warning btn-sm rounded-pill px-3"><i class="fas fa-shopping-cart me-1"></i>Keranjang</a>
                 <a href="../index.php" class="btn btn-outline-primary btn-sm rounded-pill px-3">Beranda</a>
                 <a href="../auth/user_logout.php" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="fas fa-sign-out-alt me-1"></i>Keluar</a>
             </div>
