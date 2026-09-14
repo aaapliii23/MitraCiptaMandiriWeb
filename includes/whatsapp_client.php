@@ -54,12 +54,35 @@ function sendWhatsAppNotification($toNumber, $message) {
     }
     return ['ok' => true, 'data' => $data];
 }
-function wa_send_message($pdo, $toNumber, $message, $matchedIntent = null, $senderType = 'bot') {
+function wa_send_message($pdo, $toNumber, $message, $matchedIntent = null, $senderType = 'bot', $userId = null) {
     if (!in_array($senderType, ['bot','admin','visitor'], true)) $senderType = 'bot';
-    $stmt = $pdo->prepare("INSERT INTO chat_messages (wa_number, direction, sender_type, message, matched_intent) VALUES (?, 'out', ?, ?, ?)");
-    $stmt->execute([$toNumber, $senderType, $message, $matchedIntent]);
 
-    if (strpos($toNumber, 'web-') === 0) {
+    // Resolve user_id sesuai tipe thread
+    if ($userId === null) {
+        if (strpos($toNumber, 'user-') === 0) {
+            // Thread Siswa LMS: user_id dari prefix
+            $userId = (int)substr($toNumber, 5);
+        } elseif (strpos($toNumber, 'web-') === 0) {
+            // Thread anonim: SELALU NULL — jangan pernah isi user_id
+            $userId = null;
+        } else {
+            // Thread WhatsApp asli: cari dari nomor telepon
+            try {
+                $cleanDigits = preg_replace('/\D+/', '', $toNumber);
+                if ($cleanDigits !== '') {
+                    $sU = $pdo->prepare("SELECT id FROM users WHERE phone = ? OR phone = ? LIMIT 1");
+                    $sU->execute([$cleanDigits, '+' . $cleanDigits]);
+                    $foundUid = (int)$sU->fetchColumn();
+                    if ($foundUid > 0) $userId = $foundUid;
+                }
+            } catch (Exception $e) {}
+        }
+    }
+
+    $stmt = $pdo->prepare("INSERT INTO chat_messages (wa_number, user_id, direction, sender_type, message, matched_intent) VALUES (?, ?, 'out', ?, ?, ?)");
+    $stmt->execute([$toNumber, $userId, $senderType, $message, $matchedIntent]);
+
+    if (strpos($toNumber, 'web-') === 0 || strpos($toNumber, 'user-') === 0) {
         return true;
     }
 

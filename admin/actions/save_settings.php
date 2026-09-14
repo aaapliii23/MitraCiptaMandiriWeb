@@ -32,7 +32,13 @@ $isLogoUpload = isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ER
 
 foreach ($textKeys as $k) {
     if (array_key_exists($k, $_POST)) {
-        $upsert->execute([$k, trim($_POST[$k])]);
+        $val = trim($_POST[$k]);
+        if ($k === 'admin_whatsapp') {
+            $digits = preg_replace('/\D+/', '', $val);
+            if (strpos($digits, '0') === 0) $digits = '62' . substr($digits, 1);
+            if ($digits !== '') $val = $digits;
+        }
+        $upsert->execute([$k, $val]);
     }
 }
 

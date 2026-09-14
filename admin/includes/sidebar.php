@@ -65,7 +65,7 @@ function mcm_item($page, $target, $icon, $label) {
                 }
             } catch (Exception $e) {}
             ?>
-            <li class="nav-item mb-1"><a href="?page=chat" class="nav-link <?php echo $page==='chat'?'active':''; ?>"><i class="fab fa-whatsapp"></i> Chat WhatsApp <?php if($chatUnread>0) echo '<span class="badge bg-danger rounded-pill ms-2">'.$chatUnread.'</span>'; ?></a></li>
+            <li class="nav-item mb-1"><a href="?page=chat" class="nav-link <?php echo $page==='chat'?'active':''; ?>"><i class="fab fa-whatsapp"></i> Chat WhatsApp <?php if($chatUnread>0 && $page!=='chat') echo '<span class="badge bg-danger rounded-pill ms-auto js-chat-badge" style="font-size:0.65rem;">'.$chatUnread.'</span>'; ?></a></li>
             <?php echo mcm_item($page, 'chatbot', 'fas fa-robot', 'Chatbot &amp; Balasan'); ?>
         </ul>
         </div>

@@ -81,6 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="container auth-container">
         <div class="auth-split auth-anim">
             <div class="auth-branding">
+                <img src="<?php echo $base_url; ?>assets/img/hero_workspace.jpg" alt="" class="auth-branding-photo" aria-hidden="true">
                 <div class="auth-branding-inner">
                     <div class="auth-brand-badge">
                         <img src="<?php echo $base_url; ?>assets/img/logo.png" alt="MCM"> Mitra Cipta Mandiri
@@ -96,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="auth-visual-card"><i class="fas fa-graduation-cap"></i></div>
                         <div class="auth-visual-card small"><i class="fas fa-certificate"></i></div>
                     </div>
-                    <div class="auth-brand-foot"><i class="fas fa-shield-alt"></i> Platform resmi MCM — aman & terpercaya sejak 2021</div>
+                    <div class="auth-brand-foot"><i class="fas fa-shield-alt"></i> Platform resmi MCM, aman & terpercaya sejak 2021</div>
                 </div>
                 <div class="auth-branding-deco deco-1"></div>
                 <div class="auth-branding-deco deco-2"></div>
@@ -139,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <div class="auth-divider"><span>atau</span></div>
                     <p class="auth-switch">Belum punya akun? <a href="user_register.php">Daftar sekarang</a></p>
-                    <p class="auth-terms">Dengan masuk, Anda menyetujui <a href="#">Syarat Layanan</a> & <a href="#">Kebijakan Privasi</a> MCM.</p>
+                    <p class="auth-terms">Dengan masuk, Anda menyetujui <a href="../pages/syarat_layanan.php" target="_blank">Syarat Layanan</a> &amp; <a href="../pages/kebijakan_privasi.php" target="_blank">Kebijakan Privasi</a> MCM.</p>
                 </form>
             </div>
         </div>

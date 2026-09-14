@@ -125,10 +125,13 @@ CREATE TABLE IF NOT EXISTS `chat_messages` (
   `sender_type` enum('visitor','bot','admin') NOT NULL DEFAULT 'visitor',
   `message` text NOT NULL,
   `matched_intent` varchar(50) DEFAULT NULL,
+  `is_read` tinyint(1) NOT NULL DEFAULT 0,
+  `read_at` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `idx_chat_wa_number` (`wa_number`),
-  KEY `idx_chat_sender_type` (`sender_type`)
+  KEY `idx_chat_sender_type` (`sender_type`),
+  KEY `idx_chat_is_read` (`is_read`)
 ) ENGINE=InnoDB AUTO_INCREMENT=131 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data untuk tabel `chat_messages`

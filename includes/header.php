@@ -10,9 +10,15 @@ if ($script_file !== '' && strpos($script_file, $app_root) === 0) {
 }
 $is_home = basename($_SERVER['SCRIPT_FILENAME'] ?? '') === 'index.php';
 // absolute home untuk cegah double "index.php/index.php" saat URL punya path-info (/index.php/xxx)
-$__homeAbs = '/index.php';
-if (!empty($_SERVER['SCRIPT_NAME']) && str_contains($_SERVER['SCRIPT_NAME'], '/MitraCiptaMandiriWeb/')) {
+$doc_root = !empty($_SERVER['DOCUMENT_ROOT']) ? str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT']) ?: $_SERVER['DOCUMENT_ROOT']) : '';
+$app_root_clean = str_replace('\\', '/', $app_root);
+if ($doc_root !== '' && strpos($app_root_clean, $doc_root) === 0) {
+    $sub = trim(substr($app_root_clean, strlen($doc_root)), '/');
+    $__homeAbs = ($sub !== '' ? '/' . implode('/', array_map('rawurlencode', explode('/', $sub))) : '') . '/index.php';
+} elseif (!empty($_SERVER['SCRIPT_NAME']) && str_contains($_SERVER['SCRIPT_NAME'], '/MitraCiptaMandiriWeb/')) {
     $__homeAbs = '/MitraCiptaMandiriWeb/index.php';
+} else {
+    $__homeAbs = $base_url . 'index.php';
 }
 if (!isset($csrf_token)) {
     if (session_status() === PHP_SESSION_NONE) session_start();
@@ -61,10 +67,10 @@ $headerLogo = function_exists('mcm_setting') ? mcm_setting('logo_url', $base_url
     <nav class="navbar navbar-expand-lg fixed-top<?php echo $is_home ? '' : ' navbar-solid'; ?>" style="transition: all 0.4s ease;">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center text-decoration-none" href="<?php echo htmlspecialchars($__homeAbs); ?>">
-                <img src="<?php echo htmlspecialchars($headerLogo); ?>" alt="MCM Logo" style="height: 48px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" onerror="this.onerror=null;this.src='<?php echo $base_url; ?>assets/img/logo.png';">
-                <div class="ms-2 ps-2 border-start border-2 brand-divider d-flex flex-column justify-content-center" style="height: 42px;">
-                    <span class="fw-bold brand-text" style="font-size: 0.95rem; font-weight: 800; letter-spacing: 1.2px; line-height: 1.15;">MITRA CIPTA</span>
-                    <span class="fw-bold brand-text" style="font-size: 0.95rem; font-weight: 800; letter-spacing: 1.2px; line-height: 1.15;">MANDIRI</span>
+                <img src="<?php echo htmlspecialchars($headerLogo); ?>" alt="MCM Logo" style="height: 38px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));" onerror="this.onerror=null;this.src='<?php echo $base_url; ?>assets/img/logo.png';">
+                <div class="ms-2 ps-2 border-start border-2 brand-divider d-flex flex-column justify-content-center" style="height: 30px;">
+                    <span class="fw-bold brand-text" style="font-size: 0.82rem; font-weight: 800; letter-spacing: 1px; line-height: 1.15;">MITRA CIPTA</span>
+                    <span class="fw-bold brand-text" style="font-size: 0.82rem; font-weight: 800; letter-spacing: 1px; line-height: 1.15;">MANDIRI</span>
                 </div>
             </a>
             <button class="navbar-toggler" type="button" id="mcmMainToggler">
@@ -82,9 +88,9 @@ $headerLogo = function_exists('mcm_setting') ? mcm_setting('logo_url', $base_url
             </script>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <?php $nav_sections = [['beranda', 'Beranda'], ['tentang', 'Tentang'], ['galeri', 'Galeri'], ['paket', 'Paket'], ['testimoni', 'Testimoni']]; ?>
-                <ul class="navbar-nav mx-auto align-items-center gap-2">
+                <ul class="navbar-nav mx-auto align-items-center gap-1">
                     <?php foreach ($nav_sections as $ns): ?>
-                        <?php $href = ($ns[0] === 'tentang') ? $base_url . 'pages/about.php' : ($is_home ? '#' . $ns[0] : $__homeAbs . '#' . $ns[0]); ?>
+                        <?php $href = $is_home ? '#' . $ns[0] : ($base_url . 'index.php#' . $ns[0]); ?>
                         <li class="nav-item"><a class="nav-link" href="<?php echo $href; ?>"><?php echo $ns[1]; ?></a></li>
                     <?php endforeach; ?>
                 </ul>
@@ -92,13 +98,13 @@ $headerLogo = function_exists('mcm_setting') ? mcm_setting('logo_url', $base_url
                 <div class="mt-3 mt-lg-0 text-center d-flex flex-column flex-lg-row gap-2 align-items-center">
                     <?php if (!empty($_SESSION['user_logged_in'])): ?>
                         <div class="d-flex align-items-center gap-2">
-                            <a href="<?php echo $base_url; ?>lms/dashboard.php" class="btn rounded-pill fw-bold btn-premium" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: white; border: none; padding: 10px 24px; box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.4); display: inline-flex; align-items: center; justify-content: center;"><i class="fas fa-graduation-cap me-2"></i>LMS Saya</a>
-                            <span class="small text-muted d-none d-lg-inline-flex align-items-center"><?php echo htmlspecialchars($_SESSION['user_name'] ?? ''); ?></span>
+                            <a href="<?php echo $base_url; ?>lms/dashboard.php" class="btn rounded-pill fw-bold btn-premium" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: white; border: none; padding: 6px 18px; font-size: 0.875rem; box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3); display: inline-flex; align-items: center; justify-content: center;"><i class="fas fa-graduation-cap me-2"></i>LMS Saya</a>
+                            <span class="small text-muted d-none d-lg-inline-flex align-items-center" style="font-size: 0.85rem;"><?php echo htmlspecialchars($_SESSION['user_name'] ?? ''); ?></span>
                         </div>
-                        <a href="<?php echo $base_url; ?>auth/user_logout.php" class="btn btn-outline-secondary rounded-pill fw-bold" style="padding: 8px 20px;">Keluar</a>
+                        <a href="<?php echo $base_url; ?>auth/user_logout.php" class="btn btn-outline-secondary rounded-pill fw-bold" style="padding: 5px 16px; font-size: 0.85rem;">Keluar</a>
                     <?php else: ?>
-                        <a href="<?php echo $base_url; ?>auth/user_login.php" class="btn btn-outline-primary rounded-pill fw-bold" style="padding: 8px 22px;">Masuk</a>
-                        <a href="<?php echo $base_url; ?>auth/user_register.php" class="btn rounded-pill fw-bold btn-premium" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: white; border: none; padding: 10px 28px; box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.4); display: inline-block;">Daftar Sekarang</a>
+                        <a href="<?php echo $base_url; ?>auth/user_login.php" class="btn btn-nav-login rounded-pill fw-bold" style="padding: 6px 18px; font-size: 0.875rem;">Masuk</a>
+                        <a href="<?php echo $base_url; ?>auth/user_register.php" class="btn rounded-pill fw-bold btn-premium" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: white; border: none; padding: 7px 20px; font-size: 0.875rem; box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35); display: inline-block;">Daftar Sekarang</a>
                     <?php endif; ?>
                 </div>
             </div>

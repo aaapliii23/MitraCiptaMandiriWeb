@@ -91,10 +91,10 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
         <div class="row g-5">
             <!-- Left Side: Information -->
             <div class="col-lg-8">
-                <!-- Image Header — Menyesuaikan dengan bentuk asli gambar (tidak terpotong & tanpa kotak hitam) -->
-                <div class="mb-5 text-center text-lg-start">
+                <!-- Image Header — Menyesuaikan dengan bentuk asli gambar & diposisikan ke tengah agar seimbang -->
+                <div class="mb-5 text-center d-flex justify-content-center">
                     <div class="d-inline-block position-relative shadow-sm rounded-4 overflow-hidden border bg-white" style="max-width: 100%;">
-                        <img src="<?php echo htmlspecialchars(asset_src($class['image'])); ?>" alt="<?php echo htmlspecialchars($class['name']); ?>" class="img-fluid d-block" style="max-height: 600px; width: auto; max-width: 100%; object-fit: contain; cursor: pointer;" onclick="openImageModal('<?php echo htmlspecialchars(asset_src($class['image'])); ?>', '<?php echo htmlspecialchars(addslashes($class['name'])); ?>')" title="Klik untuk memperbesar foto" fetchpriority="high" decoding="async" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
+                        <img src="<?php echo htmlspecialchars(asset_src($class['image'])); ?>" alt="<?php echo htmlspecialchars($class['name']); ?>" class="img-fluid d-block mx-auto" style="max-height: 640px; width: auto; max-width: 100%; object-fit: contain; cursor: pointer;" onclick="openImageModal('<?php echo htmlspecialchars(asset_src($class['image'])); ?>', '<?php echo htmlspecialchars(addslashes($class['name'])); ?>')" title="Klik untuk memperbesar foto" fetchpriority="high" decoding="async" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
                         <div class="position-absolute bottom-0 end-0 m-3" style="z-index: 2;">
                             <span class="badge bg-dark bg-opacity-75 text-white px-3 py-2 rounded-pill shadow-sm small" style="backdrop-filter: blur(8px); cursor: pointer;" onclick="openImageModal('<?php echo htmlspecialchars(asset_src($class['image'])); ?>', '<?php echo htmlspecialchars(addslashes($class['name'])); ?>')">
                                 <i class="fas fa-search-plus me-1"></i> Perbesar
@@ -307,13 +307,13 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
                         
                         <div class="text-center">
                             <h6 class="fw-bold mb-3 small text-uppercase" style="letter-spacing: 1px; color: #0c4a6e;">Konsultasi Gratis</h6>
-                            <div class="d-flex align-items-center justify-content-center p-3 rounded-4 bg-light border border-light transition-all hover-lift">
+                            <a href="<?php echo mcm_wa_admin_link('Halo Admin MCM, saya ingin tanya mengenai kelas ' . ($class['name'] ?? '')); ?>" target="_blank" rel="noopener" class="d-flex align-items-center justify-content-center p-3 rounded-4 bg-light border border-light transition-all hover-lift text-decoration-none shadow-sm" style="cursor: pointer;">
                                 <i class="fab fa-whatsapp fs-3 text-success me-3"></i>
                                 <div class="text-start">
                                     <p class="small fw-bold mb-0 text-dark">Hubungi Admin</p>
-                                    <a href="<?php echo "https://wa.me/" . preg_replace("/\D/", "", mcm_setting("admin_whatsapp", "628978902864")); ?>" target="_blank" class="small text-decoration-none text-primary">Tanya lewat WA</a>
+                                    <span class="small text-primary">Tanya lewat WA <i class="fas fa-arrow-right ms-1" style="font-size: 0.7rem;"></i></span>
                                 </div>
-                            </div>
+                            </a>
                         </div>
 
                         <div class="mt-4 p-3 rounded-4 border border-dashed text-center">

@@ -1,12 +1,30 @@
 <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
-        /* Pastikan modal scrollable dengan <form> di dalamnya tetap bisa scroll */
+        /* Pastikan modal scrollable dengan <form> di dalamnya tetap bisa scroll secara utuh bersama tombol footer */
+        .modal-dialog-scrollable .modal-content {
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 2rem);
+            overflow: hidden;
+        }
         .modal-dialog-scrollable .modal-content > form {
             display: flex;
             flex-direction: column;
+            flex: 1 1 auto;
             min-height: 0;
-            overflow: hidden;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch;
+        }
+        .modal-dialog-scrollable .modal-content > form > .modal-body {
+            flex: 0 0 auto;
+            overflow: visible !important;
+        }
+        .modal-dialog-scrollable .modal-content > form > .modal-footer {
+            flex-shrink: 0;
+            background: #ffffff;
+            position: static !important;
+            z-index: 2;
         }
         
         :root {
@@ -25,19 +43,17 @@
         html::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; border: 2px solid #f1f5f9; }
         html::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         html, body {
-            height: auto !important;
-            min-height: 100% !important;
-            overflow-x: hidden !important;
-            overflow-y: auto !important;
-            -webkit-overflow-scrolling: touch;
+            height: auto;
+            min-height: 100%;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
-
-        body { 
-            background-color: #f8fafc; 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
+        body {
+            background-color: #f8fafc;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             color: #334155;
             -webkit-tap-highlight-color: transparent;
-            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
         }
 
         .stat-card {

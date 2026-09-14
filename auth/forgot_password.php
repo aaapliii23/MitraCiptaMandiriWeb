@@ -82,13 +82,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Kirim email via mailer
                 require_once __DIR__ . '/../includes/mailer.php';
-                $subject = 'Reset Password — Mitra Cipta Mandiri';
+                $subject = 'Reset Password : Mitra Cipta Mandiri';
                 $htmlBody = '
                 <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:16px;">
                     <div style="text-align:center;margin-bottom:20px;">
                         <img src="https://via.placeholder.com/120x40?text=MCM" alt="MCM" style="height:40px;">
                         <h2 style="color:#0c4a6e;margin:12px 0 4px;">Reset Password</h2>
-                        <p style="color:#64748b;font-size:14px;margin:0;">Mitra Cipta Mandiri — LMS</p>
+                        <p style="color:#64748b;font-size:14px;margin:0;">Mitra Cipta Mandiri (LMS)</p>
                     </div>
                     <p>Halo <b>' . htmlspecialchars($user['name']) . '</b>,</p>
                     <p>Kami menerima permintaan reset password untuk akun <b>' . htmlspecialchars($email) . '</b>.</p>
@@ -129,6 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="container auth-container">
         <div class="auth-split auth-anim">
             <div class="auth-branding">
+                <img src="<?php echo $base_url; ?>assets/img/hero_workspace.jpg" alt="" class="auth-branding-photo" aria-hidden="true">
                 <div class="auth-branding-inner">
                     <div class="auth-brand-badge">
                         <img src="<?php echo $base_url; ?>assets/img/logo.png" alt="MCM"> Mitra Cipta Mandiri

@@ -184,17 +184,40 @@
         }, 8000);
     }
 
+    function getCurrentAdminPage() {
+        var p = new URLSearchParams(window.location.search).get('page');
+        if (p) return p;
+        var activeLink = document.querySelector('.sidebar .nav-link.active, .mobile-nav-link.active, .mcm-nav-item.active');
+        if (activeLink) {
+            var href = activeLink.getAttribute('href') || '';
+            var m = href.match(/[?&]page=([^&]+)/);
+            if (m) return m[1];
+        }
+        return 'dashboard';
+    }
+
     // Update Badges on Sidebar and Mobile View
     function updateSidebarBadges(data) {
         if (!data) return;
+        window.__lastPendingOrders = data.pending_orders || 0;
+        window.__lastUnreadChats = data.unread_chats || 0;
 
-        var currentPage = new URLSearchParams(window.location.search).get('page') || 'dashboard';
+        var currentPage = getCurrentAdminPage();
 
-        // 1. Orders badge — hide immediately if admin is already on orders page
-        var orderLinks = document.querySelectorAll('a[href="?page=orders"]');
-        var showOrderBadge = data.pending_orders > 0 && currentPage !== 'orders';
+        // 1. Orders badge — cek status dilihat agar tidak muncul kembali berulang-ulang
+        var seenOrderCount = parseInt(localStorage.getItem('mcm_admin_seen_order_count') || '-1', 10);
+        var seenOrderId = parseInt(localStorage.getItem('mcm_admin_seen_order_id') || '0', 10);
+        var hasNewOrder = (data.latest_order_id && data.latest_order_id > seenOrderId) || (data.pending_orders > seenOrderCount && seenOrderCount !== -1);
+
+        if (currentPage === 'orders') {
+            localStorage.setItem('mcm_admin_seen_order_count', String(data.pending_orders || 0));
+            if (data.latest_order_id) localStorage.setItem('mcm_admin_seen_order_id', String(data.latest_order_id));
+        }
+
+        var orderLinks = document.querySelectorAll('.sidebar a[href*="page=orders"], .offcanvas a[href*="page=orders"], .bottom-nav a[href*="page=orders"]');
+        var showOrderBadge = data.pending_orders > 0 && currentPage !== 'orders' && (seenOrderCount === -1 || hasNewOrder);
         orderLinks.forEach(function(link) {
-            var existingBadge = link.querySelector('.js-order-badge');
+            var existingBadge = link.querySelector('.js-order-badge, .badge');
             if (showOrderBadge) {
                 if (!existingBadge) {
                     var badge = document.createElement('span');
@@ -203,6 +226,8 @@
                     badge.textContent = data.pending_orders;
                     link.appendChild(badge);
                 } else {
+                    existingBadge.className = 'badge bg-warning text-dark rounded-pill ms-auto js-order-badge';
+                    existingBadge.style.fontSize = '0.65rem';
                     existingBadge.textContent = data.pending_orders;
                 }
             } else if (existingBadge) {
@@ -210,11 +235,62 @@
             }
         });
 
-        // 2. Chat WhatsApp badge — hide immediately if admin is already on chat page
-        var chatLinks = document.querySelectorAll('a[href="?page=chat"]');
-        var showChatBadge = data.unread_chats > 0 && currentPage !== 'chat';
+        // Header Order Badges & Pill
+        document.querySelectorAll('.js-header-order-badge').forEach(function(badge) {
+            if (showOrderBadge) {
+                badge.textContent = data.pending_orders;
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
+        });
+        document.querySelectorAll('.js-order-dot').forEach(function(dot) {
+            dot.style.display = showOrderBadge ? 'block' : 'none';
+        });
+        document.querySelectorAll('.js-header-order-pill').forEach(function(pill) {
+            pill.textContent = (data.pending_orders || 0) + ' Baru';
+        });
+
+        // Update Header Order Items Dropdown
+        var orderItemsContainer = document.querySelector('.js-header-order-items');
+        if (orderItemsContainer && Array.isArray(data.recent_orders)) {
+            if (data.recent_orders.length > 0) {
+                var html = '';
+                data.recent_orders.forEach(function(po) {
+                    var searchParam = encodeURIComponent(po.order_number || '');
+                    html += '<a href="?page=orders&search=' + searchParam + '" class="dropdown-item py-2 px-3 border-bottom border-light text-wrap d-flex align-items-start gap-2 notif-item">' +
+                        '<div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 30px; height: 30px; font-size: 0.75rem;">' +
+                            '<i class="fas fa-receipt"></i>' +
+                        '</div>' +
+                        '<div class="flex-grow-1" style="min-width: 0;">' +
+                            '<div class="d-flex justify-content-between align-items-center mb-1">' +
+                                '<span class="fw-bold text-dark small text-truncate" style="max-width: 145px;">' + esc(po.customer_name) + '</span>' +
+                                '<small class="text-muted" style="font-size: 0.7rem;">' + esc(po.time) + '</small>' +
+                            '</div>' +
+                            '<div class="text-muted small text-truncate" style="font-size: 0.75rem;">' + esc(po.class_name) + ' • ' + esc(po.amount_formatted) + '</div>' +
+                        '</div>' +
+                    '</a>';
+                });
+                orderItemsContainer.innerHTML = html;
+            } else {
+                orderItemsContainer.innerHTML = '<div class="text-center py-4 px-3 text-muted small js-header-order-empty"><i class="fas fa-box-open fs-3 text-secondary opacity-50 mb-2 d-block"></i>Tidak ada pesanan baru yang menunggu</div>';
+            }
+        }
+
+        // 2. Chat WhatsApp badge — cek status dilihat agar tidak muncul kembali berulang-ulang
+        var seenChatCount = parseInt(localStorage.getItem('mcm_admin_seen_chat_count') || '-1', 10);
+        var seenChatId = parseInt(localStorage.getItem('mcm_admin_seen_chat_id') || '0', 10);
+        var hasNewChat = (data.latest_chat_id && data.latest_chat_id > seenChatId) || (data.unread_chats > seenChatCount && seenChatCount !== -1);
+
+        if (currentPage === 'chat') {
+            localStorage.setItem('mcm_admin_seen_chat_count', String(data.unread_chats || 0));
+            if (data.latest_chat_id) localStorage.setItem('mcm_admin_seen_chat_id', String(data.latest_chat_id));
+        }
+
+        var chatLinks = document.querySelectorAll('.sidebar a[href*="page=chat"], .offcanvas a[href*="page=chat"], .bottom-nav a[href*="page=chat"]');
+        var showChatBadge = data.unread_chats > 0 && currentPage !== 'chat' && (seenChatCount === -1 || hasNewChat);
         chatLinks.forEach(function(link) {
-            var existingBadge = link.querySelector('.js-chat-badge');
+            var existingBadge = link.querySelector('.js-chat-badge, .badge');
             if (showChatBadge) {
                 if (!existingBadge) {
                     var badge = document.createElement('span');
@@ -223,23 +299,99 @@
                     badge.textContent = data.unread_chats;
                     link.appendChild(badge);
                 } else {
+                    existingBadge.className = 'badge bg-danger rounded-pill ms-auto js-chat-badge';
+                    existingBadge.style.fontSize = '0.65rem';
                     existingBadge.textContent = data.unread_chats;
                 }
             } else if (existingBadge) {
                 existingBadge.remove();
             }
         });
+
+        // Header Chat Badges & Pill
+        document.querySelectorAll('.js-header-chat-badge').forEach(function(badge) {
+            if (showChatBadge) {
+                badge.textContent = data.unread_chats;
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
+        });
+        document.querySelectorAll('.js-chat-dot').forEach(function(dot) {
+            dot.style.display = showChatBadge ? 'block' : 'none';
+        });
+        document.querySelectorAll('.js-header-chat-pill').forEach(function(pill) {
+            pill.textContent = (data.unread_chats || 0) + ' Baru';
+        });
+
+        // Update Header Chat Items Dropdown
+        var chatItemsContainer = document.querySelector('.js-header-chat-items');
+        if (chatItemsContainer && Array.isArray(data.recent_chats)) {
+            if (data.recent_chats.length > 0) {
+                var cHtml = '';
+                data.recent_chats.forEach(function(uc) {
+                    var threadParam = encodeURIComponent(uc.wa_number || '');
+                    cHtml += '<a href="?page=chat&thread=' + threadParam + '" class="dropdown-item py-2 px-3 border-bottom border-light text-wrap d-flex align-items-start gap-2 notif-item">' +
+                        '<div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-1" style="width: 30px; height: 30px; font-size: 0.75rem;">' +
+                            '<i class="fab fa-whatsapp"></i>' +
+                        '</div>' +
+                        '<div class="flex-grow-1" style="min-width: 0;">' +
+                            '<div class="d-flex justify-content-between align-items-center mb-1">' +
+                                '<span class="fw-bold text-dark small text-truncate" style="max-width: 145px;">' + esc(uc.sender_label) + '</span>' +
+                                '<small class="text-muted" style="font-size: 0.7rem;">' + esc(uc.time) + '</small>' +
+                            '</div>' +
+                            '<div class="text-muted small text-truncate" style="font-size: 0.75rem;">' + esc(uc.message) + '</div>' +
+                        '</div>' +
+                    '</a>';
+                });
+                chatItemsContainer.innerHTML = cHtml;
+            } else {
+                chatItemsContainer.innerHTML = '<div class="text-center py-4 px-3 text-muted small js-header-chat-empty"><i class="far fa-comments fs-3 text-secondary opacity-50 mb-2 d-block"></i>Tidak ada pesan chat baru</div>';
+            }
+        }
+
+        if (typeof window.initAjaxLinks === 'function') {
+            window.initAjaxLinks();
+        }
     }
 
     // Clear badge when admin opens the relevant page
     function clearBadgesForPage(pageName) {
         if (pageName === 'chat') {
-            document.querySelectorAll('.js-chat-badge').forEach(function(b) { b.remove(); });
+            localStorage.setItem('mcm_admin_seen_chat_count', String(window.__lastUnreadChats || 0));
+            if (lastChatId) localStorage.setItem('mcm_admin_seen_chat_id', String(lastChatId));
+            document.querySelectorAll('a[href*="page=chat"] .badge, .js-chat-badge').forEach(function(b) { b.remove(); });
+            document.querySelectorAll('.js-header-chat-badge').forEach(function(b) { b.style.display = 'none'; });
+            document.querySelectorAll('.js-header-chat-pill').forEach(function(p) { p.textContent = '0 Baru'; });
+            document.querySelectorAll('.js-chat-dot').forEach(function(d) { d.style.display = 'none'; });
         }
         if (pageName === 'orders') {
-            document.querySelectorAll('.js-order-badge').forEach(function(b) { b.remove(); });
+            localStorage.setItem('mcm_admin_seen_order_count', String(window.__lastPendingOrders || 0));
+            if (lastOrderId) localStorage.setItem('mcm_admin_seen_order_id', String(lastOrderId));
+            document.querySelectorAll('a[href*="page=orders"] .badge, .js-order-badge').forEach(function(b) { b.remove(); });
+            document.querySelectorAll('.js-header-order-badge').forEach(function(b) { b.style.display = 'none'; });
+            document.querySelectorAll('.js-header-order-pill').forEach(function(p) { p.textContent = '0 Baru'; });
+            document.querySelectorAll('.js-order-dot').forEach(function(d) { d.style.display = 'none'; });
         }
     }
+
+    // Hapus badge notifikasi langsung saat link menu di-klik oleh admin
+    document.addEventListener('click', function(e) {
+        var chatL = e.target.closest('a[href*="page=chat"]');
+        if (chatL) {
+            localStorage.setItem('mcm_admin_seen_chat_count', String(window.__lastUnreadChats || 0));
+            if (lastChatId) localStorage.setItem('mcm_admin_seen_chat_id', String(lastChatId));
+            chatL.querySelectorAll('.badge').forEach(function(b) { b.remove(); });
+            clearBadgesForPage('chat');
+        }
+        var orderL = e.target.closest('a[href*="page=orders"]');
+        if (orderL) {
+            localStorage.setItem('mcm_admin_seen_order_count', String(window.__lastPendingOrders || 0));
+            if (lastOrderId) localStorage.setItem('mcm_admin_seen_order_id', String(lastOrderId));
+            orderL.querySelectorAll('.badge').forEach(function(b) { b.remove(); });
+            clearBadgesForPage('orders');
+        }
+    });
 
     // Expose clearBadgesForPage so scripts_navigation.php loadContent can call it
     window.MCMNotifClearBadges = clearBadgesForPage;

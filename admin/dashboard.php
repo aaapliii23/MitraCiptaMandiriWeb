@@ -47,8 +47,35 @@ if ($page === 'dashboard' || $page === 'reports') {
         $stats['instructors'] = $pdo->query("SELECT COUNT(*) FROM instructors")->fetchColumn();
         $stats['revenue'] = (int) $pdo->query("SELECT COALESCE(SUM(amount),0) FROM orders WHERE payment_status='paid'")->fetchColumn();
         $stats['paid_orders'] = $pdo->query("SELECT COUNT(*) FROM orders WHERE payment_status='paid'")->fetchColumn();
-        $stats['waiting_payment'] = $pdo->query("SELECT COUNT(*) FROM orders WHERE payment_status IN ('unpaid','pending')")->fetchColumn();
+        $stats['waiting_payment'] = (int) $pdo->query("SELECT COUNT(*) FROM orders WHERE payment_status IN ('unpaid','pending')")->fetchColumn();
         $stats['failed_orders'] = $pdo->query("SELECT COUNT(*) FROM orders WHERE payment_status IN ('failed','expired')")->fetchColumn();
+        $stats['unread_chats'] = 0;
+        try {
+            $stats['unread_chats'] = (int)$pdo->query(
+                "SELECT COUNT(*) FROM (SELECT wa_number, MAX(id) AS mid FROM chat_messages WHERE sender_type='visitor' GROUP BY wa_number) t JOIN chat_messages m ON m.id=t.mid WHERE m.direction='in' AND m.is_read=0"
+            )->fetchColumn();
+        } catch (Exception $e) {}
+
+        // Data for Header Notification Dropdowns
+        $stmtPending = $pdo->query("SELECT o.id, o.order_number, o.customer_name, o.amount, o.payment_status, o.created_at, c.name as class_name 
+                                    FROM orders o 
+                                    LEFT JOIN classes c ON o.class_id = c.id 
+                                    WHERE o.payment_status IN ('unpaid','pending') 
+                                    ORDER BY o.created_at DESC LIMIT 5");
+        $pending_orders_list = $stmtPending ? $stmtPending->fetchAll(PDO::FETCH_ASSOC) : [];
+
+        $unread_chats_list = [];
+        try {
+            $stmtChats = $pdo->query(
+                "SELECT m.id, m.wa_number, m.message, m.created_at, u.name AS user_name 
+                 FROM (SELECT wa_number, MAX(id) AS mid FROM chat_messages WHERE sender_type='visitor' GROUP BY wa_number) t 
+                 JOIN chat_messages m ON m.id=t.mid 
+                 LEFT JOIN users u ON (m.user_id=u.id OR (m.wa_number LIKE 'user-%' AND SUBSTRING(m.wa_number, 6) = CAST(u.id AS CHAR)))
+                 WHERE m.direction='in' AND m.is_read=0 
+                 ORDER BY m.id DESC LIMIT 5"
+            );
+            $unread_chats_list = $stmtChats ? $stmtChats->fetchAll(PDO::FETCH_ASSOC) : [];
+        } catch (Exception $e) {}
         
         $stmt = $pdo->query("SELECT o.*, c.name as class_name FROM orders o JOIN classes c ON o.class_id = c.id ORDER BY o.created_at DESC LIMIT 5");
         $recent_orders = $stmt->fetchAll();
@@ -257,11 +284,27 @@ if ($page === 'materials') {
 $chats = [];
 $threadNumber = '';
 if ($page === 'chat') {
-    $rawThread = $_GET['thread'] ?? '';
-    if (str_starts_with($rawThread, 'web-')) {
+    $rawThread = trim($_GET['thread'] ?? '');
+    if (str_starts_with($rawThread, 'web-') || str_starts_with($rawThread, 'user-')) {
         $threadNumber = preg_replace('/[^a-z0-9\-]/', '', strtolower($rawThread));
     } else {
-        $threadNumber = preg_replace('/\D+/', '', $rawThread);
+        $clean = preg_replace('/\D+/', '', $rawThread);
+        if ($clean !== '' && strlen($clean) <= 6) {
+            // Cek jika ini user_id (misal thread=8)
+            try {
+                $chk = $pdo->prepare("SELECT 1 FROM users WHERE id = ? LIMIT 1");
+                $chk->execute([(int)$clean]);
+                if ($chk->fetchColumn()) {
+                    $threadNumber = 'user-' . (int)$clean;
+                } else {
+                    $threadNumber = $clean;
+                }
+            } catch (Exception $e) {
+                $threadNumber = $clean;
+            }
+        } else {
+            $threadNumber = $clean;
+        }
     }
     try {
         $chats = $pdo->query("SELECT * FROM chat_messages ORDER BY created_at DESC, id DESC LIMIT 500")->fetchAll();

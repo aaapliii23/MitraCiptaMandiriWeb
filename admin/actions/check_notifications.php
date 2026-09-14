@@ -26,7 +26,9 @@ try {
     
     $unreadChats = 0;
     try {
-        $unreadChats = (int)$pdo->query("SELECT COUNT(*) FROM (SELECT MAX(id) AS mid FROM chat_messages GROUP BY wa_number) t JOIN chat_messages m ON m.id=t.mid WHERE m.direction='in' AND m.sender_type='visitor'")->fetchColumn();
+        $unreadChats = (int)$pdo->query(
+            "SELECT COUNT(*) FROM (SELECT wa_number, MAX(id) AS mid FROM chat_messages WHERE sender_type='visitor' GROUP BY wa_number) t JOIN chat_messages m ON m.id=t.mid WHERE m.direction='in' AND m.is_read=0"
+        )->fetchColumn();
     } catch (Exception $e) {}
 
     $newOrders = [];
@@ -65,15 +67,82 @@ try {
         $stmt->execute([$lastChatId]);
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $isAnon = str_starts_with($row['wa_number'], 'web-');
+            $isUser = str_starts_with($row['wa_number'], 'user-');
+            $senderLabel = $row['wa_number'];
+            if ($isAnon) {
+                $senderLabel = 'Pengunjung Web (' . substr($row['wa_number'], 4, 6) . ')';
+            } elseif ($isUser) {
+                $uid = (int)substr($row['wa_number'], 5);
+                try {
+                    $st = $pdo->prepare("SELECT name FROM users WHERE id = ?");
+                    $st->execute([$uid]);
+                    $uName = $st->fetchColumn();
+                    $senderLabel = $uName ? ($uName . ' (Siswa)') : ('Siswa #' . $uid);
+                } catch (Exception $e) {
+                    $senderLabel = 'Siswa #' . $uid;
+                }
+            }
             $newChats[] = [
                 'id' => (int)$row['id'],
                 'wa_number' => $row['wa_number'],
-                'sender_label' => $isAnon ? 'Pengunjung Web (' . substr($row['wa_number'], 4, 6) . ')' : $row['wa_number'],
+                'sender_label' => $senderLabel,
                 'message' => mb_strimwidth(strip_tags($row['message']), 0, 80, '...'),
                 'time' => date('H:i', strtotime($row['created_at']))
             ];
         }
     }
+
+    // Recent lists for dropdowns
+    $recentOrders = [];
+    $stmtRecentOrders = $pdo->query("SELECT o.id, o.order_number, o.customer_name, o.amount, o.created_at, c.name AS class_name 
+                                    FROM orders o 
+                                    LEFT JOIN classes c ON o.class_id = c.id 
+                                    WHERE o.payment_status IN ('unpaid','pending') 
+                                    ORDER BY o.created_at DESC LIMIT 5");
+    if ($stmtRecentOrders) {
+        while ($row = $stmtRecentOrders->fetch(PDO::FETCH_ASSOC)) {
+            $recentOrders[] = [
+                'id' => (int)$row['id'],
+                'order_number' => $row['order_number'],
+                'customer_name' => $row['customer_name'] ?: 'Pelanggan',
+                'class_name' => $row['class_name'] ?: 'Pelatihan MCM',
+                'amount_formatted' => 'Rp ' . number_format((int)$row['amount'], 0, ',', '.'),
+                'time' => date('H:i', strtotime($row['created_at']))
+            ];
+        }
+    }
+
+    $recentChats = [];
+    try {
+        $stmtRecentChats = $pdo->query(
+            "SELECT m.id, m.wa_number, m.message, m.created_at, u.name AS user_name 
+             FROM (SELECT wa_number, MAX(id) AS mid FROM chat_messages WHERE sender_type='visitor' GROUP BY wa_number) t 
+             JOIN chat_messages m ON m.id=t.mid 
+             LEFT JOIN users u ON (m.user_id=u.id OR (m.wa_number LIKE 'user-%' AND SUBSTRING(m.wa_number, 6) = CAST(u.id AS CHAR)))
+             WHERE m.direction='in' 
+             ORDER BY m.id DESC LIMIT 5"
+        );
+        if ($stmtRecentChats) {
+            while ($row = $stmtRecentChats->fetch(PDO::FETCH_ASSOC)) {
+                $isAnon = str_starts_with($row['wa_number'], 'web-');
+                $isUser = str_starts_with($row['wa_number'], 'user-');
+                if ($isAnon) {
+                    $sLabel = 'Pengunjung Web (' . substr($row['wa_number'], 4, 6) . ')';
+                } elseif ($isUser) {
+                    $sLabel = !empty($row['user_name']) ? ($row['user_name'] . ' (Siswa)') : ('Siswa #' . substr($row['wa_number'], 5));
+                } else {
+                    $sLabel = $row['wa_number'];
+                }
+                $recentChats[] = [
+                    'id' => (int)$row['id'],
+                    'wa_number' => $row['wa_number'],
+                    'sender_label' => $sLabel,
+                    'message' => mb_strimwidth(strip_tags($row['message']), 0, 65, '...'),
+                    'time' => date('H:i', strtotime($row['created_at']))
+                ];
+            }
+        }
+    } catch (Exception $e) {}
 
     echo json_encode([
         'status' => 'success',
@@ -83,6 +152,8 @@ try {
         'unread_chats' => $unreadChats,
         'new_orders' => $newOrders,
         'new_chats' => $newChats,
+        'recent_orders' => $recentOrders,
+        'recent_chats' => $recentChats,
         'timestamp' => time()
     ]);
 } catch (PDOException $e) {

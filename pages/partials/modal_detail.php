@@ -160,13 +160,13 @@
                                 
                                 <div class="text-start">
                                     <h6 class="fw-bold mb-3 small text-uppercase" style="letter-spacing: 1px;">Konsultasi Gratis</h6>
-                                    <div class="d-flex align-items-center p-3 rounded-4 bg-light border border-light">
+                                    <a href="<?php echo mcm_wa_admin_link('Halo Admin MCM, saya ingin konsultasi program pelatihan.'); ?>" target="_blank" rel="noopener" class="d-flex align-items-center p-3 rounded-4 bg-light border border-light text-decoration-none shadow-sm transition-all hover-lift" id="modalDetailWaLink" data-wa-digits="<?php echo preg_replace('/\D+/', '', mcm_wa_admin_link()); ?>" style="cursor: pointer;">
                                         <i class="fab fa-whatsapp fs-3 text-success me-3"></i>
                                         <div>
-                                            <p class="small fw-bold mb-0">Hubungi Admin</p>
-                                            <a href="<?php echo "https://wa.me/" . preg_replace("/\D/", "", mcm_setting("admin_whatsapp", "628978902864")); ?>" target="_blank" class="small text-decoration-none text-primary">Tanya lewat WA</a>
+                                            <p class="small fw-bold mb-0 text-dark">Hubungi Admin</p>
+                                            <span class="small text-primary">Tanya lewat WA <i class="fas fa-arrow-right ms-1" style="font-size: 0.7rem;"></i></span>
                                         </div>
-                                    </div>
+                                    </a>
                                 </div>
 
                                 <div class="mt-4 p-3 rounded-4 border border-dashed text-center">

@@ -104,6 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="container auth-container">
         <div class="auth-split auth-anim">
             <div class="auth-branding">
+                <img src="<?php echo $base_url; ?>assets/img/hero_workspace.jpg" alt="" class="auth-branding-photo" aria-hidden="true">
                 <div class="auth-branding-inner">
                     <div class="auth-brand-badge">
                         <img src="<?php echo $base_url; ?>assets/img/logo.png" alt="MCM"> Mitra Cipta Mandiri
@@ -111,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <h2 class="auth-brand-title">Tingkatkan kompetensi Anda bersama Mitra Cipta Mandiri</h2>
                     <p class="auth-brand-sub">Bergabunglah dengan ribuan peserta yang telah meraih sertifikat resmi & skill praktis siap kerja.</p>
                     <ul class="auth-brand-features">
-                        <li><i class="fas fa-check"></i><span>Pelatihan vokasi premium — materi praktis & instruktur berpengalaman</span></li>
+                        <li><i class="fas fa-check"></i><span>Pelatihan vokasi premium: materi praktis & instruktur berpengalaman</span></li>
                         <li><i class="fas fa-certificate"></i><span>Sertifikat resmi bernomor unik + verifikasi QR online</span></li>
                         <li><i class="fas fa-users"></i><span>Komunitas alumni & pendampingan karir berkelanjutan</span></li>
                     </ul>
@@ -143,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label class="auth-label" for="authName"><i class="fas fa-user"></i> Nama Asli Lengkap</label>
                         <input type="text" class="form-control auth-input" id="authName" name="name" required autocomplete="name" minlength="3" maxlength="100" pattern="[A-Za-z\u00C0-\u017F\s-]+" placeholder="Contoh: Siti Aminah" value="<?php echo isset($_POST['name']) ? htmlspecialchars($_POST['name']) : ''; ?>">
                         <div class="auth-feedback" id="nameFeedback"></div>
-                        <div class="auth-hint">Hanya huruf, spasi & tanda hubung — sesuai ijazah untuk cetak sertifikat.</div>
+                        <div class="auth-hint">Hanya huruf, spasi & tanda hubung (sesuai ijazah untuk cetak sertifikat).</div>
                     </div>
 
                     <div class="auth-field">
@@ -181,7 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <button type="submit" class="btn auth-btn" id="authSubmitBtn"><span class="btn-text">Daftar</span> <i class="fas fa-arrow-right"></i></button>
 
                     <p class="auth-switch">Sudah punya akun? <a href="user_login.php">Masuk di sini</a></p>
-                    <p class="auth-terms">Dengan mendaftar, Anda menyetujui <a href="#">Syarat Layanan</a> & <a href="#">Kebijakan Privasi</a> MCM.</p>
+                    <p class="auth-terms">Dengan mendaftar, Anda menyetujui <a href="../pages/syarat_layanan.php" target="_blank">Syarat Layanan</a> &amp; <a href="../pages/kebijakan_privasi.php" target="_blank">Kebijakan Privasi</a> MCM.</p>
                 </form>
             </div>
         </div>

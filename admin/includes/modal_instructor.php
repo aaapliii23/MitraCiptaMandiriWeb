@@ -1,6 +1,6 @@
 <!-- Instructor Modal -->
 <div class="modal fade" id="instructorModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow" style="border-radius: 1rem;">
             <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
                 <h5 class="modal-title fw-bold" id="instructorModalTitle">Tambah Instruktur / Asesor</h5>

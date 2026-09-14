@@ -367,38 +367,116 @@ function quizTypeChanged(type) {
 function resetQuizQuestionForm() {
     const form = document.getElementById('quizForm');
     if (form) form.reset();
-    document.getElementById('quizAction').value = 'create';
-    document.getElementById('quizId').value = '';
-    document.getElementById('quizQuestion').value = '';
-    document.getElementById('quizType').value = 'mcq';
+    const matId = document.getElementById('quizMaterialId') ? document.getElementById('quizMaterialId').value : '';
+    const matInput = document.getElementById('quizMaterialInput');
+    if (matInput) matInput.value = matId;
+    const actionEl = document.getElementById('quizAction');
+    if (actionEl) actionEl.value = 'create';
+    const idEl = document.getElementById('quizId');
+    if (idEl) idEl.value = '';
+    const qEl = document.getElementById('quizQuestion');
+    if (qEl) qEl.value = '';
+    const typeEl = document.getElementById('quizType');
+    if (typeEl) typeEl.value = 'mcq';
     quizTypeChanged('mcq');
     const expEl = document.getElementById('quizExplanation');
     if (expEl) expEl.value = '';
-    document.getElementById('quizFormTitle').textContent = 'Tambah Soal';
-    document.getElementById('quizSubmitBtn').textContent = 'Simpan Soal';
+    const sortEl = document.getElementById('quizSort');
+    if (sortEl) sortEl.value = '0';
+    const formTitle = document.getElementById('quizFormTitle');
+    if (formTitle) formTitle.textContent = 'Tambah Soal';
+    const submitBtn = document.getElementById('quizSubmitBtn');
+    if (submitBtn) submitBtn.innerHTML = 'Simpan Soal';
+    const resetBtn = document.getElementById('quizResetBtn');
+    if (resetBtn) resetBtn.textContent = 'Reset';
+    document.querySelectorAll('#quizList .quiz-card-item').forEach(card => {
+        card.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
+    });
 }
 
-function editQuizQuestion(data) {
+function editQuizQuestion(dataOrId) {
+    let data = dataOrId;
+    if (typeof dataOrId === 'number' || typeof dataOrId === 'string') {
+        data = (window._quizCache || []).find(x => String(x.id) === String(dataOrId));
+    }
+    if (!data) return;
+
     resetQuizQuestionForm();
-    document.getElementById('quizAction').value = 'update';
-    document.getElementById('quizId').value = data.id;
+
+    const actionEl = document.getElementById('quizAction');
+    if (actionEl) actionEl.value = 'update';
+
+    const idEl = document.getElementById('quizId');
+    if (idEl) idEl.value = data.id;
+
+    const matId = document.getElementById('quizMaterialId') ? document.getElementById('quizMaterialId').value : (data.material_id || '');
+    const matInput = document.getElementById('quizMaterialInput');
+    if (matInput) matInput.value = matId;
+
     const type = data.question_type === 'essay' ? 'essay' : 'mcq';
-    document.getElementById('quizType').value = type;
+    const typeEl = document.getElementById('quizType');
+    if (typeEl) typeEl.value = type;
     quizTypeChanged(type);
-    document.getElementById('quizQuestion').value = data.question;
-    document.getElementById('quizOptionA').value = data.option_a || '';
-    document.getElementById('quizOptionB').value = data.option_b || '';
-    document.getElementById('quizOptionC').value = data.option_c || '';
-    document.getElementById('quizOptionD').value = data.option_d || '';
-    document.getElementById('quizCorrect').value = data.correct_option || 'a';
-    document.getElementById('quizEssayAnswer').value = data.essay_answer || '';
+
+    const qInput = document.getElementById('quizQuestion');
+    if (qInput) qInput.value = data.question || '';
+
+    const optA = document.getElementById('quizOptionA');
+    if (optA) optA.value = data.option_a || '';
+    const optB = document.getElementById('quizOptionB');
+    if (optB) optB.value = data.option_b || '';
+    const optC = document.getElementById('quizOptionC');
+    if (optC) optC.value = data.option_c || '';
+    const optD = document.getElementById('quizOptionD');
+    if (optD) optD.value = data.option_d || '';
+
+    const cor = document.getElementById('quizCorrect');
+    if (cor) cor.value = data.correct_option || 'a';
+
+    const essayAns = document.getElementById('quizEssayAnswer');
+    if (essayAns) essayAns.value = data.essay_answer || '';
+
     const expEl = document.getElementById('quizExplanation');
     if (expEl) expEl.value = data.explanation || '';
-    document.getElementById('quizSort').value = data.sort_order;
-    document.getElementById('quizFormTitle').textContent = 'Edit Soal';
-    document.getElementById('quizSubmitBtn').textContent = 'Simpan Perubahan';
-    document.getElementById('quizForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    const sortEl = document.getElementById('quizSort');
+    if (sortEl) sortEl.value = data.sort_order ?? 0;
+
+    const formTitle = document.getElementById('quizFormTitle');
+    if (formTitle) formTitle.innerHTML = '<i class="fas fa-edit me-1 text-primary"></i> Edit Soal (ID: ' + data.id + ')';
+
+    const submitBtn = document.getElementById('quizSubmitBtn');
+    if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save me-1"></i> Simpan Perubahan';
+
+    const resetBtn = document.getElementById('quizResetBtn');
+    if (resetBtn) resetBtn.textContent = 'Batal Edit';
+
+    document.querySelectorAll('#quizList .quiz-card-item').forEach(card => {
+        card.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
+    });
+    const activeCard = document.getElementById('quizCard_' + data.id);
+    if (activeCard) {
+        activeCard.classList.add('border-primary', 'bg-primary', 'bg-opacity-10');
+    }
+
+    const modalEl = document.getElementById('quizModal');
+    const formEl = document.getElementById('quizForm');
+    if (modalEl && formEl) {
+        modalEl.scrollTo({ top: formEl.offsetTop - 30, behavior: 'smooth' });
+    }
+    if (formEl) {
+        formEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    setTimeout(() => {
+        if (qInput) {
+            qInput.focus();
+        }
+    }, 200);
 }
+
+window.editQuizQuestionById = function(id) {
+    editQuizQuestion(id);
+};
 
 function renderQuizList(questions) {
     window._quizCache = questions || [];
@@ -411,40 +489,39 @@ function renderQuizList(questions) {
     let html = '';
     questions.forEach(q => {
         const isEssay = q.question_type === 'essay';
-        html += `<div class="d-flex justify-content-between align-items-start border rounded-3 p-3 mb-2">
+        html += `<div class="d-flex justify-content-between align-items-start border rounded-3 p-3 mb-2 quiz-card-item" id="quizCard_${q.id}">
             <div>
                 <div class="fw-semibold text-dark mb-1">${q.question}</div>
                 <small class="text-muted">
-                    ${isEssay ? '<i class="fas fa-align-left me-1"></i>Soal Essay' : 'A. ' + q.option_a + ' &nbsp; B. ' + q.option_b + ' &nbsp; C. ' + q.option_c + ' &nbsp; D. ' + q.option_d}
+                    ${isEssay ? '<i class="fas fa-align-left me-1"></i>Soal Essay' : 'A. ' + (q.option_a || '-') + ' &nbsp; B. ' + (q.option_b || '-') + ' &nbsp; C. ' + (q.option_c || '-') + ' &nbsp; D. ' + (q.option_d || '-')}
                 </small>
                 <div class="mt-1"><span class="badge ${isEssay ? 'bg-info bg-opacity-10 text-info' : 'bg-success bg-opacity-10 text-success'} small">${isEssay ? 'Essay' : 'Kunci: ' + (q.correct_option || '').toUpperCase()}</span></div>
             </div>
             <div class="d-inline-flex gap-2 flex-shrink-0">
-                <button type="button" class="btn btn-action btn-soft-primary btn-edit-soal" data-soal-id="${q.id}" title="Edit"><i class="fas fa-edit"></i></button>
-                <button type="button" class="btn btn-action btn-soft-danger btn-delete-soal" data-soal-id="${q.id}" title="Hapus"><i class="fas fa-trash"></i></button>
+                <button type="button" class="btn btn-action btn-soft-primary btn-edit-soal" data-soal-id="${q.id}" onclick="editQuizQuestion(${q.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                <button type="button" class="btn btn-action btn-soft-danger btn-delete-soal" data-soal-id="${q.id}" onclick="deleteQuizQuestion(${q.id})" title="Hapus"><i class="fas fa-trash"></i></button>
             </div>
         </div>`;
     });
     container.innerHTML = html;
 }
 
-// Event delegation: tombol edit/hapus dirender dinamis via innerHTML,
-// listener dipasang SEKALI di modal statis (#quizModal) agar tetap berlaku untuk konten baru.
-(function(){
-    const modal = document.getElementById('quizModal');
-    if (!modal || modal.dataset.soalDelegated) return;
-    modal.dataset.soalDelegated = 'true';
-    modal.addEventListener('click', function(e) {
+if (!window._quizEventDelegated) {
+    window._quizEventDelegated = true;
+    document.addEventListener('click', function(e) {
         const editBtn = e.target.closest('.btn-edit-soal');
         const delBtn = e.target.closest('.btn-delete-soal');
         if (editBtn) {
-            const q = (window._quizCache || []).find(x => String(x.id) === editBtn.dataset.soalId);
-            if (q) editQuizQuestion(q);
+            e.preventDefault();
+            const id = editBtn.dataset.soalId;
+            if (id) editQuizQuestion(id);
         } else if (delBtn) {
-            deleteQuizQuestion(delBtn.dataset.soalId);
+            e.preventDefault();
+            const id = delBtn.dataset.soalId;
+            if (id) deleteQuizQuestion(id);
         }
     });
-})();
+}
 
 function fetchQuizList() {
     const adminBase = '<?php echo $adminBase; ?>';
@@ -526,7 +603,7 @@ function submitQuizQuestionForm() {
     .then(data => {
         if (data.status === 'success') {
             resetQuizQuestionForm();
-            openQuizManager(document.getElementById('quizMaterialId').value, document.getElementById('quizModalSubtitle').textContent);
+            fetchQuizList();
             Swal.fire({
                 icon: 'success',
                 title: 'Berhasil!',

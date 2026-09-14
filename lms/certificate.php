@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once '../includes/auth_user.php';
 require_once '../config/database.php';
 
@@ -415,5 +415,10 @@ try {
         if(document.fonts&&document.fonts.ready) document.fonts.ready.then(updateCertScale);
         window.addEventListener('pageshow', updateCertScale);
     </script>
+    <?php
+    $base_url = '../';
+    require_once '../config/database.php';
+    require_once __DIR__ . '/../includes/chat_widget.php';
+    ?>
 </body>
 </html>

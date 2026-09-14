@@ -1,5 +1,5 @@
     <!-- Mobile Navigation Drawer (Offcanvas) -->
-    <div class="offcanvas offcanvas-start border-0 shadow-lg" tabindex="-1" id="adminOffcanvas" style="width: 320px; background-color: #0f172a; color: #fff;">
+    <div class="offcanvas offcanvas-start border-0 shadow-lg" tabindex="-1" id="adminOffcanvas" style="width: 320px; background-color: #0f172a; color: #fff; z-index: 2050 !important;">
         <div class="offcanvas-header py-3 px-4 border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center">
                 <img src="../assets/img/logo.png" alt="MCM Logo" height="32" class="me-2">
@@ -130,5 +130,11 @@
             color: #ffffff !important;
             background: linear-gradient(135deg, #2563eb, #3b82f6) !important;
             box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
+        }
+        #adminOffcanvas {
+            z-index: 2050 !important;
+        }
+        .offcanvas-backdrop {
+            z-index: 2040 !important;
         }
     </style>

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once '../includes/auth_user.php';
 require_once '../config/database.php';
 
@@ -163,5 +163,10 @@ try {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <?php
+    $base_url = '../';
+    require_once '../config/database.php';
+    require_once __DIR__ . '/../includes/chat_widget.php';
+    ?>
 </body>
 </html>

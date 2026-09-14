@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once '../includes/auth_user.php';
 require_once '../config/database.php';
 
@@ -452,5 +452,11 @@ $csrf = $_SESSION['csrf_token'] ?? '';
         }
     </script>
     <?php endif; ?>
+    <?php
+    $base_url = '../';
+    require_once '../config/database.php';
+    require_once __DIR__ . '/../includes/chat_widget.php';
+    ?>
 </body>
 </html>
+
