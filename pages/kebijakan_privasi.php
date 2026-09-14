@@ -100,11 +100,11 @@ $clauses = [
                     Komitmen penuh LPK Mitra Cipta Mandiri dalam menjaga kerahasiaan, mengelola, serta melindungi data dan hak privasi Anda saat berinteraksi dengan layanan kami.
                 </p>
                 <div class="d-flex flex-wrap gap-2 gap-sm-3 align-items-center pt-2 text-white text-opacity-90 small">
-                    <span class="d-inline-flex align-items-center"><i class="far fa-calendar-check me-2 opacity-75"></i> Berlaku: <strong>1 Jan 2025</strong></span>
+                    <!-- <span class="d-inline-flex align-items-center"><i class="far fa-calendar-check me-2 opacity-75"></i> Berlaku: <strong>1 Jan 2025</strong></span>
                     <span class="opacity-50 d-none d-sm-inline">•</span>
                     <span class="d-inline-flex align-items-center"><i class="fas fa-history me-2 opacity-75"></i> Diperbarui: <strong>1 Sep 2025</strong></span>
-                    <span class="opacity-50 d-none d-sm-inline">•</span>
-                    <span class="d-inline-flex align-items-center"><i class="far fa-clock me-2 opacity-75"></i> Waktu Baca: <strong>~3 Menit</strong></span>
+                    <span class="opacity-50 d-none d-sm-inline">•</span> -->
+                    <!-- <span class="d-inline-flex align-items-center"><i class="far fa-clock me-2 opacity-75"></i> Waktu Baca: <strong>~3 Menit</strong></span> -->
                 </div>
             </div>
             <div class="position-absolute end-0 top-0 translate-middle-y me-n4 mt-n4 d-none d-lg-block pointer-events-none" style="opacity: 0.08;">

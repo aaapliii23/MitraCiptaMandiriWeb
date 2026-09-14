@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <div class="auth-divider"><span>atau</span></div>
                     <p class="auth-switch">Belum punya akun? <a href="user_register.php">Daftar sekarang</a></p>
-                    <p class="auth-terms">Dengan masuk, Anda menyetujui <a href="../pages/syarat_layanan.php" target="_blank">Syarat Layanan</a> &amp; <a href="../pages/kebijakan_privasi.php" target="_blank">Kebijakan Privasi</a> MCM.</p>
+                    <p class="auth-terms">Dengan masuk, Anda menyetujui <a href="../pages/syarat_layanan.php">Syarat Layanan</a> &amp; <a href="../pages/kebijakan_privasi.php">Kebijakan Privasi</a> MCM.</p>
                 </form>
             </div>
         </div>
