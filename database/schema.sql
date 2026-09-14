@@ -739,6 +739,8 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `payment_method` varchar(50) DEFAULT NULL,
   `payment_gateway_ref` varchar(100) DEFAULT NULL,
   `paid_at` timestamp NULL DEFAULT NULL,
+  `transfer_proof` varchar(255) DEFAULT NULL,
+  `proof_uploaded_at` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `order_number` (`order_number`),

@@ -58,6 +58,23 @@
                                     <label class="form-label small fw-bold text-muted text-uppercase">Link Google Maps (opsional — paste link Share dari Google Maps agar pin persis lokasi)</label>
                                     <input type="url" class="form-control bg-light border-0 py-2" name="maps_url" value="<?php echo htmlspecialchars(mcm_setting('maps_url', '')); ?>" placeholder="https://maps.app.goo.gl/... atau https://www.google.com/maps?q=-6.9,107.6">
                                 </div>
+                                <div class="col-12">
+                                    <h6 class="fw-bold text-dark mt-3 mb-3">Rekening Transfer Bank Manual</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-bold text-muted">Bank</label>
+                                            <input type="text" class="form-control bg-light border-0" name="manual_bank_name" value="<?php echo htmlspecialchars(mcm_setting('manual_bank_name', 'BCA')); ?>">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-bold text-muted">No. Rekening</label>
+                                            <input type="text" class="form-control bg-light border-0" name="manual_bank_account" value="<?php echo htmlspecialchars(mcm_setting('manual_bank_account', '8210101010')); ?>">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-bold text-muted">Atas Nama</label>
+                                            <input type="text" class="form-control bg-light border-0" name="manual_bank_holder" value="<?php echo htmlspecialchars(mcm_setting('manual_bank_holder', 'Mitra Cipta Mandiri')); ?>">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="mt-5 pt-4 border-top text-end">
                                 <button type="submit" class="btn btn-primary px-5 rounded-pill shadow-sm">Simpan Konfigurasi</button>

@@ -49,6 +49,14 @@
                             <div class="mt-2 text-center text-sm-start">
                                 <span class="badge bg-light border" id="detailMode" style="font-size: 0.72rem;"></span>
                             </div>
+                            <div class="mt-2 small">
+                                <span class="text-muted">Metode: </span><span class="fw-bold text-dark" id="detailMetode">-</span>
+                            </div>
+                            <div id="detailProofWrap" class="mt-2 d-none">
+                                <label class="small text-muted d-block mb-1">Bukti Transfer</label>
+                                <img id="detailProofImg" class="d-none rounded-3 border w-100" style="max-height:220px; object-fit:contain; background:#fff;" alt="Bukti transfer">
+                                <a id="detailProofPdf" href="#" target="_blank" rel="noopener" class="d-none btn btn-sm btn-outline-danger rounded-pill"><i class="fas fa-file-pdf me-1"></i>Lihat / Unduh PDF</a>
+                            </div>
                         </div>
                     </div>
                 </div>

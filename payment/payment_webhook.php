@@ -1,35 +1,62 @@
 <?php
-require_once '../config/database.php';
-require_once '../includes/payment_gateway.php';
-require_once '../includes/whatsapp_client.php';
+// Webhook notifikasi DOKU (Jokul Direct / Checkout) — server-to-server, TANPA sesi/CSRF.
+// Daftarkan URL file ini sebagai Notification URL di Dashboard DOKU, mis:
+//   https://domain-anda/payment/payment_webhook.php
+// DOKU mengirim header Client-Id/Request-Id/Request-Timestamp/Signature (HMAC-SHA256)
+// dan body {service, acquirer, channel:{id}, transaction:{status,...}, order:{invoice_number,...}}.
+// transaction.status: SUCCESS → paid (+enrollment LMS, finance, WA); FAILED/EXPIRED →
+// update payment_status saja; PENDING → ack 200 tanpa perubahan. Transfer manual tidak
+// pernah disentuh endpoint ini (tetap konfirmasi admin).
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/payment_gateway.php';
+require_once __DIR__ . '/../includes/whatsapp_client.php';
 
 header('Content-Type: application/json');
 
-$payload = json_decode(file_get_contents('php://input'), true);
-if (!is_array($payload)) {
-    $payload = $_POST;
+$rawBody = file_get_contents('php://input');
+if (!is_string($rawBody)) $rawBody = '';
+if (function_exists('getallheaders')) {
+    $headers = getallheaders() ?: [];
+} else {
+    $headers = [];
+    foreach ($_SERVER as $k => $v) {
+        if (str_starts_with($k, 'HTTP_')) {
+            $name = str_replace('_', '-', strtolower(substr($k, 5)));
+            $headers[$name] = $v;
+        }
+    }
 }
+// Request-Target = path Notification URL terdaftar (dukung instalasi subfolder)
+$targetPath = parse_url($_SERVER['REQUEST_URI'] ?? '/payment/payment_webhook.php', PHP_URL_PATH);
+if (!is_string($targetPath) || $targetPath === '') $targetPath = '/payment/payment_webhook.php';
 
-if (!pg_verify_webhook($payload)) {
+if (!pg_verify_doku_notify($rawBody, $headers, $targetPath)) {
+    error_log('[doku_webhook] invalid signature from ' . ($_SERVER['REMOTE_ADDR'] ?? '?'));
     http_response_code(401);
     echo json_encode(['status' => 'error', 'message' => 'Invalid signature']);
     exit;
 }
 
-$orderNumber = (string)($payload['order_number'] ?? '');
-$newStatus = (string)($payload['payment_status'] ?? '');
-$method = isset($payload['payment_method']) ? (string)$payload['payment_method'] : null;
-$gatewayRef = isset($payload['gateway_ref']) ? (string)$payload['gateway_ref'] : null;
-
-$allowed = ['paid', 'failed', 'expired'];
-if ($orderNumber === '' || !in_array($newStatus, $allowed)) {
+$payload = json_decode($rawBody, true);
+if (!is_array($payload)) {
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Payload tidak valid']);
     exit;
 }
 
+$orderNumber = (string)($payload['order']['invoice_number'] ?? '');
+$txnStatus = strtoupper((string)($payload['transaction']['status'] ?? ''));
+$channelId = (string)($payload['channel']['id'] ?? '');
+if ($orderNumber === '' || $txnStatus === '') {
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Payload tidak valid']);
+    exit;
+}
+error_log("[doku_webhook] $orderNumber channel=$channelId status=$txnStatus");
+
 try {
-    $stmt = $pdo->prepare("SELECT * FROM orders WHERE order_number = ?");
+    pg_ensure_payment_columns($pdo);
+    $stmt = $pdo->prepare("SELECT * FROM orders WHERE order_number = ? LIMIT 1");
     $stmt->execute([$orderNumber]);
     $order = $stmt->fetch();
     if (!$order) {
@@ -37,118 +64,41 @@ try {
         echo json_encode(['status' => 'error', 'message' => 'Order tidak ditemukan']);
         exit;
     }
-
-    if ($order['payment_status'] === 'paid') {
-        echo json_encode(['status' => 'success', 'message' => 'Already processed', 'order_number' => $orderNumber, 'payment_status' => $order['payment_status']]);
+    // Transfer manual: abaikan notifikasi DOKU (tetap konfirmasi admin), tapi ack 200 agar DOKU tidak retry
+    if (($order['payment_method'] ?? '') === 'manual_transfer' || !empty($order['transfer_proof'])) {
+        echo json_encode(['status' => 'success', 'message' => 'Ignored: manual transfer', 'order_number' => $orderNumber]);
         exit;
     }
-
-    $pdo->beginTransaction();
-
-    if ($newStatus === 'paid') {
-        $stmt = $pdo->prepare("UPDATE orders SET payment_status = 'paid', payment_method = ?, payment_gateway_ref = COALESCE(payment_gateway_ref, ?), paid_at = NOW(), status = 'confirmed' WHERE id = ?");
-        $stmt->execute([$method, $gatewayRef, $order['id']]);
-
-        if ($order['user_id']) {
-            // Unique key kini (user_id, class_id, class_mode): pembelian mode berbeda
-            // untuk kelas sama menghasilkan enrollment terpisah, tidak lagi saling menggantikan.
-            $orderMode = 'offline';
-            try { $orderMode = strtolower($order['class_mode'] ?? 'offline'); } catch (Exception $e2m) {}
-            if (!in_array($orderMode, ['online','offline'], true)) $orderMode = 'offline';
-            try {
-                $stmt = $pdo->prepare("INSERT INTO enrollments (user_id, class_id, class_mode, order_id) VALUES (?, ?, ?, ?)
-                                       ON DUPLICATE KEY UPDATE order_id = VALUES(order_id)");
-                $stmt->execute([$order['user_id'], $order['class_id'], $orderMode, $order['id']]);
-            } catch (PDOException $eOld) {
-                if ($eOld->getCode() === '42S22') { // kolom class_mode belum ada (DB lama, migrasi belum jalan)
-                    $stmt = $pdo->prepare("INSERT IGNORE INTO enrollments (user_id, class_id, order_id) VALUES (?, ?, ?)");
-                    $stmt->execute([$order['user_id'], $order['class_id'], $order['id']]);
-                } else {
-                    throw $eOld;
-                }
-            }
-        }
-
-        // Ambil nama kelas & link WA (jika ada)
-        $className = '';
-        $waLink = null;
-        try {
-            $hasWaCol = true;
-            try { $pdo->query("SELECT whatsapp_group_link FROM classes LIMIT 1"); } catch (Exception $e) { $hasWaCol = false; }
-            if ($hasWaCol) {
-                $stmt = $pdo->prepare("SELECT name, whatsapp_group_link FROM classes WHERE id = ?");
-                $stmt->execute([$order['class_id']]);
-                $cls = $stmt->fetch();
-                $className = (string)($cls['name'] ?? '');
-                $waLink = $cls['whatsapp_group_link'] ?? null;
-            } else {
-                $stmt = $pdo->prepare("SELECT name FROM classes WHERE id = ?");
-                $stmt->execute([$order['class_id']]);
-                $className = (string)$stmt->fetchColumn();
-            }
-        } catch (Exception $e) {
-            $stmt = $pdo->prepare("SELECT name FROM classes WHERE id = ?");
-            $stmt->execute([$order['class_id']]);
-            $className = (string)$stmt->fetchColumn();
-        }
-        if ($className === '') $className = 'Kelas MCM';
-
-        // Auto-record into finance_transactions
-        try {
-            $checkFin = $pdo->prepare("SELECT COUNT(*) FROM finance_transactions WHERE order_id = ?");
-            $checkFin->execute([$order['id']]);
-            if ($checkFin->fetchColumn() == 0) {
-                $insFin = $pdo->prepare("INSERT INTO finance_transactions (type, category, item_name, quantity, unit_price, amount, description, order_id, transaction_date) 
-                                          VALUES ('in', 'pemasukan_kursus', ?, 1, ?, ?, ?, ?, CURDATE())");
-                $itemName = "Pendaftaran " . $className . " (" . $order['customer_name'] . ")";
-                $desc = "Pemasukan pembayaran kursus no. order " . $orderNumber;
-                $insFin->execute([$itemName, $order['amount'], $order['amount'], $desc, $order['id']]);
-            }
-        } catch (Exception $fe) {}
-
-        // Kirim pesan sesuai mode: offline -> link WA grup, online -> LMS
-        // ponytail: try-catch di sini — gagal kirim notifikasi TIDAK boleh rollback enrollment & payment_status
-        try {
-            $classMode = 'offline';
-            try { $classMode = strtolower($order['class_mode'] ?? 'offline'); } catch (Exception $e) {}
-            if (!in_array($classMode, ['online','offline'], true)) $classMode = 'offline';
-            if ($classMode === 'offline') {
-                if (!empty($waLink) && strpos($waLink, 'https://chat.whatsapp.com/') === 0) {
-                    $msg = "*PEMBAYARAN LUNAS - MCM*\n\n";
-                    $msg .= "Halo " . $order['customer_name'] . ", pembayaran Anda untuk *" . $className . "* (Offline) sudah kami terima. ✅\n";
-                    $msg .= "No. Order: " . $orderNumber . "\n\n";
-                    $msg .= "Silakan gabung ke grup WhatsApp kelas untuk info jadwal & lokasi pelatihan:\n" . $waLink;
-                    wa_send_message($pdo, $order['customer_phone'], $msg, 'pembayaran');
-                } else {
-                    $msg = "*PEMBAYARAN LUNAS - MCM*\n\n";
-                    $msg .= "Halo " . $order['customer_name'] . ", pembayaran Anda untuk *" . $className . "* (Offline) sudah kami terima. ✅\n";
-                    $msg .= "No. Order: " . $orderNumber . "\n\n";
-                    $msg .= "Admin kami akan segera menghubungi Anda untuk info grup WhatsApp kelas & jadwal pelatihan.";
-                    wa_send_message($pdo, $order['customer_phone'], $msg, 'pembayaran');
-                    // Notifikasi ke admin karena link kosong
-                    try {
-                        $adminNumber = preg_replace('/\D/', '', mcm_setting('admin_whatsapp', '628978902864'));
-                        $adminMsg = "[NOTIF OFFLINE] Link WA kosong — Kelas: $className (ID {$order['class_id']}), Order: $orderNumber, Peserta: {$order['customer_name']} ({$order['customer_phone']}) — segera hubungi peserta.";
-                        wa_send_message($pdo, $adminNumber, $adminMsg, 'admin_notif');
-                    } catch (Exception $ae) {}
-                }
-            } else {
-                $msg = "*PEMBAYARAN LUNAS - MCM*\n\n";
-                $msg .= "Halo " . $order['customer_name'] . ", pembayaran Anda untuk *" . $className . "* (Online) sudah kami terima. ✅\n";
-                $msg .= "No. Order: " . $orderNumber . "\n";
-                $msg .= "Silakan login ke LMS untuk mulai belajar: " . pg_base_url() . "/lms/dashboard.php";
-                wa_send_message($pdo, $order['customer_phone'], $msg, 'pembayaran');
-            }
-        } catch (Exception $we) {}
-    } else {
-        $stmt = $pdo->prepare("UPDATE orders SET payment_status = ?, payment_method = ? WHERE id = ?");
-        $stmt->execute([$newStatus, $method, $order['id']]);
+    if ($order['payment_status'] === 'paid') {
+        echo json_encode(['status' => 'success', 'message' => 'Already processed', 'order_number' => $orderNumber, 'payment_status' => 'paid']);
+        exit;
     }
-
-    $pdo->commit();
-    echo json_encode(['status' => 'success', 'order_number' => $orderNumber, 'payment_status' => $newStatus]);
+    if ($txnStatus === 'SUCCESS') {
+        $vaNum = $payload['virtual_account_info']['virtual_account_number'] ?? null;
+        $gatewayRef = $vaNum ?: (string)($payload['transaction']['original_request_id'] ?? '');
+        $ok = pg_apply_doku_paid($pdo, $order, pg_channel_to_method($channelId, $order['payment_method'] ?? null), $gatewayRef ?: null);
+        if (!$ok) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Gagal memproses pembayaran']);
+            exit;
+        }
+        echo json_encode(['status' => 'success', 'order_number' => $orderNumber, 'payment_status' => 'paid']);
+        exit;
+    }
+    if ($txnStatus === 'PENDING' || $txnStatus === 'REDIRECT') {
+        echo json_encode(['status' => 'success', 'message' => 'Pending, menunggu pembayaran', 'order_number' => $orderNumber]);
+        exit;
+    }
+    if (in_array($txnStatus, ['FAILED', 'EXPIRED', 'REFUNDED', 'TIMEOUT'], true)) {
+        $new = strtolower($txnStatus === 'TIMEOUT' ? 'expired' : ($txnStatus === 'REFUNDED' ? 'failed' : $txnStatus));
+        $pdo->prepare("UPDATE orders SET payment_status = ? WHERE id = ? AND payment_status != 'paid'")->execute([$new, $order['id']]);
+        echo json_encode(['status' => 'success', 'order_number' => $orderNumber, 'payment_status' => $new]);
+        exit;
+    }
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Status tidak dikenal: ' . $txnStatus]);
 } catch (Exception $e) {
-    if ($pdo->inTransaction()) $pdo->rollBack();
+    error_log('[doku_webhook] ' . $e->getMessage());
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Gagal memproses webhook']);
 }

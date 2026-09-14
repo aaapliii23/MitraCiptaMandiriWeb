@@ -28,12 +28,12 @@ Prosedural PHP 8 (lokal 8.4), MySQL PDO, tanpa framework/composer/build/test. Se
 ## Flows & Gotchas
 
 - Checkout: `modal_checkout.php` → `payment/create_transaction.php` (CSRF; WA dinormalisasi `0…`→`62…`, validasi `/^62[0-9]{9,13}$/`; email ada→link user, email baru→buat akun `validateFullName` min 2 kata + pwd≥6 + auto-login; `orders` `unpaid`; harga dihitung server-side dari `price_online/price_offline`) → redirect `custom_payment.php?order=` (VA via `pg_generate_va`, QRIS `pg_generate_qris`, e-wallet `pg_generate_ewallet`) → `payment_status.php`/`check_status.php` → `payment_webhook.php` (verifikasi `pg_verify_webhook`) → `enrollments`. `payment/payment_mock.php.bak` nonaktif — jangan acu; `pg_mode()` memetakan `mock`→`production`. `legacy/process_checkout.php` orphan, jangan jadi acuan.
-- LMS: `lms/{dashboard,course,material,certificate,profile}.php`, progres berurutan (modul terkunci diblok). Tanpa kuis→toggle `lms/progress.php`; dengan kuis→`lms/quiz.php` harus **100% benar semua soal** (PG `correct_option` persis; essay ≥½ keyword ≥4 huruf dari `essay_answer`) baru `material_progress.completed=1`. Sertifikat 100% → `certificates` `MCM-YYYY-NNNN`, `verify_token` 40hex, verifikasi `pages/verify_certificate.php?token=`.
+- LMS: `lms/{dashboard,course,material,certificate,profile}.php`, progres berurutan (modul terkunci diblok). Tanpa kuis→toggle `lms/progress.php`; dengan kuis→`lms/quiz.php` harus **100% benar semua soal** (`remaining===0` baru `material_progress.completed=1`; PG `correct_option` persis; essay ≥½ keyword ≥4 huruf dari `essay_answer`). Sertifikat 100% → `certificates` `MCM-YYYY-NNNN`, `verify_token` 40hex, verifikasi `pages/verify_certificate.php?token=` (`pages/verify_cert.php?cert=` hanya lookup lama by nomor).
 - Testimoni ditulis dari `lms/profile.php` (butuh lulus 100% + sertifikat) → status `pending`; home hanya tampil `approved`; admin `?page=testimonials`. `pages/testimoni.php` hanya redirect.
 - `manage_gallery.php` harus selalu JSON murni (`ob_start`+`respondJson`, `parseIniSize` untuk `G/M/K`); jangan echo/blok HTML sebelum header.
 - **Jangan baca `form.action`/`.id`/`.method` sebagai property JS di dashboard** — ada `<input name="action|id">` yang meng-override → 404 `[object HTMLInputElement]`. Pakai `form.getAttribute(...)` (sudah benar di `scripts_common/entities/quiz`).
 - Chat: `chat_messages.sender_type ENUM(visitor,bot,admin)`; thread anon `web-<hex12>` (`localStorage.mcmChatVid` + cookie 90d, `user_id` selalu NULL), thread siswa `user-<id>`, thread WA nomor dinormalisasi. `web-` tidak dikirim ke Fonnte. Fonnte: header `Authorization: <token>` ke `api.fonnte.com/send` (`target` tanpa `+`).
-- Teks UI/seed DB Bahasa Indonesia — pertahankan.
+- Teks UI/seed DB Bahasa Indonesia — pertahankan. Arah visual di `DESIGN.md` (palet `#0c4a6e`/`#0ea5e9`/`#f59e0b`, Inter) — jangan tambah warna baru.
 
 <!-- antislop:start -->
 ## antislop

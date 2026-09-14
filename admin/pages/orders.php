@@ -91,7 +91,10 @@
                                             <span class="badge <?php echo $payBadge[0]; ?>"><i class="<?php echo $payBadge[1]; ?> me-1"></i><?php echo $payBadge[2]; ?></span>
                                         </td>
                                         <td class="text-center">
-                                            <?php if ($o['status'] === 'pending'): ?>
+                                            <?php $isAwaiting = (($o['payment_method'] ?? '') === 'manual_transfer') && (($o['status'] ?? '') === 'pending') && (($o['payment_status'] ?? '') !== 'paid'); ?>
+                                            <?php if ($isAwaiting): ?>
+                                                <span class="badge badge-soft-purple"><i class="fas fa-user-check me-1"></i>Menunggu Konfirmasi</span>
+                                            <?php elseif ($o['status'] === 'pending'): ?>
                                                 <span class="badge badge-soft-warning"><i class="fas fa-clock me-1"></i>Pending</span>
                                             <?php elseif ($o['status'] === 'confirmed'): ?>
                                                 <span class="badge badge-soft-success"><i class="fas fa-check-circle me-1"></i>Lunas</span>
@@ -110,6 +113,8 @@
                                                     data-alamat="<?php echo htmlspecialchars(!empty($o['customer_address']) ? $o['customer_address'] : '-'); ?>"
                                                     data-kelas="<?php echo htmlspecialchars($o['class_name']); ?>"
                                                     data-mode="<?php echo htmlspecialchars(strtolower($o['class_mode'] ?? 'offline')); ?>"
+                                                    data-metode="<?php echo htmlspecialchars(($o['payment_method'] ?? '') === 'manual_transfer' ? 'Transfer Bank Manual' : ($o['payment_method'] ?? '-')); ?>"
+                                                    data-proof="<?php echo htmlspecialchars($o['transfer_proof'] ?? ''); ?>"
                                                     data-harga="<?php echo number_format($o['amount'], 0, ',', '.'); ?>">
                                                     <i class="fas fa-eye"></i>
                                                 </button>

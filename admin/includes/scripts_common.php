@@ -32,12 +32,27 @@ if (detailPesananModal) {
             'detailInstansi': 'data-instansi',
             'detailAlamat': 'data-alamat',
             'detailKelas': 'data-kelas',
-            'detailHarga': 'data-harga'
+            'detailHarga': 'data-harga',
+            'detailMetode': 'data-metode'
         };
 
         for (const [id, attr] of Object.entries(map)) {
             const el = document.getElementById(id);
             if (el) el.textContent = btn.getAttribute(attr) || '-';
+        }
+        // Bukti transfer manual — gambar tampil langsung, PDF sebagai link
+        const proof = btn.getAttribute('data-proof') || '';
+        const wrap = document.getElementById('detailProofWrap');
+        const img = document.getElementById('detailProofImg');
+        const pdf = document.getElementById('detailProofPdf');
+        if (wrap && img && pdf) {
+            img.classList.add('d-none'); pdf.classList.add('d-none'); wrap.classList.add('d-none');
+            if (proof) {
+                const src = /^https?:\/\//i.test(proof) ? proof : '../' + proof.replace(/^\/+/, '');
+                wrap.classList.remove('d-none');
+                if (/\.pdf(\?.*)?$/i.test(proof)) { pdf.href = src; pdf.classList.remove('d-none'); }
+                else { img.src = src; img.classList.remove('d-none'); }
+            }
         }
         // Mode khusus — badge Online/Offline
         const modeEl = document.getElementById('detailMode');

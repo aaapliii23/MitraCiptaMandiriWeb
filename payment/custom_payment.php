@@ -36,6 +36,14 @@ $isQRISValid = !empty($existingQRIS) && !empty($existingExpiry) && strtotime($ex
 $existingEwalletUrl = $order['ewallet_url'] ?? null;
 $existingEwalletType = $order['ewallet_type'] ?? null;
 $isEwalletValid = !empty($existingEwalletUrl) && !empty($existingExpiry) && strtotime($existingExpiry) > time() && str_starts_with($order['payment_method'] ?? '', 'ewallet_');
+
+if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+$csrf_token = $_SESSION['csrf_token'];
+// Rekening tujuan bisa diubah admin di ?page=settings
+$bankName = mcm_setting('manual_bank_name', 'BCA');
+$bankAccount = mcm_setting('manual_bank_account', '8210101010');
+$bankHolder = mcm_setting('manual_bank_holder', 'Mitra Cipta Mandiri');
+$isAwaiting = (($order['payment_method'] ?? '') === 'manual_transfer') && ($order['payment_status'] ?? '') !== 'paid' && ($order['status'] ?? '') === 'pending' && !empty($order['transfer_proof']);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -92,8 +100,13 @@ $isEwalletValid = !empty($existingEwalletUrl) && !empty($existingExpiry) && strt
             <div class="small text-muted">Sudah termasuk biaya admin</div>
           </div>
           <div id="statusBadge" class="mt-3 text-center">
+            <?php if ($isAwaiting): ?>
+            <span class="badge text-white" style="background:#7c3aed;"><i class="fas fa-user-check me-1"></i>Menunggu Konfirmasi Admin</span>
+            <div class="small text-muted mt-1">Bukti transfer diterima, maks 1x24 jam</div>
+            <?php else: ?>
             <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Menunggu Pembayaran</span>
             <div class="small text-muted mt-1">Status: <span id="paymentStatusText">unpaid</span></div>
+            <?php endif; ?>
           </div>
           <button id="btnCheckStatus" class="btn btn-outline-primary w-100 rounded-pill mt-3"><i class="fas fa-sync me-2"></i>Cek Status Pembayaran</button>
           <div class="small text-muted text-center mt-2">Auto cek tiap 10 detik</div>
@@ -109,7 +122,8 @@ $isEwalletValid = !empty($existingEwalletUrl) && !empty($existingExpiry) && strt
           <div class="col-md-4"><div class="method-tab active" data-method="va"><div class="d-flex align-items-center gap-2"><i class="fas fa-university"></i><div><div class="fw-bold small">Virtual Account</div><div class="small text-muted" style="font-size:0.72rem;">BCA, Mandiri, BRI...</div></div></div></div></div>
           <div class="col-md-4"><div class="method-tab" data-method="qris"><div class="d-flex align-items-center gap-2"><i class="fas fa-qrcode"></i><div><div class="fw-bold small">QRIS</div><div class="small text-muted" style="font-size:0.72rem;">Scan QR</div></div></div></div></div>
           <div class="col-md-4"><div class="method-tab" data-method="ewallet"><div class="d-flex align-items-center gap-2"><i class="fas fa-wallet"></i><div><div class="fw-bold small">E-Wallet</div><div class="small text-muted" style="font-size:0.72rem;">OVO/DANA/ShopeePay</div></div></div></div></div>
-          <div class="col-12"><div class="method-tab" data-method="cc"><div class="d-flex align-items-center gap-2"><i class="fas fa-credit-card"></i><div><div class="fw-bold small">Kartu Kredit/Debit</div><div class="small text-muted" style="font-size:0.72rem;">Tetap via halaman DOKU resmi</div></div></div></div></div>
+          <div class="col-md-6"><div class="method-tab" data-method="manual"><div class="d-flex align-items-center gap-2"><i class="fas fa-landmark"></i><div><div class="fw-bold small">Transfer Bank Manual</div><div class="small text-muted" style="font-size:0.72rem;">Upload bukti, verifikasi admin</div></div></div></div></div>
+          <div class="col-md-6"><div class="method-tab" data-method="cc"><div class="d-flex align-items-center gap-2"><i class="fas fa-credit-card"></i><div><div class="fw-bold small">Kartu Kredit/Debit</div><div class="small text-muted" style="font-size:0.72rem;">Tetap via halaman DOKU resmi</div></div></div></div></div>
         </div>
 
         <!-- VA Panel -->
@@ -174,6 +188,34 @@ $isEwalletValid = !empty($existingEwalletUrl) && !empty($existingExpiry) && strt
             <div class="mt-2 small text-muted">Atau scan QR di atas</div>
             <div class="small">Batas: <span id="ewalletExpiry" class="countdown">-</span></div>
           </div>
+        </div>
+
+        <!-- Manual Panel -->
+        <div id="panel-manual" class="method-panel d-none">
+          <div class="va-box">
+            <div class="small text-muted">Transfer ke rekening berikut</div>
+            <div class="fw-bold mt-1" style="color:#0c4a6e;"><i class="fas fa-landmark me-1"></i><?php echo htmlspecialchars($bankName); ?> — a.n. <?php echo htmlspecialchars($bankHolder); ?></div>
+            <div class="va-number" id="manualAccount"><?php echo htmlspecialchars($bankAccount); ?></div>
+            <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill mt-2" id="btnCopyAccount"><i class="fas fa-copy me-1"></i>Salin Nomor Rekening</button>
+            <div class="mt-3 bg-white rounded-3 py-2 px-3 d-inline-block border">
+              <span class="small text-muted">Nominal transfer: </span>
+              <span class="fw-bold" style="color:#0c4a6e;">Rp <?php echo number_format($amount,0,',','.'); ?></span>
+            </div>
+          </div>
+          <?php if ($isAwaiting): ?>
+          <div class="alert rounded-4 py-2 small mt-3 mb-0 text-white" style="background:#7c3aed;"><i class="fas fa-user-check me-1"></i>Bukti transfer sudah kami terima dan menunggu konfirmasi admin (maks 1x24 jam). Upload ulang di bawah jika ingin mengganti bukti.</div>
+          <?php endif; ?>
+          <form id="proofForm" class="mt-3" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+            <input type="hidden" name="order" value="<?php echo htmlspecialchars($orderNumber); ?>">
+            <label class="small fw-bold mb-2" for="proofFile">Upload Bukti Transfer <span class="fw-normal text-muted">(JPG/PNG/PDF, maks 2MB)</span></label>
+            <input type="file" id="proofFile" name="bukti" class="form-control rounded-3" accept=".jpg,.jpeg,.png,.pdf" required>
+            <div class="text-center mt-3">
+              <img id="proofPreview" class="d-none rounded-3 border" style="max-width:100%; max-height:260px;" alt="Preview bukti transfer">
+              <div id="proofPdfInfo" class="d-none small text-muted"><i class="fas fa-file-pdf me-1 text-danger"></i><span id="proofPdfName"></span></div>
+            </div>
+            <button type="submit" id="btnSendProof" class="btn btn-primary w-100 rounded-pill mt-3"><i class="fas fa-paper-plane me-2"></i>Kirim Bukti Pembayaran</button>
+          </form>
         </div>
 
         <!-- CC Panel -->
@@ -281,6 +323,38 @@ document.querySelectorAll('.ewallet-btn').forEach(btn=>{
       document.getElementById('ewalletResult').classList.remove('d-none');
     }catch(e){ Swal.fire('Gagal',e.message,'error'); }
   });
+});
+
+// Transfer Manual — salin rekening, preview, upload bukti
+document.getElementById('btnCopyAccount')?.addEventListener('click', ()=>{
+  navigator.clipboard.writeText(document.getElementById('manualAccount').textContent.trim());
+  Swal.fire('Disalin','Nomor rekening disalin','success');
+});
+document.getElementById('proofFile')?.addEventListener('change', function(){
+  const f = this.files[0];
+  const img = document.getElementById('proofPreview'), pdf = document.getElementById('proofPdfInfo');
+  img.classList.add('d-none'); pdf.classList.add('d-none');
+  if(!f) return;
+  const okExt = /\.(jpe?g|png|pdf)$/i.test(f.name);
+  if(!okExt){ Swal.fire('Format salah','Gunakan JPG, PNG, atau PDF.','error'); this.value=''; return; }
+  if(f.size > 2*1024*1024){ Swal.fire('Terlalu besar','Maksimal 2MB.','error'); this.value=''; return; }
+  if(f.type === 'application/pdf'){ document.getElementById('proofPdfName').textContent = f.name; pdf.classList.remove('d-none'); }
+  else { const rd = new FileReader(); rd.onload = e=>{ img.src = e.target.result; img.classList.remove('d-none'); }; rd.readAsDataURL(f); }
+});
+document.getElementById('proofForm')?.addEventListener('submit', async function(e){
+  e.preventDefault();
+  const fileInput = document.getElementById('proofFile');
+  if(!fileInput.files.length){ Swal.fire('Belum ada file','Pilih file bukti transfer dulu.','warning'); return; }
+  const btn = document.getElementById('btnSendProof');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mengirim...';
+  try{
+    const r = await fetch(PAYMENT_BASE + '/upload_proof.php', {method:'POST', body:new FormData(this)});
+    const j = await r.json();
+    if(j.status !== 'success') throw new Error(j.message || 'Gagal upload');
+    document.getElementById('statusBadge').innerHTML = '<span class="badge text-white" style="background:#7c3aed;"><i class="fas fa-user-check me-1"></i>Menunggu Konfirmasi Admin</span><div class="small text-muted mt-1">Bukti transfer diterima, maks 1x24 jam</div>';
+    Swal.fire('Berhasil', j.message, 'success');
+  }catch(err){ Swal.fire('Gagal', err.message, 'error'); }
+  finally{ btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Kirim Bukti Pembayaran'; }
 });
 
 // CC

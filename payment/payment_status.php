@@ -55,6 +55,10 @@ $statusMeta = [
     'expired' => ['icon' => 'fa-clock', 'color' => '#dc2626', 'title' => 'Pembayaran Kedaluwarsa', 'desc' => 'Waktu pembayaran habis. Silakan lakukan pembayaran ulang.'],
 ];
 $meta = $statusMeta[$order['payment_status'] ?? 'unpaid'] ?? $statusMeta['unpaid'];
+if ($order && ($order['payment_status'] ?? '') === 'pending' && ($order['payment_method'] ?? '') === 'manual_transfer') {
+    $meta = ['icon' => 'fa-user-check', 'color' => '#7c3aed', 'title' => 'Menunggu Konfirmasi Admin', 'desc' => 'Bukti pembayaran berhasil dikirim, mohon tunggu konfirmasi dari admin (maks 1x24 jam).'];
+}
+$isAwaitingProof = $order && ($order['payment_status'] ?? '') === 'pending' && ($order['payment_method'] ?? '') === 'manual_transfer';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -152,6 +156,11 @@ $meta = $statusMeta[$order['payment_status'] ?? 'unpaid'] ?? $statusMeta['unpaid
                         </div>
                     <?php else: ?>
                         <div class="d-grid gap-2">
+                            <?php if ($isAwaitingProof): ?>
+                            <a href="custom_payment.php?order=<?php echo urlencode($order['order_number']); ?>" class="btn rounded-pill py-2 fw-bold text-white" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9);">
+                                <i class="fas fa-receipt me-2"></i>Lihat Halaman Pembayaran
+                            </a>
+                            <?php endif; ?>
                             <a href="../index.php" class="btn btn-outline-primary rounded-pill py-2 fw-bold">Kembali ke Beranda</a>
                         </div>
                     <?php endif; ?>

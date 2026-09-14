@@ -12,11 +12,11 @@ if (!defined('CLOUDINARY_FOLDER'))     define('CLOUDINARY_FOLDER', 'mcm'); // po
 if (!defined('CLOUDINARY_MAX_BYTES'))  define('CLOUDINARY_MAX_BYTES', 5 * 1024 * 1024); // 5 MB
 
 /**
- * Upload gambar ke Cloudinary (signed).
+ * Upload gambar ke Cloudinary (signed). PDF di-upload sebagai image (default Cloudinary).
  * @param array $file elemen $_FILES['field'] (single)
  * @param string $folder subfolder opsional, default CLOUDINARY_FOLDER
  * @return array ['ok'=>bool, 'url'=>string, 'error'=>string]
- * ponytail: 5MB, jpg/png/webp, cURL, SHA1(timestamp+secret)
+ * ponytail: 5MB, jpg/png/webp/heic/pdf, cURL, SHA1(timestamp+secret)
  */
 function uploadImageToCloudinary(array $file, string $folder = CLOUDINARY_FOLDER): array {
     if (!isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
@@ -35,9 +35,9 @@ function uploadImageToCloudinary(array $file, string $folder = CLOUDINARY_FOLDER
         return ['ok'=>false, 'error'=>'File terlalu besar, maksimal 5 MB.'];
     }
     $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-    $allowed = ['jpg','jpeg','png','webp','heic'];
+    $allowed = ['jpg','jpeg','png','webp','heic','pdf'];
     if (!in_array($ext, $allowed, true)) {
-        return ['ok'=>false, 'error'=>'Format tidak didukung. Gunakan JPG, PNG, atau WEBP.'];
+        return ['ok'=>false, 'error'=>'Format tidak didukung. Gunakan JPG, PNG, WEBP, atau PDF.'];
     }
     if (!is_file($tmp)) {
         return ['ok'=>false, 'error'=>'File tidak valid.'];
@@ -46,7 +46,11 @@ function uploadImageToCloudinary(array $file, string $folder = CLOUDINARY_FOLDER
         return ['ok'=>false, 'error'=>'File tidak valid (bukan upload HTTP).'];
     }
     $mime = @mime_content_type($tmp);
-    if ($mime && !str_starts_with($mime, 'image/')) {
+    if ($ext === 'pdf') {
+        if ($mime && !in_array($mime, ['application/pdf','application/octet-stream'], true)) {
+            return ['ok'=>false, 'error'=>'File tidak valid (harus PDF).'];
+        }
+    } elseif ($mime && !str_starts_with($mime, 'image/')) {
         // tetap tolak jika mime bukan image (secara ketat)
         // beberapa webp mungkin terdeteksi sebagai image/webp
         if (!in_array($mime, ['image/jpeg','image/png','image/webp'], true)) {
@@ -61,9 +65,11 @@ function uploadImageToCloudinary(array $file, string $folder = CLOUDINARY_FOLDER
     // signature untuk signed upload: sha1("folder=...&timestamp=...<secret>") — key diurut alfabet
     $toSign = "folder={$folder}&timestamp={$timestamp}";
     $signature = sha1($toSign . $secret);
+    // ponytail: PDF di-upload sebagai image (default Cloudinary), jadi satu endpoint image/upload
+    $isPdf = ($ext === 'pdf');
     $url = "https://api.cloudinary.com/v1_1/{$cloud}/image/upload";
     $post = [
-        'file'      => new CURLFile($tmp, $mime ?: 'image/'.$ext, $name),
+        'file'      => new CURLFile($tmp, $mime ?: ($isPdf ? 'application/pdf' : 'image/'.$ext), $name),
         'api_key'   => $key,
         'timestamp' => $timestamp,
         'folder'    => $folder,

@@ -35,9 +35,8 @@ $channels = [
     'VIRTUAL_ACCOUNT_CIMB' => 'CIMB VA',
 ];
 
-// Probe: 1x general checkout (payload SAMA PERSIS dengan checkout sukses) + infer per-channel
-// Alasan: DOKU Checkout tidak support filter payment_method_types — kirim itu selalu 400, bukan indikator channel.
-// Jadi per-channel yang akurat adalah: general tanpa filter = Danamon OK → Danamon Active, lainnya Inactive (dashboard masih Pending)
+// Probe: general checkout (konteks) + probe REAL per-bank payment-code.
+// DOKU Checkout tidak support filter payment_method_types — status akurat berasal dari probe per-bank di bawah.
 $results = [];
 $generalHttp = 0;
 $generalResp = '';
@@ -95,14 +94,72 @@ try {
 $generalOk = ($generalHttp >=200 && $generalHttp <300);
 $testGeneral = $generalOk ? 'General checkout OK (checkout URL terbit)' : ('Gagal ('.$generalHttp.'): '.substr($generalResp,0,120));
 
-// Bangun hasil per-channel: Danamon = Active jika general OK, lainnya Inactive (sesuai praktik: hanya Danamon yang muncul di checkout)
+// Probe REAL per-bank ke Jokul Direct payment-code (bukan infer).
+// Hasil probe live 2026-09-14: danamon/cimb/bri/bni/permata → 200 dengan payload per-bank;
+// bca/mandiri → 400 invalid_client_id (channel belum aktif di merchant / butuh SNAP).
+$bankOf = [
+    'VIRTUAL_ACCOUNT_BCA' => 'bca',
+    'VIRTUAL_ACCOUNT_MANDIRI' => 'mandiri',
+    'VIRTUAL_ACCOUNT_BRI' => 'bri',
+    'VIRTUAL_ACCOUNT_BNI' => 'bni',
+    'VIRTUAL_ACCOUNT_DANAMON' => 'danamon',
+    'VIRTUAL_ACCOUNT_PERMATA' => 'permata',
+    'VIRTUAL_ACCOUNT_CIMB' => 'cimb',
+];
+$vaEndpoints = [
+    'bca'=>'bca-virtual-account/v2/payment-code',
+    'mandiri'=>'mandiri-virtual-account/v2/payment-code',
+    'bri'=>'bri-virtual-account/v2/payment-code',
+    'bni'=>'bni-virtual-account/v2/payment-code',
+    'danamon'=>'danamon-virtual-account/v2/payment-code',
+    'permata'=>'permata-virtual-account/v2/payment-code',
+    'cimb'=>'cimb-virtual-account/v2/payment-code',
+];
+$baseDoku = ($cfg['mode'] === 'production' ? 'https://api.doku.com/' : 'https://api-sandbox.doku.com/');
+$results = [];
 foreach ($channels as $chanCode => $label) {
-    $isActive = ($chanCode === $generalActiveChannel && $generalOk);
-    $http = $isActive ? $generalHttp : 400;
-    $msg = $isActive ? 'Active — muncul di checkout general (tanpa filter)' : 'Inactive — tidak muncul di checkout general, cek Dashboard → Pending';
-    // Untuk Danamon, tampilkan HTTP real; untuk lain, beri pesan dashboard
-    if ($isActive) $msg .= ' (HTTP '.$generalHttp.')';
-    $results[] = ['channel'=>$chanCode,'label'=>$label,'http'=>$http,'active'=>$isActive,'message'=>$msg];
+    $bank = $bankOf[$chanCode] ?? 'danamon';
+    $vaPath = $vaEndpoints[$bank];
+    $inv = 'CHECK-' . strtoupper($bank) . '-' . substr(uniqid(), -6);
+    if ($bank === 'bni') {
+        $mur = strtoupper(substr(md5($inv . microtime(true)), 0, 12));
+        $vaInfo = ['expired_time'=>60,'billing_type'=>'FIXED','biling_type'=>'FIXED','info'=>'MCM Check','merchant_unique_reference'=>$mur];
+    } elseif ($bank === 'permata') {
+        $vaInfo = ['expired_time'=>60,'reusable_status'=>false,'ref_info'=>[['ref_name'=>'customer','ref_value'=>'MCM Check']]];
+    } elseif ($bank === 'bri' || $bank === 'bca' || $bank === 'mandiri') {
+        $vaInfo = ['billing_type'=>'FIX_BILL','expired_time'=>60,'reusable_status'=>false,'info1'=>'MCM Check','info2'=>'MCM','info3'=>'VA '.ucfirst($bank)];
+    } else {
+        $vaInfo = ['expired_time'=>60,'reusable_status'=>false,'info1'=>'MCM Check','info2'=>'MCM','info3'=>'VA '.ucfirst($bank)];
+    }
+    $strict = in_array($bank, ['bri','permata'], true);
+    $payload = [
+        // BRI & Permata menolak order.currency & customer.phone
+        'order'=>$strict ? ['amount'=>10000,'invoice_number'=>$inv] : ['amount'=>10000,'invoice_number'=>$inv,'currency'=>'IDR'],
+        'virtual_account_info'=>$vaInfo,
+        'customer'=>$strict
+            ? ['name'=>'MCM Check','email'=>'check@mcm.id']
+            : ['name'=>'MCM Check','email'=>'check@mcm.id','phone'=>'628000000000'],
+    ];
+    $bodyJson = json_encode($payload);
+    $reqId = bin2hex(random_bytes(8));
+    $reqTs = gmdate("Y-m-d\TH:i:s\Z");
+    $reqTarget = '/' . $vaPath;
+    $digest = base64_encode(hash('sha256', $bodyJson, true));
+    $sig = base64_encode(hash_hmac('sha256', "Client-Id:".$cfg['client_id']."\nRequest-Id:".$reqId."\nRequest-Timestamp:".$reqTs."\nRequest-Target:".$reqTarget."\nDigest:".$digest, $cfg['secret_key'], true));
+    $ch = curl_init($baseDoku . $vaPath);
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_POST=>true, CURLOPT_HTTPHEADER=>['Content-Type: application/json','Accept: application/json','Client-Id: '.$cfg['client_id'],'Request-Id: '.$reqId,'Request-Timestamp: '.$reqTs,'Signature: HMACSHA256='.$sig,'Digest: SHA-256='.$digest], CURLOPT_POSTFIELDS=>$bodyJson, CURLOPT_TIMEOUT=>10]);
+    $resp = curl_exec($ch);
+    $http = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    $data = json_decode((string)$resp, true);
+    $vaNum = $data['virtual_account_info']['virtual_account_number'] ?? '';
+    if ($http >= 200 && $http < 300 && $vaNum !== '') {
+        $results[] = ['channel'=>$chanCode,'label'=>$label,'http'=>$http,'active'=>true,'message'=>'Active — VA terbit dari DOKU (HTTP '.$http.')'];
+    } else {
+        $errMsg = $data['error']['message'] ?? $data['error']['code'] ?? substr((string)$resp, 0, 120);
+        if (str_contains((string)$errMsg, 'Invalid Client-Id')) $errMsg .= ' — channel belum aktif di merchant, aktifkan via Dashboard DOKU';
+        $results[] = ['channel'=>$chanCode,'label'=>$label,'http'=>$http ?: 400,'active'=>false,'message'=>'Inactive — '.$errMsg];
+    }
 }
 $activeCount = count(array_filter($results, fn($r)=>$r['active']));
 $activeList = implode(', ', array_map(fn($r)=>$r['label'], array_filter($results, fn($r)=>$r['active'])));

@@ -121,6 +121,7 @@
         .badge-soft-success { background: #f0fdf4; color: #16a34a; }
         .badge-soft-primary { background: #eff6ff; color: #2563eb; }
         .badge-soft-danger { background: #fef2f2; color: #dc2626; }
+        .badge-soft-purple { background: #f5f3ff; color: #7c3aed; }
 
         /* Action Buttons */
         .btn-action {
