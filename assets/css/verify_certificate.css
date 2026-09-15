@@ -269,3 +269,22 @@ body.verify-body {
     margin: 8px auto 0;
     line-height: 1.6;
 }
+
+@page { margin: 1cm; }
+@media print {
+    nav.navbar, .navbar, footer,
+    .verify-actions, .verify-invalid-card .btn,
+    #mcmScrollTop, .mcm-scrolltop,
+    #mcmChatWidget,
+    #mcmChatWidget .mcm-chat-fab,
+    #mcmChatWidget .mcm-chat-panel,
+    #mcmChatWidget .mcm-chat-toast,
+    #mcmChatWidget .mcm-chat-badge { display: none !important; }
+    body.verify-body, body { background: #fff !important; }
+    .verify-wrapper { padding: 0 !important; min-height: auto !important; display: block !important; }
+    .verify-card { box-shadow: none !important; max-width: 100% !important; border-radius: 0 !important; }
+    .verify-header, .verify-badge, .verify-status, .verify-table th {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}

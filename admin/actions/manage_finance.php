@@ -50,41 +50,6 @@ try {
 
 $action = $_POST['action'] ?? '';
 
-// ACTION: SINKRONISASI PEMASUKAN DARI PESANAN LUNAS
-if ($action === 'sync_orders') {
-    try {
-        $stmt = $pdo->query("SELECT o.id, o.order_number, o.customer_name, o.amount, o.created_at, c.name as class_name 
-                             FROM orders o 
-                             JOIN classes c ON o.class_id = c.id 
-                             WHERE o.payment_status = 'paid'");
-        $paidOrders = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $insertedCount = 0;
-        $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM finance_transactions WHERE order_id = ?");
-        $insStmt = $pdo->prepare("INSERT INTO finance_transactions (type, category, item_name, quantity, unit_price, amount, description, order_id, transaction_date) 
-                                  VALUES ('in', 'pemasukan_kursus', ?, 1, ?, ?, ?, ?, ?)");
-
-        foreach ($paidOrders as $ord) {
-            $checkStmt->execute([$ord['id']]);
-            if ($checkStmt->fetchColumn() == 0) {
-                $itemName = "Pendaftaran " . $ord['class_name'] . " (" . $ord['customer_name'] . ")";
-                $desc = "Pemasukan otomatis dari pesanan " . $ord['order_number'];
-                $tDate = date('Y-m-d', strtotime($ord['created_at']));
-                $insStmt->execute([$itemName, $ord['amount'], $ord['amount'], $desc, $ord['id'], $tDate]);
-                $insertedCount++;
-            }
-        }
-
-        echo json_encode([
-            'status' => 'success',
-            'message' => $insertedCount > 0 ? "Berhasil menyinkronkan $insertedCount transaksi pesanan lunas ke catatan keuangan." : "Semua pesanan lunas sudah tersinkronisasi ke keuangan."
-        ]);
-    } catch (PDOException $e) {
-        echo json_encode(['status' => 'error', 'message' => 'Gagal menyinkronkan pesanan: ' . $e->getMessage()]);
-    }
-    exit;
-}
-
 // ACTION: CREATE / UPDATE TRANSAKSI
 if ($action === 'create' || $action === 'update') {
     $id = (int)($_POST['id'] ?? 0);

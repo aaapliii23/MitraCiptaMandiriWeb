@@ -680,6 +680,15 @@
             print-color-adjust: exact !important;
         }
         .no-print { display: none !important; }
+        /* Widget chat (fixed FAB/panel/toast) + UI non-sertifikat: sembunyi saat print saja */
+        #mcmChatWidget,
+        #mcmChatWidget .mcm-chat-fab,
+        #mcmChatWidget .mcm-chat-panel,
+        #mcmChatWidget .mcm-chat-toast,
+        #mcmChatWidget .mcm-chat-badge,
+        .cert-toolbar,
+        .modal,
+        .alert { display: none !important; }
         .cert-container { 
             padding: 0 !important; 
             margin: 0 !important;

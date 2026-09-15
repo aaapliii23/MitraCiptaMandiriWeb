@@ -261,6 +261,38 @@ function materialTypeChanged() {
     if (type === 'text') { text.setAttribute('name', 'content'); text.required = true; }
     else if (type === 'video') video.setAttribute('name', 'content');
     else pdf.setAttribute('name', 'content');
+    materialPdfSourceChanged();
+}
+
+function materialPdfSourceChanged() {
+    const isUpload = document.getElementById('pdfSourceUpload').checked;
+    document.getElementById('materialFileWrap').classList.toggle('d-none', !isUpload);
+    document.getElementById('materialUrlWrap').classList.toggle('d-none', isUpload);
+    document.getElementById('materialFile').disabled = !isUpload || document.getElementById('materialType').value !== 'pdf';
+    const pdf = document.getElementById('materialPdfUrl');
+    if (document.getElementById('materialType').value === 'pdf') {
+        if (isUpload) pdf.removeAttribute('name'); else pdf.setAttribute('name', 'content');
+    }
+}
+
+function validateMaterialForm() {
+    if (document.getElementById('materialType').value !== 'pdf') return true;
+    if (document.getElementById('pdfSourceUpload').checked) {
+        const file = document.getElementById('materialFile');
+        if (document.getElementById('materialAction').value === 'create' && (!file.files || file.files.length === 0)) {
+            Swal.fire('Belum ada file', 'Pilih file PDF untuk diunggah, atau ganti Sumber PDF ke URL Eksternal.', 'warning');
+            return false;
+        }
+        document.getElementById('materialPdfUrl').removeAttribute('name');
+    } else {
+        const url = document.getElementById('materialPdfUrl').value.trim();
+        if (!/^https?:\/\/.+\..+/.test(url)) {
+            Swal.fire('URL tidak valid', 'Isi URL PDF eksternal (http/https), atau ganti Sumber PDF ke Upload File.', 'warning');
+            return false;
+        }
+        document.getElementById('materialFile').value = '';
+    }
+    return true;
 }
 
 function resetMaterialForm() {
@@ -287,11 +319,15 @@ function editMaterial(data) {
     } else if (data.type === 'video') {
         document.getElementById('materialVideo').value = data.content;
     } else {
-        if (data.content && data.content.indexOf('uploads/') === 0) {
-            document.getElementById('materialFileHint').textContent = 'File saat ini: ' + data.content.split('/').pop() + '. Unggah file baru untuk mengganti.';
+        const isFile = data.content && data.content.indexOf('uploads/') === 0;
+        document.getElementById('pdfSourceUpload').checked = !!isFile;
+        document.getElementById('pdfSourceUrl').checked = !isFile;
+        if (isFile) {
+            document.getElementById('materialFileHint').textContent = 'File saat ini: ' + data.content.split('/').pop() + ' — biarkan kosong jika tidak ingin mengganti.';
         } else {
             document.getElementById('materialPdfUrl').value = data.content;
         }
+        materialPdfSourceChanged();
     }
     document.getElementById('materialModalTitle').textContent = 'Edit Materi';
     new bootstrap.Modal(document.getElementById('materialModal')).show();

@@ -134,11 +134,6 @@ for ($m = 1; $m <= 12; $m++) {
                 ?>
             </select>
 
-            <!-- Tombol Sinkronisasi Pesanan Lunas -->
-            <button class="btn btn-outline-success rounded-pill px-3 fw-bold shadow-sm d-flex align-items-center gap-2" style="height: 42px;" onclick="syncPaidOrders()" title="Tarik data transaksi pesanan lunas ke catatan pemasukan otomatis">
-                <i class="fas fa-sync-alt"></i> <span>Sinkronkan Pesanan Lunas</span>
-            </button>
-
             <!-- Tombol Tambah Transaksi -->
             <button class="btn btn-primary px-3 rounded-pill fw-bold shadow-sm d-flex align-items-center gap-2" style="height: 42px;" onclick="resetFinanceForm(); showModal('financeModal');">
                 <i class="fas fa-plus-circle"></i> <span>Tambah Transaksi</span>
@@ -351,11 +346,7 @@ for ($m = 1; $m <= 12; $m++) {
                                 <?php echo $tr['type']==='in'?'+':'-'; ?>Rp <?php echo number_format($tr['amount'],0,',','.'); ?>
                             </td>
                             <td class="text-center">
-                                <?php if (!empty($tr['receipt_image'])): ?>
-                                    <a href="../<?php echo htmlspecialchars($tr['receipt_image']); ?>" target="_blank" class="btn btn-sm btn-outline-info rounded-pill px-2 py-1" style="font-size:0.7rem;" title="Lihat Nota"><i class="fas fa-file-invoice me-1"></i>Nota</a>
-                                <?php else: ?>
-                                    <span class="text-muted small">-</span>
-                                <?php endif; ?>
+                                <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-2 py-1" style="font-size:0.7rem;" title="Lihat Nota" onclick="showFinanceNota(<?php echo htmlspecialchars(json_encode($tr)); ?>)"><i class="fas fa-file-invoice me-1"></i>Nota</button>
                             </td>
                             <td class="text-end pe-3">
                                 <div class="d-inline-flex gap-1">
@@ -373,45 +364,6 @@ for ($m = 1; $m <= 12; $m++) {
 </div>
 
 <script>
-function syncPaidOrders() {
-    Swal.fire({
-        title: 'Sinkronkan Pesanan Lunas?',
-        text: 'Sistem akan otomatis mendata seluruh pesanan lunas ke catatan pemasukan keuangan.',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Ya, Sinkronkan!',
-        cancelButtonText: 'Batal'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            Swal.fire({
-                title: 'Sedang memproses...',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
-            });
-
-            const formData = new FormData();
-            formData.append('action', 'sync_orders');
-
-            fetch('actions/manage_finance.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(res => res.text()).then(t=>{ let d; try{ d=JSON.parse(t);}catch(e){ throw new Error('Respons tidak valid: '+t.slice(0,120)); } return d; })
-            .then(data => {
-                if (data.status === 'success') {
-                    Swal.fire({ icon:'success', title:'Berhasil!', text:data.message, timer:1500, showConfirmButton:false }).then(() => {
-                        if (typeof window.mcmCloseModalsAndRefresh==='function') window.mcmCloseModalsAndRefresh();
-                        else if (typeof loadContent==='function'){ loadContent('?page=finance', false); }
-                    });
-                } else {
-                    Swal.fire('Gagal!', data.message || 'Gagal', 'error');
-                }
-            })
-            .catch(err => Swal.fire('Gagal!', err.message || 'Terjadi kesalahan saat memproses data.', 'error'));
-        }
-    });
-}
-
 // Dipanggil ulang kapan saja: full page load maupun setelah AJAX nav meng-inject konten.
 // Data chart di-inject PHP di atas (bukan fetch) -> tidak ada race condition data.
 function initGrafikArusKas() {

@@ -64,8 +64,8 @@ function mcm_rate_limit_reset($key) {
 function mcm_cors_headers($allowedOrigins = []) {
     if (empty($allowedOrigins)) {
         $allowedOrigins = [
-            'https://mitraciptamandiri.com',
-            'https://www.mitraciptamandiri.com',
+            'https://lpkmcm.com',
+            'https://lpkmcm.com',
             // SEMENTARA: portfgil untuk testing
             'https://portfgil.my.id',
             'https://www.portfgil.my.id',

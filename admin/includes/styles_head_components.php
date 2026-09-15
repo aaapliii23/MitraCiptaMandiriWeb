@@ -205,9 +205,18 @@
         .cell-stack .line-sub { font-size:0.72rem; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
         .table.admin-compact .badge { font-size:0.68rem; padding:0.35rem 0.6rem; }
         .table.admin-compact .btn-action { width:32px; height:32px; border-radius:0.6rem; font-size:0.8rem; }
-        /* wrapper tanpa scroll — hanya untuk desktop */
+        /* Kolom Aksi (kolom terakhir) sticky kanan + scroll horizontal bila tabel lebih lebar dari card */
+        .table-responsive--no-scroll { overflow-x:auto !important; }
+        .table.admin-compact th:last-child,
+        .table.admin-compact td:last-child {
+            position:sticky; right:0; z-index:2; background:#fff;
+            box-shadow:-8px 0 12px -8px rgba(15,23,42,.15);
+        }
+        .table.admin-compact thead th:last-child { z-index:3; }
+        .table.admin-compact tbody tr:hover td:last-child { background:#fcfdfe; }
+        /* wrapper tabel: izinkan scroll horizontal di semua ukuran layar */
         @media (min-width: 992px) {
-            .table-responsive--no-scroll { overflow:visible !important; overflow-x:visible !important; }
+            .table-responsive--no-scroll { overflow-x:auto !important; }
         }
         /* Sembunyikan kolom sekunder di layar sempit, tampilkan via expand */
         .col-optional { }

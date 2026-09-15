@@ -32,6 +32,17 @@ if (!empty($order['user_id']) && isset($_SESSION['user_id']) && (int)$order['use
     $isOwnerPdf = false;
 }
 
+// URL status order absolut untuk isi QR (pola sama seperti lms/certificate.php)
+$pdScheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$pdHost = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$pdDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+$pdBase = '';
+if ($pdDir !== '/' && $pdDir !== '.' && $pdDir !== '') {
+    $pdBase = rtrim(str_replace('\\', '/', dirname($pdDir)), '/');
+    if ($pdBase === '/' || $pdBase === '.') $pdBase = '';
+}
+$orderVerifyUrl = $pdScheme . '://' . $pdHost . ($pdBase ? $pdBase : '') . '/payment/payment_status.php?order=' . urlencode($order['order_number']);
+
 // Note: To truly generate a PDF on a server, we usually use libraries like Dompdf or FPDF.
 // However, to provide an IMMEDIATE high-end solution that works without complex setup:
 // We use a "Print-to-PDF" ready layout that looks stunning.
@@ -120,16 +131,20 @@ if (!empty($order['user_id']) && isset($_SESSION['user_id']) && (int)$order['use
             border: 1px solid #f1f5f9;
         }
 
+        .qr-block { text-align: center; }
         .qr-placeholder {
-            width: 100px;
-            height: 100px;
-            background: #f8fafc;
-            border-radius: 15px;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+            padding: 8px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 2px dashed #e2e8f0;
         }
+        .qr-placeholder img, .qr-placeholder canvas { width: 104px !important; height: 104px !important; display: block; }
 
         .footer-note {
             background: #0f172a;
@@ -271,23 +286,38 @@ if (!empty($order['user_id']) && isset($_SESSION['user_id']) && (int)$order['use
                         </ul>
                     </div>
                 </div>
-                <div class="col-md-4 text-end">
-                    <div class="info-label">Digital Verified</div>
-                    <div class="qr-placeholder mx-auto mx-md-0 mt-2">
-                        <i class="fas fa-qrcode fs-1 text-muted opacity-25"></i>
+                <div class="col-md-4 mt-4 mt-md-0">
+                    <div class="qr-block">
+                        <div class="info-label">Digital Verified</div>
+                        <div class="qr-placeholder mt-2" id="orderQr" data-verify-url="<?php echo htmlspecialchars($orderVerifyUrl); ?>">
+                            <i class="fas fa-qrcode fs-1 text-muted opacity-25"></i>
+                        </div>
+                        <p class="small text-muted mt-2 mb-0" style="font-size: 0.65rem;">MCM Authenticated Document</p>
                     </div>
-                    <p class="small text-muted mt-2 mb-0" style="font-size: 0.65rem;">MCM Authenticated Document</p>
                 </div>
             </div>
         </div>
 
         <div class="footer-note">
             <p class="mb-1 fw-bold text-white">Mitra Cipta Mandiri - Empowering Independence</p>
-            <p class="mb-0">www.mitraciptamandiri.com | © <?php echo date('Y'); ?> All Rights Reserved</p>
+            <p class="mb-0">www.lpkmcm.com | © <?php echo date('Y'); ?> All Rights Reserved</p>
         </div>
     </div>
 
+    <script src="../assets/js/qrcode.min.js"></script>
     <script>
+        // QR verifikasi order (client-side via qrcode.js lokal, pola sama seperti certificate_front.php)
+        (function(){
+            var el = document.getElementById('orderQr');
+            if (!el) return;
+            function gen(){
+                if (typeof QRCode === 'undefined') return;
+                el.innerHTML = '';
+                new QRCode(el, { text: el.getAttribute('data-verify-url'), width: 104, height: 104, correctLevel: QRCode.CorrectLevel.M });
+            }
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', gen);
+            else gen();
+        })();
         // Auto show print dialog if requested
         if (window.location.search.indexOf('print=true') > -1) {
             window.onload = function() { window.print(); }

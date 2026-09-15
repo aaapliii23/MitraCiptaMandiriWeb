@@ -69,6 +69,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (Exception $fe) {}
         }
 
+        // Status non-lunas (pending/cancelled, dari status apapun): cabut akses LMS
+        // pesanan ini. Idempoten — tetap sukses meski tidak ada enrollment yang cocok.
+        if ($status === 'pending' || $status === 'cancelled') {
+            try {
+                $pdo->prepare("DELETE FROM enrollments WHERE order_id = ?")->execute([$orderId]);
+            } catch (Exception $eRevoke) { error_log('[update_order revoke] ' . $eRevoke->getMessage()); }
+        }
+
         $pdo->commit();
         echo json_encode(['status' => 'success', 'message' => 'Status pesanan berhasil diperbarui.']);
     } catch (Exception $e) {
