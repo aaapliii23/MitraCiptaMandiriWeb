@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once '../includes/auth_user.php';
 require_once '../config/database.php';
 
@@ -53,19 +53,7 @@ try {
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg fixed-top shadow-sm bg-white" style="transition: all 0.4s ease;">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="../index.php">
-                <img src="../assets/img/logo.png" alt="MCM Logo" style="height: 40px;">
-                <span class="fw-bold ms-2" style="font-size: 0.9rem; letter-spacing: 1px;">LMS MITRA CIPTA MANDIRI</span>
-            </a>
-            <div class="d-flex align-items-center gap-2">
-                <a href="dashboard.php" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a>
-                <a href="profile.php" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-user-cog me-1"></i>Profil</a>
-                <a href="../auth/user_logout.php" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="fas fa-sign-out-alt me-1"></i>Keluar</a>
-            </div>
-        </div>
-    </nav>
+    <?php $lms_nav_active = 'dashboard'; require __DIR__ . '/partials/navbar.php'; ?>
 
     <section class="pt-5" style="margin-top: 56px; min-height: 80vh; background: #f8fafc;">
         <div class="container py-4">
@@ -85,8 +73,10 @@ try {
             ?>
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
                     <div class="row g-0">
-                        <div class="col-md-4">
-                            <img src="../<?php echo htmlspecialchars($class['image']); ?>" alt="<?php echo htmlspecialchars($class['name']); ?>" style="width: 100%; height: 100%; min-height: 180px; object-fit: cover;" onerror="this.src='../assets/img/logo.png';">
+                        <div class="col-md-4 position-relative d-flex align-items-center justify-content-center" style="background:#0f172a; min-height: 180px; overflow: hidden;">
+                            <?php $imgUrl = htmlspecialchars(asset_src($class['image'])); ?>
+                            <div style="position: absolute; inset: -15px; background-image: url('<?php echo $imgUrl; ?>'); background-size: cover; background-position: center; filter: blur(16px) brightness(0.4); opacity: 0.65;"></div>
+                            <img src="<?php echo $imgUrl; ?>" alt="<?php echo htmlspecialchars($class['name']); ?>" class="position-relative" style="max-height: 220px; max-width: 100%; object-fit: contain; z-index: 1; padding: 8px;" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
                         </div>
                         <div class="col-md-8">
                             <div class="p-4">
@@ -161,5 +151,10 @@ try {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <?php
+    $base_url = '../';
+    require_once '../config/database.php';
+    require_once __DIR__ . '/../includes/chat_widget.php';
+    ?>
 </body>
 </html>

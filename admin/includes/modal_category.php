@@ -7,6 +7,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="categoryForm" action="<?php echo $adminBase; ?>/actions/manage_categories.php" method="POST" onsubmit="event.preventDefault(); submitAjaxForm('categoryForm');">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(mcm_csrf_token()); ?>">
                 <div class="modal-body p-4">
                     <input type="hidden" name="action" value="create" id="categoryAction">
                     <input type="hidden" name="id" id="categoryId">

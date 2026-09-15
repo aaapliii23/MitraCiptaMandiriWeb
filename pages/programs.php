@@ -27,10 +27,10 @@ try {
             <!-- Logo directly above badge -->
             <div class="mb-4">
                 <a class="d-flex align-items-center text-decoration-none" href="../index.php">
-                    <img src="../assets/img/logo.png" alt="MCM Logo" style="height: 45px; width: auto;">
-                    <div class="ms-2 ps-2 border-start border-2 border-dark d-flex flex-column justify-content-center" style="height: 35px;">
-                        <span class="fw-bold text-dark" style="font-size: 0.8rem; letter-spacing: 1px; line-height: 1.1;">MITRA CIPTA</span>
-                        <span class="fw-bold text-dark" style="font-size: 0.8rem; letter-spacing: 1px; line-height: 1.1;">MANDIRI</span>
+                    <img src="<?php echo htmlspecialchars($headerLogo); ?>" alt="MCM Logo" style="height: 52px; width: auto; object-fit: contain;" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
+                    <div class="ms-3 ps-3 border-start border-2 border-primary d-flex flex-column justify-content-center" style="height: 42px;">
+                        <span class="fw-bold text-dark" style="font-size: 1rem; font-weight: 800; letter-spacing: 1.2px; line-height: 1.15;">MITRA CIPTA</span>
+                        <span class="fw-bold" style="font-size: 1rem; font-weight: 800; letter-spacing: 1.2px; line-height: 1.15; color: #0c4a6e;">MANDIRI</span>
                     </div>
                 </a>
             </div>
@@ -85,49 +85,60 @@ try {
         <div class="row g-4">
             <?php foreach ($classes as $c): 
                 $featuresArr = json_decode($c['features'], true) ?: [];
+                $detailUrl = 'class_detail.php?id=' . (int)$c['id'] . '&from=programs';
             ?>
             <div class="col-lg-4 col-md-6 class-item" data-category="<?php echo htmlspecialchars($c['category']); ?>" data-name="<?php echo strtolower(htmlspecialchars($c['name'])); ?>">
-                <div class="paket-card h-100 shadow-sm border rounded-4 overflow-hidden bg-white">
-                    <div class="position-relative" style="height: 200px;">
-                        <img src="<?php echo htmlspecialchars(asset_src($c['image'])); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="w-100 h-100" style="object-fit: cover;" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
-                        <div class="position-absolute top-0 end-0 m-3">
+                <div class="paket-card h-100 shadow-sm border rounded-4 overflow-hidden bg-white"
+                     role="button"
+                     tabindex="0"
+                     onclick="window.location.href='<?php echo $detailUrl; ?>'"
+                     onkeydown="if(event.key==='Enter')window.location.href='<?php echo $detailUrl; ?>'"
+                     style="cursor: pointer;">
+                    <div class="position-relative w-100 overflow-hidden" style="height: 220px; border-top-left-radius: 1.25rem; border-top-right-radius: 1.25rem; background: #e2e8f0;">
+                        <img src="<?php echo htmlspecialchars(asset_src($c['image'])); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="w-100 h-100" style="object-fit: cover; object-position: top center; display: block;" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
+                        <div class="position-absolute top-0 end-0 m-3" style="z-index: 2;">
                             <span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm">MCM Official</span>
                         </div>
                     </div>
-                    <div class="paket-card-content p-4">
-                        <h4 class="fw-bold mb-2"><?php echo htmlspecialchars($c['name']); ?></h4>
-                        <p class="text-muted small mb-4" style="height: 4.5em; overflow: hidden;"><?php echo substr(strip_tags($c['description']), 0, 120); ?>...</p>
+                    <div class="paket-card-content p-4 d-flex flex-column flex-grow-1">
+                        <h4 class="fw-bold mb-2 text-dark text-truncate" title="<?php echo htmlspecialchars($c['name']); ?>"><?php echo htmlspecialchars($c['name']); ?></h4>
+                        <p class="text-muted small mb-3" style="min-height: 4.2em; height: 4.2em; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"><?php echo substr(strip_tags($c['description']), 0, 110); ?>...</p>
+                        
+                        <div class="mb-3 d-flex flex-column justify-content-center" style="min-height: 64px;">
                         <?php
                         $pLegacy = (int)($c['price'] ?? 0);
                         $pOn = isset($c['price_online']) && (int)$c['price_online'] > 0 ? (int)$c['price_online'] : (int)round($pLegacy * 0.8);
                         $pOff = isset($c['price_offline']) && (int)$c['price_offline'] > 0 ? (int)$c['price_offline'] : $pLegacy;
                         $ma = $c['mode_available'] ?? 'both';
                         if ($ma === 'online') {
-                            echo '<h5 class="text-primary fw-bold mb-1">Rp '.number_format($pOn,0,',','.').'</h5><small class="text-muted d-block mb-3"><span class="badge bg-info bg-opacity-10 text-info" style="font-size:0.7rem;"><i class="fas fa-laptop me-1"></i>Online</span></small>';
+                            echo '<small class="text-muted d-block" style="font-size:0.72rem;">Investasi Program</small><h5 class="text-primary fw-bold mb-0" style="font-size:1.1rem;">Rp '.number_format($pOn,0,',','.').'</h5><small class="text-muted mt-1" style="font-size:0.7rem;"><span class="badge bg-info bg-opacity-10 text-info" style="font-size:0.68rem;"><i class="fas fa-laptop me-1"></i>Online</span></small>';
                         } elseif ($ma === 'offline') {
-                            echo '<h5 class="text-primary fw-bold mb-1">Rp '.number_format($pOff,0,',','.').'</h5><small class="text-muted d-block mb-3"><span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.7rem;"><i class="fas fa-chalkboard-teacher me-1"></i>Offline</span></small>';
+                            echo '<small class="text-muted d-block" style="font-size:0.72rem;">Investasi Program</small><h5 class="text-primary fw-bold mb-0" style="font-size:1.1rem;">Rp '.number_format($pOff,0,',','.').'</h5><small class="text-muted mt-1" style="font-size:0.7rem;"><span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.68rem;"><i class="fas fa-chalkboard-teacher me-1"></i>Offline</span></small>';
                         } else {
                             if ($pOn !== $pOff) {
-                                echo '<div class="mb-3"><small class="text-muted d-block" style="font-size:0.72rem;">Mulai dari</small><h5 class="text-primary fw-bold mb-0">Rp '.number_format(min($pOn,$pOff),0,',','.').'</h5><small class="text-muted" style="font-size:0.7rem;">Offline Rp '.number_format($pOff,0,',','.').' &bull; Online Rp '.number_format($pOn,0,',','.').'</small></div>';
+                                echo '<small class="text-muted d-block" style="font-size:0.72rem;">Mulai dari</small><h5 class="text-primary fw-bold mb-0" style="font-size:1.1rem;">Rp '.number_format(min($pOn,$pOff),0,',','.').'</h5><small class="text-muted mt-1" style="font-size:0.7rem;">Offline Rp '.number_format($pOff,0,',','.').' &bull; Online Rp '.number_format($pOn,0,',','.').'</small>';
                             } else {
-                                echo '<h5 class="text-primary fw-bold mb-4">Rp '.number_format($pLegacy,0,',','.').'</h5>';
+                                echo '<small class="text-muted d-block" style="font-size:0.72rem;">Investasi Program</small><h5 class="text-primary fw-bold mb-0" style="font-size:1.1rem;">Rp '.number_format($pLegacy,0,',','.').'</h5><small class="text-muted mt-1" style="font-size:0.7rem;">Online &bull; Offline</small>';
                             }
                         }
                         ?>
+                        </div>
                         
-                        <div class="mb-4">
+                        <div class="mb-3 d-flex flex-column justify-content-start" style="min-height: 84px;">
                             <?php foreach (array_slice($featuresArr, 0, 3) as $f): ?>
                                 <div class="d-flex align-items-center mb-2">
-                                    <i class="fas fa-check-circle text-success me-2 small"></i>
-                                    <span class="small text-secondary"><?php echo htmlspecialchars($f); ?></span>
+                                    <i class="fas fa-check-circle text-success me-2 flex-shrink-0" style="font-size: 0.85rem;"></i>
+                                    <span class="small text-secondary fw-medium text-truncate"><?php echo htmlspecialchars($f); ?></span>
                                 </div>
                             <?php endforeach; ?>
                         </div>
 
-                        <a href="class_detail.php?id=<?php echo $c['id']; ?>&from=programs" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm" 
-                                style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); border: none;">
-                            Daftar Sekarang
-                        </a>
+                        <div class="mt-auto pt-3">
+                            <a href="<?php echo $detailUrl; ?>" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm d-block text-center" 
+                                    style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9); border: none; font-size: 0.95rem;">
+                                Daftar Sekarang
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>

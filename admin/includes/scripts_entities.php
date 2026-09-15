@@ -65,22 +65,25 @@ function deleteFacilityCategory(id, name) {
             const formData = new FormData();
             formData.append('action', 'delete_category');
             formData.append('id', id);
+            const csrfFacCat = document.querySelector('input[name="csrf_token"]')?.value || window.MCM_CSRF_TOKEN || '';
+            if (csrfFacCat) formData.append('csrf_token', csrfFacCat);
 
             fetch('<?php echo $adminBase; ?>/actions/manage_facilities.php', {
                 method: 'POST',
                 body: formData
             })
-            .then(res => res.json())
+            .then(res => res.text()).then(t=>{ let d; try{ d=JSON.parse(t);}catch(e){ throw new Error('Respons tidak valid: '+t.slice(0,120)); } return d; })
             .then(data => {
                 if (data.status === 'success') {
-                    Swal.fire('Terhapus!', data.message, 'success').then(() => window.location.reload());
+                    Swal.fire({ icon:'success', title:'Terhapus!', text:data.message, timer:1500, showConfirmButton:false }).then(() => {
+                        if (typeof window.mcmCloseModalsAndRefresh==='function') window.mcmCloseModalsAndRefresh();
+                        else if (typeof loadContent==='function'){ const p=new URLSearchParams(window.location.search).get('page')||'dashboard'; loadContent('?page='+p,false); }
+                    });
                 } else {
-                    Swal.fire('Gagal!', data.message, 'error');
+                    Swal.fire('Gagal!', data.message || 'Gagal', 'error');
                 }
             })
-            .catch(() => {
-                Swal.fire('Gagal!', 'Terjadi kesalahan sistem.', 'error');
-            });
+            .catch(err => Swal.fire('Gagal!', err.message || 'Terjadi kesalahan sistem.', 'error'));
         }
     });
 }
@@ -227,13 +230,19 @@ function setTestimonialStatus(id, action) {
     const formData = new FormData();
     formData.append('action', action);
     formData.append('id', id);
+    const csrfTesti = document.querySelector('input[name="csrf_token"]')?.value || window.MCM_CSRF_TOKEN || '';
+    if (csrfTesti) formData.append('csrf_token', csrfTesti);
     fetch(adminBase + '/actions/manage_testimonials.php', { method: 'POST', body: formData })
-    .then(res => res.json())
+    .then(res => res.text()).then(t=>{ let d; try{ d=JSON.parse(t);}catch(e){ throw new Error('Respons tidak valid: '+t.slice(0,120)); } return d; })
     .then(data => {
-        Swal.fire(data.status === 'success' ? 'Berhasil!' : 'Gagal', data.message, data.status).then(() => {
-            if (data.status === 'success') window.location.reload();
+        const ok = data.status === 'success';
+        Swal.fire(ok ? 'Berhasil!' : 'Gagal', data.message, data.status).then(() => {
+            if (ok) {
+                if (typeof window.mcmCloseModalsAndRefresh==='function') window.mcmCloseModalsAndRefresh();
+                else if (typeof loadContent==='function'){ const p=new URLSearchParams(window.location.search).get('page')||'dashboard'; loadContent('?page='+p,false); }
+            }
         });
-    });
+    }).catch(err=> Swal.fire('Gagal', err.message || 'Terjadi kesalahan', 'error'));
 }
 
 function materialTypeChanged() {
@@ -358,38 +367,116 @@ function quizTypeChanged(type) {
 function resetQuizQuestionForm() {
     const form = document.getElementById('quizForm');
     if (form) form.reset();
-    document.getElementById('quizAction').value = 'create';
-    document.getElementById('quizId').value = '';
-    document.getElementById('quizQuestion').value = '';
-    document.getElementById('quizType').value = 'mcq';
+    const matId = document.getElementById('quizMaterialId') ? document.getElementById('quizMaterialId').value : '';
+    const matInput = document.getElementById('quizMaterialInput');
+    if (matInput) matInput.value = matId;
+    const actionEl = document.getElementById('quizAction');
+    if (actionEl) actionEl.value = 'create';
+    const idEl = document.getElementById('quizId');
+    if (idEl) idEl.value = '';
+    const qEl = document.getElementById('quizQuestion');
+    if (qEl) qEl.value = '';
+    const typeEl = document.getElementById('quizType');
+    if (typeEl) typeEl.value = 'mcq';
     quizTypeChanged('mcq');
     const expEl = document.getElementById('quizExplanation');
     if (expEl) expEl.value = '';
-    document.getElementById('quizFormTitle').textContent = 'Tambah Soal';
-    document.getElementById('quizSubmitBtn').textContent = 'Simpan Soal';
+    const sortEl = document.getElementById('quizSort');
+    if (sortEl) sortEl.value = '0';
+    const formTitle = document.getElementById('quizFormTitle');
+    if (formTitle) formTitle.textContent = 'Tambah Soal';
+    const submitBtn = document.getElementById('quizSubmitBtn');
+    if (submitBtn) submitBtn.innerHTML = 'Simpan Soal';
+    const resetBtn = document.getElementById('quizResetBtn');
+    if (resetBtn) resetBtn.textContent = 'Reset';
+    document.querySelectorAll('#quizList .quiz-card-item').forEach(card => {
+        card.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
+    });
 }
 
-function editQuizQuestion(data) {
+function editQuizQuestion(dataOrId) {
+    let data = dataOrId;
+    if (typeof dataOrId === 'number' || typeof dataOrId === 'string') {
+        data = (window._quizCache || []).find(x => String(x.id) === String(dataOrId));
+    }
+    if (!data) return;
+
     resetQuizQuestionForm();
-    document.getElementById('quizAction').value = 'update';
-    document.getElementById('quizId').value = data.id;
+
+    const actionEl = document.getElementById('quizAction');
+    if (actionEl) actionEl.value = 'update';
+
+    const idEl = document.getElementById('quizId');
+    if (idEl) idEl.value = data.id;
+
+    const matId = document.getElementById('quizMaterialId') ? document.getElementById('quizMaterialId').value : (data.material_id || '');
+    const matInput = document.getElementById('quizMaterialInput');
+    if (matInput) matInput.value = matId;
+
     const type = data.question_type === 'essay' ? 'essay' : 'mcq';
-    document.getElementById('quizType').value = type;
+    const typeEl = document.getElementById('quizType');
+    if (typeEl) typeEl.value = type;
     quizTypeChanged(type);
-    document.getElementById('quizQuestion').value = data.question;
-    document.getElementById('quizOptionA').value = data.option_a || '';
-    document.getElementById('quizOptionB').value = data.option_b || '';
-    document.getElementById('quizOptionC').value = data.option_c || '';
-    document.getElementById('quizOptionD').value = data.option_d || '';
-    document.getElementById('quizCorrect').value = data.correct_option || 'a';
-    document.getElementById('quizEssayAnswer').value = data.essay_answer || '';
+
+    const qInput = document.getElementById('quizQuestion');
+    if (qInput) qInput.value = data.question || '';
+
+    const optA = document.getElementById('quizOptionA');
+    if (optA) optA.value = data.option_a || '';
+    const optB = document.getElementById('quizOptionB');
+    if (optB) optB.value = data.option_b || '';
+    const optC = document.getElementById('quizOptionC');
+    if (optC) optC.value = data.option_c || '';
+    const optD = document.getElementById('quizOptionD');
+    if (optD) optD.value = data.option_d || '';
+
+    const cor = document.getElementById('quizCorrect');
+    if (cor) cor.value = data.correct_option || 'a';
+
+    const essayAns = document.getElementById('quizEssayAnswer');
+    if (essayAns) essayAns.value = data.essay_answer || '';
+
     const expEl = document.getElementById('quizExplanation');
     if (expEl) expEl.value = data.explanation || '';
-    document.getElementById('quizSort').value = data.sort_order;
-    document.getElementById('quizFormTitle').textContent = 'Edit Soal';
-    document.getElementById('quizSubmitBtn').textContent = 'Simpan Perubahan';
-    document.getElementById('quizForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    const sortEl = document.getElementById('quizSort');
+    if (sortEl) sortEl.value = data.sort_order ?? 0;
+
+    const formTitle = document.getElementById('quizFormTitle');
+    if (formTitle) formTitle.innerHTML = '<i class="fas fa-edit me-1 text-primary"></i> Edit Soal (ID: ' + data.id + ')';
+
+    const submitBtn = document.getElementById('quizSubmitBtn');
+    if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save me-1"></i> Simpan Perubahan';
+
+    const resetBtn = document.getElementById('quizResetBtn');
+    if (resetBtn) resetBtn.textContent = 'Batal Edit';
+
+    document.querySelectorAll('#quizList .quiz-card-item').forEach(card => {
+        card.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
+    });
+    const activeCard = document.getElementById('quizCard_' + data.id);
+    if (activeCard) {
+        activeCard.classList.add('border-primary', 'bg-primary', 'bg-opacity-10');
+    }
+
+    const modalEl = document.getElementById('quizModal');
+    const formEl = document.getElementById('quizForm');
+    if (modalEl && formEl) {
+        modalEl.scrollTo({ top: formEl.offsetTop - 30, behavior: 'smooth' });
+    }
+    if (formEl) {
+        formEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    setTimeout(() => {
+        if (qInput) {
+            qInput.focus();
+        }
+    }, 200);
 }
+
+window.editQuizQuestionById = function(id) {
+    editQuizQuestion(id);
+};
 
 function renderQuizList(questions) {
     window._quizCache = questions || [];
@@ -402,40 +489,39 @@ function renderQuizList(questions) {
     let html = '';
     questions.forEach(q => {
         const isEssay = q.question_type === 'essay';
-        html += `<div class="d-flex justify-content-between align-items-start border rounded-3 p-3 mb-2">
+        html += `<div class="d-flex justify-content-between align-items-start border rounded-3 p-3 mb-2 quiz-card-item" id="quizCard_${q.id}">
             <div>
                 <div class="fw-semibold text-dark mb-1">${q.question}</div>
                 <small class="text-muted">
-                    ${isEssay ? '<i class="fas fa-align-left me-1"></i>Soal Essay' : 'A. ' + q.option_a + ' &nbsp; B. ' + q.option_b + ' &nbsp; C. ' + q.option_c + ' &nbsp; D. ' + q.option_d}
+                    ${isEssay ? '<i class="fas fa-align-left me-1"></i>Soal Essay' : 'A. ' + (q.option_a || '-') + ' &nbsp; B. ' + (q.option_b || '-') + ' &nbsp; C. ' + (q.option_c || '-') + ' &nbsp; D. ' + (q.option_d || '-')}
                 </small>
                 <div class="mt-1"><span class="badge ${isEssay ? 'bg-info bg-opacity-10 text-info' : 'bg-success bg-opacity-10 text-success'} small">${isEssay ? 'Essay' : 'Kunci: ' + (q.correct_option || '').toUpperCase()}</span></div>
             </div>
             <div class="d-inline-flex gap-2 flex-shrink-0">
-                <button type="button" class="btn btn-action btn-soft-primary btn-edit-soal" data-soal-id="${q.id}" title="Edit"><i class="fas fa-edit"></i></button>
-                <button type="button" class="btn btn-action btn-soft-danger btn-delete-soal" data-soal-id="${q.id}" title="Hapus"><i class="fas fa-trash"></i></button>
+                <button type="button" class="btn btn-action btn-soft-primary btn-edit-soal" data-soal-id="${q.id}" onclick="editQuizQuestion(${q.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                <button type="button" class="btn btn-action btn-soft-danger btn-delete-soal" data-soal-id="${q.id}" onclick="deleteQuizQuestion(${q.id})" title="Hapus"><i class="fas fa-trash"></i></button>
             </div>
         </div>`;
     });
     container.innerHTML = html;
 }
 
-// Event delegation: tombol edit/hapus dirender dinamis via innerHTML,
-// listener dipasang SEKALI di modal statis (#quizModal) agar tetap berlaku untuk konten baru.
-(function(){
-    const modal = document.getElementById('quizModal');
-    if (!modal || modal.dataset.soalDelegated) return;
-    modal.dataset.soalDelegated = 'true';
-    modal.addEventListener('click', function(e) {
+if (!window._quizEventDelegated) {
+    window._quizEventDelegated = true;
+    document.addEventListener('click', function(e) {
         const editBtn = e.target.closest('.btn-edit-soal');
         const delBtn = e.target.closest('.btn-delete-soal');
         if (editBtn) {
-            const q = (window._quizCache || []).find(x => String(x.id) === editBtn.dataset.soalId);
-            if (q) editQuizQuestion(q);
+            e.preventDefault();
+            const id = editBtn.dataset.soalId;
+            if (id) editQuizQuestion(id);
         } else if (delBtn) {
-            deleteQuizQuestion(delBtn.dataset.soalId);
+            e.preventDefault();
+            const id = delBtn.dataset.soalId;
+            if (id) deleteQuizQuestion(id);
         }
     });
-})();
+}
 
 function fetchQuizList() {
     const adminBase = '<?php echo $adminBase; ?>';
@@ -481,6 +567,8 @@ function deleteQuizQuestion(id) {
         const fd = new FormData();
         fd.append('action', 'delete');
         fd.append('id', id);
+        const csrfDQ = document.querySelector('input[name="csrf_token"]')?.value || window.MCM_CSRF_TOKEN || '';
+        if (csrfDQ) fd.append('csrf_token', csrfDQ);
         fetch(adminBase + '/actions/manage_quiz.php', { method: 'POST', body: fd })
         .then(res => res.json())
         .then(data => {
@@ -515,7 +603,7 @@ function submitQuizQuestionForm() {
     .then(data => {
         if (data.status === 'success') {
             resetQuizQuestionForm();
-            openQuizManager(document.getElementById('quizMaterialId').value, document.getElementById('quizModalSubtitle').textContent);
+            fetchQuizList();
             Swal.fire({
                 icon: 'success',
                 title: 'Berhasil!',
@@ -568,50 +656,294 @@ function deleteItem(type, id) {
             const formData = new FormData();
             formData.append('action', 'delete');
             formData.append('id', id);
+            // CSRF untuk delete
+            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || window.MCM_CSRF_TOKEN || '';
+            if (csrfToken) formData.append('csrf_token', csrfToken);
             
             fetch(endpoint, { method: 'POST', body: formData })
-            .then(res => res.json())
+            .then(res => res.text()).then(t => { let d; try{ d=JSON.parse(t);}catch(e){ throw new Error('Respons tidak valid: '+t.slice(0,120)); } return d; })
             .then(data => {
                 if(data.status === 'success') {
-                    Swal.fire('Terhapus!', data.message, 'success').then(() => window.location.reload());
+                    Swal.fire({ icon:'success', title:'Terhapus!', text:data.message, timer:1500, showConfirmButton:false }).then(() => {
+                        if (typeof window.mcmCloseModalsAndRefresh === 'function') window.mcmCloseModalsAndRefresh();
+                        else if (typeof loadContent === 'function') { const p=new URLSearchParams(window.location.search).get('page')||'dashboard'; loadContent('?page='+p,false); }
+                        else {
+                            const btn = document.querySelector('button[onclick*="deleteItem"][onclick*="'+id+'"]');
+                            if (btn) { const row = btn.closest('tr') || btn.closest('[data-bulk-card]') || btn.closest('.col-md-4') || btn.closest('.card'); if (row) row.remove(); }
+                        }
+                    });
                 } else {
-                    Swal.fire('Gagal!', data.message, 'error');
+                    Swal.fire('Gagal!', data.message || 'Gagal menghapus', 'error');
                 }
-            });
+            }).catch(err => Swal.fire('Error', err.message || 'Terjadi kesalahan sistem.', 'error'));
         }
     });
 }
 
-// AJAX Form Submission
-document.querySelectorAll('.ajax-form').forEach(form => {
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
-
-        fetch(this.getAttribute('action'), {
-            method: this.getAttribute('method') || 'POST',
-            body: new FormData(this)
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'success') {
-                Swal.fire('Berhasil!', data.message, 'success').then(() => {
-                    window.location.reload();
+// ===== Bulk select & bulk delete (shared) =====
+function getBulkEndpoint(type){
+    const adminBase = '<?php echo $adminBase; ?>';
+    const map = {
+        classes: adminBase + '/actions/manage_classes.php',
+        gallery: adminBase + '/actions/manage_gallery.php',
+        instructors: adminBase + '/actions/manage_instructors.php',
+        certs: adminBase + '/actions/manage_certs.php',
+        cert_templates: adminBase + '/actions/manage_cert_templates.php',
+        admins: adminBase + '/actions/manage_admins.php',
+        orders: adminBase + '/actions/manage_orders.php',
+        categories: adminBase + '/actions/manage_categories.php',
+        testimonials: adminBase + '/actions/manage_testimonials.php',
+        materials: adminBase + '/actions/manage_materials.php',
+        chatbot: adminBase + '/actions/manage_chatbot.php',
+        finance: adminBase + '/actions/manage_finance.php',
+        facilities: adminBase + '/actions/manage_facilities.php',
+        users: adminBase + '/actions/manage_users.php',
+        chat: adminBase + '/actions/manage_chat.php'
+    };
+    return map[type] || '';
+}
+    // Optimized bulk — single delegation, no MutationObserver loop
+    function initBulkTables(){
+        document.querySelectorAll('[data-bulk-table]').forEach(function(wrap){
+            if (wrap.dataset.bulkInit) return;
+            wrap.dataset.bulkInit = '1';
+            const type = wrap.getAttribute('data-bulk-table');
+            const endpoint = getBulkEndpoint(type);
+            const toolbar = wrap.querySelector('[data-bulk-toolbar]');
+            const countEl = wrap.querySelector('[data-bulk-count]');
+            const delBtn = wrap.querySelector('[data-bulk-delete]');
+            const selectAll = wrap.querySelector('.js-bulk-select-all');
+            // cache rows on demand, use offsetParent check (no getComputedStyle reflow)
+            const getVisibleRows = () => {
+                const all = wrap.querySelectorAll('.js-bulk-row');
+                const vis = [];
+                for (let i=0;i<all.length;i++){
+                    const cb = all[i];
+                    const tr = cb.closest('tr');
+                    const card = cb.closest('[data-bulk-card]');
+                    const el = tr || card || cb;
+                    // offsetParent null => hidden (display:none), fast path
+                    if (el.style.display === 'none') continue;
+                    if (el.offsetParent === null && el.tagName !== 'BODY') {
+                        // for <tr> offsetParent is null when hidden, also check card hidden via class
+                        if (tr || card) continue;
+                    }
+                    // also respect explicit hidden via .d-none on card wrapper
+                    if (card && card.style.display === 'none') continue;
+                    vis.push(cb);
+                }
+                return vis;
+            };
+            let rafPending = false;
+            function updateToolbar(){
+                if (rafPending) return;
+                rafPending = true;
+                requestAnimationFrame(function(){
+                    rafPending = false;
+                    const vis = getVisibleRows();
+                    let checked = 0;
+                    for (let i=0;i<vis.length;i++) if (vis[i].checked) checked++;
+                    const n = checked;
+                    if (toolbar){
+                        const shouldHide = n===0;
+                        if (toolbar.classList.contains('d-none') !== shouldHide) toolbar.classList.toggle('d-none', shouldHide);
+                        const c2 = toolbar.querySelector('[data-bulk-count-num]');
+                        if (c2) c2.textContent = n;
+                        if (countEl) countEl.textContent = n + ' dipilih';
+                    }
+                    if (selectAll){
+                        const totalVis = vis.length;
+                        if (n===0){ if(selectAll.checked||selectAll.indeterminate){ selectAll.checked=false; selectAll.indeterminate=false; } }
+                        else if (n===totalVis){ if(!selectAll.checked||selectAll.indeterminate){ selectAll.checked=true; selectAll.indeterminate=false; } }
+                        else { if(selectAll.checked||!selectAll.indeterminate){ selectAll.checked=false; selectAll.indeterminate=true; } }
+                    }
                 });
+            }
+            if (selectAll){
+                selectAll.addEventListener('change', function(){
+                    const vis = getVisibleRows();
+                    for (let i=0;i<vis.length;i++) vis[i].checked = selectAll.checked;
+                    updateToolbar();
+                });
+            }
+            // delegation: one listener per wrap
+            wrap.addEventListener('change', function(e){
+                if (e.target.classList.contains('js-bulk-row')) updateToolbar();
+            });
+            // also update on filter/search inputs inside wrap
+            wrap.addEventListener('input', function(e){
+                if (e.target.matches('input[type="text"], input[type="search"]')) {
+                    // debounce 150ms
+                    clearTimeout(wrap._bulkInputTimer);
+                    wrap._bulkInputTimer = setTimeout(updateToolbar, 150);
+                }
+            });
+            // filter pills (facilities, chat) trigger display:none via click
+            wrap.addEventListener('click', function(e){
+                if (e.target.closest('[data-filter], .admin-fac-filter')) {
+                    setTimeout(updateToolbar, 50);
+                }
+            });
+            if (delBtn){
+                delBtn.addEventListener('click', function(){
+                    const vis = getVisibleRows();
+                    const checked = [];
+                    for (let i=0;i<vis.length;i++) if (vis[i].checked) checked.push(vis[i]);
+                    if (!checked.length) return;
+                    let sendIds;
+                    if (type==='chat') sendIds = checked.map(cb=> cb.value).filter(v=> String(v).trim()!=='');
+                    else { sendIds=[]; for(let i=0;i<checked.length;i++){ const v=parseInt(checked[i].value,10); if(v>0) sendIds.push(v); } }
+                    if (!sendIds.length) return;
+                    Swal.fire({
+                        title: 'Hapus '+sendIds.length+' data terpilih?',
+                        text: 'Data yang dihapus tidak dapat dikembalikan. Jumlah: '+sendIds.length,
+                        icon: 'warning',
+                        showCancelButton:true,
+                        confirmButtonColor:'#dc2626',
+                        cancelButtonColor:'#6b7280',
+                        confirmButtonText:'Ya, Hapus '+sendIds.length,
+                        cancelButtonText:'Batal'
+                    }).then(function(res){
+                        if (!res.isConfirmed) return;
+                        const fd = new FormData();
+                        fd.append('action', type==='chat' ? 'bulk_delete_thread' : 'bulk_delete');
+                        if (type==='chat') fd.append('wa_numbers', JSON.stringify(sendIds));
+                        else fd.append('ids', JSON.stringify(sendIds));
+                        const csrfBulk = document.querySelector('input[name="csrf_token"]')?.value || window.MCM_CSRF_TOKEN || '';
+                        if (csrfBulk) fd.append('csrf_token', csrfBulk);
+                        const ep = endpoint || getBulkEndpoint(type);
+                        if (!ep){ Swal.fire('Gagal','Endpoint tidak ditemukan','error'); return; }
+                        delBtn.disabled = true;
+                        const orig = delBtn.innerHTML;
+                        delBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menghapus...';
+                        fetch(ep, { method:'POST', body: fd })
+                        .then(r=>r.text()).then(t=>{ let d; try{ d=JSON.parse(t);}catch(e){ throw new Error('Respons tidak valid: '+t.slice(0,120)); } return d; })
+                        .then(d=>{
+                            if (d.status==='success'){
+                                Swal.fire({ icon:'success', title:'Terhapus!', text:d.message || (sendIds.length+' data berhasil dihapus.'), timer:1500, showConfirmButton:false }).then(()=> {
+                                    if (typeof window.mcmCloseModalsAndRefresh==='function') window.mcmCloseModalsAndRefresh();
+                                    else if (typeof loadContent==='function'){ const p=new URLSearchParams(window.location.search).get('page')||'dashboard'; loadContent('?page='+p,false); }
+                                    else {
+                                        // fallback partial: hapus baris terpilih dari DOM
+                                        checked.forEach(function(cb){ const row=cb.closest('tr')||cb.closest('[data-bulk-card]'); if(row) row.remove(); });
+                                        if (typeof updateToolbar==='function') updateToolbar();
+                                    }
+                                });
+                            } else {
+                                Swal.fire('Gagal', d.message || 'Gagal menghapus', 'error');
+                            }
+                        })
+                        .catch(()=> Swal.fire('Error','Terjadi kesalahan sistem.','error'))
+                        .finally(()=>{ delBtn.disabled=false; delBtn.innerHTML=orig; });
+                    });
+                });
+            }
+            updateToolbar();
+            // lightweight observer for table body / card grid childList only (search replaces tbody)
+            const bodyEl = wrap.querySelector('tbody, .row.g-4, #adminFacilityGrid, .admin-fac-card');
+            const obsTarget = wrap.querySelector('tbody') || wrap.querySelector('.row') || wrap;
+            try {
+                const obs = new MutationObserver(function(){ clearTimeout(wrap._bulkObsTimer); wrap._bulkObsTimer = setTimeout(updateToolbar, 80); });
+                obs.observe(obsTarget, { childList:true, subtree:false });
+                wrap._bulkObs = obs;
+            } catch(e){}
+        });
+    }
+    // expose debounced global trigger for order search & other dynamic filters
+    window.refreshBulkToolbar = function(){
+        document.querySelectorAll('[data-bulk-table]').forEach(function(wrap){
+            const ev = new Event('change', {bubbles:true});
+            wrap.dispatchEvent(ev);
+        });
+    };
+    document.addEventListener('DOMContentLoaded', initBulkTables);
+    document.addEventListener('ajaxReload', initBulkTables);
+    if (document.readyState !== 'loading') initBulkTables();
+    window.initBulkTables = initBulkTables;
+    window.getBulkEndpoint = getBulkEndpoint;
+
+// AJAX Form Submission — delegated (fix redirect JSON + partial-render for updateStatus)
+document.addEventListener('submit', function(e) {
+    const form = e.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    const isAjaxForm = form.classList.contains('ajax-form');
+    const action = form.getAttribute('action') || '';
+    const isAdminAction = action.includes('admin/actions/');
+    if (!isAjaxForm && !isAdminAction) return;
+    if (form.id === 'chatReplyForm' || form.id === 'quizForm') return;
+    const onSubmitAttr = form.getAttribute('onsubmit') || '';
+    if (onSubmitAttr.includes('submitAjaxForm') || onSubmitAttr.includes('submitQuizQuestionForm')) return;
+
+    // khusus updateStatusForm -> partial-render tanpa reload
+    if (form.id === 'updateStatusForm') {
+        e.preventDefault();
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (!submitBtn) return;
+        const orig = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
+        const fd = new FormData(form);
+        const orderId = fd.get('order_id');
+        const newStatus = fd.get('status');
+        fetch(form.getAttribute('action'), { method: form.getAttribute('method') || 'POST', body: fd })
+        .then(r => r.text()).then(t => { let d; try{ d=JSON.parse(t);}catch(e){ throw new Error('Respons tidak valid: '+t.slice(0,120)); } return d; })
+        .then(d => {
+            if (d.status === 'success') {
+                // tutup modal
+                const modalEl = document.getElementById('updateStatusModal');
+                if (modalEl) { const m = bootstrap.Modal.getInstance(modalEl); if (m) m.hide(); }
+                // update badge di baris yang sesuai (tanpa reload)
+                const btn = document.querySelector('button[data-bs-target="#updateStatusModal"][data-id="'+orderId+'"]');
+                const row = btn ? btn.closest('tr') : null;
+                if (row) {
+                    const badgeCell = row.querySelector('td:nth-child(7)');
+                    if (badgeCell) {
+                        let html = '';
+                        if (newStatus === 'pending') html = '<span class="badge badge-soft-warning"><i class="fas fa-clock me-1"></i>Pending</span>';
+                        else if (newStatus === 'confirmed') html = '<span class="badge badge-soft-success"><i class="fas fa-check-circle me-1"></i>Lunas</span>';
+                        else html = '<span class="badge badge-soft-danger"><i class="fas fa-times-circle me-1"></i>Batal</span>';
+                        badgeCell.innerHTML = html;
+                        // sync data-status pada tombol edit agar modal berikutnya benar
+                        btn.setAttribute('data-status', newStatus);
+                    }
+                }
+                Swal.fire({ icon:'success', title:'Berhasil!', text:d.message, timer:1500, showConfirmButton:false });
             } else {
-                Swal.fire('Gagal', data.message, 'error');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
+                Swal.fire('Gagal', d.message || 'Gagal menyimpan', 'error');
             }
         })
-        .catch(err => {
-            Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');
+        .catch(err => Swal.fire('Error', err.message || 'Terjadi kesalahan sistem.', 'error'))
+        .finally(() => { submitBtn.disabled = false; submitBtn.innerHTML = orig; });
+        return;
+    }
+
+    // generic ajax-form (delegated) — untuk finance, facility, settings, dll.
+    e.preventDefault();
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (!submitBtn) return;
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+    fetch(form.getAttribute('action'), { method: form.getAttribute('method') || 'POST', body: new FormData(form) })
+    .then(res => res.text()).then(t => { let d; try{ d=JSON.parse(t);}catch(e){ throw new Error('Respons tidak valid: '+t.slice(0,120)); } return d; })
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({ icon:'success', title:'Berhasil!', text:data.message, timer:1500, showConfirmButton:false }).then(() => {
+                if (typeof window.mcmCloseModalsAndRefresh==='function') window.mcmCloseModalsAndRefresh();
+                else if (typeof loadContent==='function'){ const p=new URLSearchParams(window.location.search).get('page')||'dashboard'; loadContent('?page='+p,false); }
+            });
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalText;
-        });
+        } else {
+            Swal.fire('Gagal', data.message || 'Gagal', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    })
+    .catch(err => {
+        Swal.fire('Error', err.message || 'Terjadi kesalahan sistem.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
     });
 });
 </script>

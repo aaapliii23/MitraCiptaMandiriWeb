@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once '../includes/auth_user.php';
 require_once '../config/database.php';
 
@@ -95,22 +95,7 @@ $csrf = $_SESSION['csrf_token'] ?? '';
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg fixed-top shadow-sm bg-white" style="transition: all 0.4s ease;">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="../index.php">
-                <img src="../assets/img/logo.png" alt="MCM Logo" style="height: 40px;">
-                <span class="fw-bold ms-2" style="font-size: 0.9rem; letter-spacing: 1px;">LMS MITRA CIPTA MANDIRI</span>
-            </a>
-            <div class="d-flex align-items-center gap-2">
-                <?php if (!$notEnrolled): ?>
-                    <a href="course.php?class_id=<?php echo (int)$material['class_id']; ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-arrow-left me-1"></i><?php echo htmlspecialchars($material['class_name']); ?></a>
-                <?php endif; ?>
-                <a href="dashboard.php" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a>
-                <a href="profile.php" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-user-cog me-1"></i>Profil</a>
-                <a href="../auth/user_logout.php" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="fas fa-sign-out-alt me-1"></i>Keluar</a>
-            </div>
-        </div>
-    </nav>
+    <?php $lms_nav_active = ''; $lms_back_url = empty($notEnrolled) ? 'course.php?class_id=' . (int)$material['class_id'] : ''; $lms_back_label = $material['class_name']; require __DIR__ . '/partials/navbar.php'; ?>
 
     <section class="pt-5" style="margin-top: 56px; min-height: 80vh; background: #f8fafc;">
         <div class="container py-4">
@@ -177,7 +162,7 @@ $csrf = $_SESSION['csrf_token'] ?? '';
                     <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4" id="quizCard">
                         <div class="card-body p-4">
                             <h5 class="fw-bold text-dark mb-1"><i class="fas fa-question-circle text-primary me-2"></i>Ujian Akhir Modul</h5>
-                            <p class="text-muted small mb-3" id="quizDesc">Jawab semua soal di bawah ini. Anda harus menjawab <b>100% benar</b> untuk lulus. Jika ada yang salah, sistem akan menampilkan pembahasan dan Anda hanya perlu memperbaiki soal yang salah sampai semua benar.</p>
+                            <p class="text-muted small mb-3" id="quizDesc">Jawab semua soal di bawah ini. Anda harus menjawab <b>100% benar</b> untuk lulus. </p>
 
                             <?php if ($quizPassed): ?>
                                 <div class="alert alert-success rounded-3 mb-3">
@@ -452,5 +437,11 @@ $csrf = $_SESSION['csrf_token'] ?? '';
         }
     </script>
     <?php endif; ?>
+    <?php
+    $base_url = '../';
+    require_once '../config/database.php';
+    require_once __DIR__ . '/../includes/chat_widget.php';
+    ?>
 </body>
 </html>
+

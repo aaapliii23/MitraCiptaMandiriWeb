@@ -17,7 +17,7 @@
             height: 70px !important;
             justify-content: space-around !important;
             align-items: center !important;
-            z-index: 999999 !important;
+            z-index: 1060 !important;
             box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.05) !important;
             border-top: 1px solid rgba(0,0,0,0.05) !important;
             padding-bottom: env(safe-area-inset-bottom) !important;

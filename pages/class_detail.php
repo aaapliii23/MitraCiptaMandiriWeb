@@ -4,7 +4,8 @@ require_once '../config/database.php';
 // Get class ID from URL
 $class_id = $_GET['id'] ?? null;
 if (!$class_id) {
-    header("Location: programs.php");
+    http_response_code(404);
+    include __DIR__ . '/../404.php';
     exit;
 }
 
@@ -14,7 +15,8 @@ try {
     $class = $stmt->fetch();
     
     if (!$class) {
-        header("Location: programs.php");
+        http_response_code(404);
+        include __DIR__ . '/../404.php';
         exit;
     }
     
@@ -30,7 +32,8 @@ try {
     // Default mode: offline jika both/offline, online jika hanya online
     $defaultMode = $modeAvailable === 'online' ? 'online' : 'offline';
 } catch(PDOException $e) {
-    header("Location: programs.php");
+    http_response_code(404);
+    include __DIR__ . '/../404.php';
     exit;
 }
 
@@ -73,10 +76,10 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
             <!-- Logo -->
             <div class="mb-4">
                 <a class="d-flex align-items-center text-decoration-none" href="../index.php">
-                    <img src="../assets/img/logo.png" alt="MCM Logo" style="height: 45px; width: auto;">
-                    <div class="ms-2 ps-2 border-start border-2 border-dark d-flex flex-column justify-content-center" style="height: 35px;">
-                        <span class="fw-bold text-dark" style="font-size: 0.8rem; letter-spacing: 1px; line-height: 1.1;">MITRA CIPTA</span>
-                        <span class="fw-bold text-dark" style="font-size: 0.8rem; letter-spacing: 1px; line-height: 1.1;">MANDIRI</span>
+                    <img src="<?php echo htmlspecialchars($headerLogo); ?>" alt="MCM Logo" style="height: 52px; width: auto; object-fit: contain;" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
+                    <div class="ms-3 ps-3 border-start border-2 border-primary d-flex flex-column justify-content-center" style="height: 42px;">
+                        <span class="fw-bold text-dark" style="font-size: 1rem; font-weight: 800; letter-spacing: 1.2px; line-height: 1.15;">MITRA CIPTA</span>
+                        <span class="fw-bold" style="font-size: 1rem; font-weight: 800; letter-spacing: 1.2px; line-height: 1.15; color: #0c4a6e;">MANDIRI</span>
                     </div>
                 </a>
             </div>
@@ -88,9 +91,16 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
         <div class="row g-5">
             <!-- Left Side: Information -->
             <div class="col-lg-8">
-                <!-- Image Header -->
-                <div class="rounded-5 overflow-hidden mb-5 shadow-sm" style="height: 400px;">
-                    <img src="<?php echo htmlspecialchars(asset_src($class['image'])); ?>" alt="<?php echo htmlspecialchars($class['name']); ?>" class="w-100 h-100" style="object-fit: cover;" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
+                <!-- Image Header — Menyesuaikan dengan bentuk asli gambar & diposisikan ke tengah agar seimbang -->
+                <div class="mb-5 text-center d-flex justify-content-center">
+                    <div class="d-inline-block position-relative shadow-sm rounded-4 overflow-hidden border bg-white" style="max-width: 100%;">
+                        <img src="<?php echo htmlspecialchars(asset_src($class['image'])); ?>" alt="<?php echo htmlspecialchars($class['name']); ?>" class="img-fluid d-block mx-auto" style="max-height: 640px; width: auto; max-width: 100%; object-fit: contain; cursor: pointer;" onclick="openImageModal('<?php echo htmlspecialchars(asset_src($class['image'])); ?>', '<?php echo htmlspecialchars(addslashes($class['name'])); ?>')" title="Klik untuk memperbesar foto" fetchpriority="high" decoding="async" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
+                        <div class="position-absolute bottom-0 end-0 m-3" style="z-index: 2;">
+                            <span class="badge bg-dark bg-opacity-75 text-white px-3 py-2 rounded-pill shadow-sm small" style="backdrop-filter: blur(8px); cursor: pointer;" onclick="openImageModal('<?php echo htmlspecialchars(asset_src($class['image'])); ?>', '<?php echo htmlspecialchars(addslashes($class['name'])); ?>')">
+                                <i class="fas fa-search-plus me-1"></i> Perbesar
+                            </span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Content Sections -->
@@ -297,13 +307,13 @@ $back_url = ($from === 'programs') ? 'programs.php' : '../index.php#paket';
                         
                         <div class="text-center">
                             <h6 class="fw-bold mb-3 small text-uppercase" style="letter-spacing: 1px; color: #0c4a6e;">Konsultasi Gratis</h6>
-                            <div class="d-flex align-items-center justify-content-center p-3 rounded-4 bg-light border border-light transition-all hover-lift">
+                            <a href="<?php echo mcm_wa_admin_link('Halo Admin MCM, saya ingin tanya mengenai kelas ' . ($class['name'] ?? '')); ?>" target="_blank" rel="noopener" class="d-flex align-items-center justify-content-center p-3 rounded-4 bg-light border border-light transition-all hover-lift text-decoration-none shadow-sm" style="cursor: pointer;">
                                 <i class="fab fa-whatsapp fs-3 text-success me-3"></i>
                                 <div class="text-start">
                                     <p class="small fw-bold mb-0 text-dark">Hubungi Admin</p>
-                                    <a href="<?php echo "https://wa.me/" . preg_replace("/\D/", "", mcm_setting("admin_whatsapp", "6285793935707")); ?>" target="_blank" class="small text-decoration-none text-primary">Tanya lewat WA</a>
+                                    <span class="small text-primary">Tanya lewat WA <i class="fas fa-arrow-right ms-1" style="font-size: 0.7rem;"></i></span>
                                 </div>
-                            </div>
+                            </a>
                         </div>
 
                         <div class="mt-4 p-3 rounded-4 border border-dashed text-center">
@@ -375,6 +385,33 @@ document.addEventListener('DOMContentLoaded', function() {
     updateUI(currentMode);
     if (modeAvailable !== 'both') updateUI(modeAvailable);
 });
+</script>
+
+<!-- Modal Zoom Foto Penuh (Tidak Terpotong) -->
+<div class="modal fade" id="imageZoomModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content bg-dark border-0 rounded-4 shadow-lg overflow-hidden">
+            <div class="modal-header border-0 pb-0 text-white d-flex justify-content-between align-items-center px-4 pt-3">
+                <h6 class="modal-title fw-bold" id="imageZoomTitle"><?php echo htmlspecialchars($class['name']); ?></h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body p-3 d-flex align-items-center justify-content-center text-center">
+                <img id="imageZoomImg" src="<?php echo htmlspecialchars(asset_src($class['image'])); ?>" alt="Foto Pelatihan" style="max-width: 100%; max-height: 82vh; object-fit: contain; border-radius: 0.75rem;">
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+function openImageModal(src, title) {
+    const modalEl = document.getElementById('imageZoomModal');
+    if (!modalEl) return;
+    const img = document.getElementById('imageZoomImg');
+    const t = document.getElementById('imageZoomTitle');
+    if (img) img.src = src;
+    if (t && title) t.textContent = title;
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+}
 </script>
 
 <?php include '../includes/footer.php'; ?>

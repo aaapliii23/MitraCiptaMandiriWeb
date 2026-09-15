@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCM CMS - Superadmin</title>
+    <meta name="csrf-token" content="<?php echo htmlspecialchars(mcm_csrf_token()); ?>">
+    <script>window.MCM_CSRF_TOKEN = "<?php echo htmlspecialchars(mcm_csrf_token()); ?>";</script>
     <link rel="icon" type="image/png" href="../assets/img/logo.png">
     <link rel="shortcut icon" type="image/png" href="../assets/img/logo.png">
     <link rel="apple-touch-icon" href="../assets/img/logo.png">

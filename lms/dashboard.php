@@ -59,20 +59,7 @@ try {
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg fixed-top shadow-sm bg-white" style="transition: all 0.4s ease;">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="../index.php">
-                <img src="../assets/img/logo.png" alt="MCM Logo" style="height: 40px;">
-                <span class="fw-bold ms-2" style="font-size: 0.9rem; letter-spacing: 1px;">LMS MITRA CIPTA MANDIRI</span>
-            </a>
-            <div class="d-flex align-items-center gap-2">
-                <span class="text-muted small d-none d-md-inline"><i class="fas fa-user me-1"></i><?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
-                <a href="profile.php" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-user-cog me-1"></i>Profil</a>
-                <a href="../index.php" class="btn btn-outline-primary btn-sm rounded-pill px-3">Beranda</a>
-                <a href="../auth/user_logout.php" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="fas fa-sign-out-alt me-1"></i>Keluar</a>
-            </div>
-        </div>
-    </nav>
+    <?php $lms_nav_active = 'dashboard'; require __DIR__ . '/partials/navbar.php'; ?>
 
     <section class="pt-5" style="margin-top: 56px; min-height: 80vh; background: #f8fafc;">
         <div class="container py-4">
@@ -124,7 +111,11 @@ try {
                     ?>
                         <div class="col-md-6 col-lg-4">
                             <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
-                                <img src="../<?php echo htmlspecialchars($c['image']); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="card-img-top" style="height: 160px; object-fit: cover;" onerror="this.src='../assets/img/logo.png';">
+                                <div class="position-relative d-flex align-items-center justify-content-center" style="height: 180px; background:#0f172a; overflow: hidden;">
+                                    <?php $imgUrl = htmlspecialchars(asset_src($c['image'])); ?>
+                                    <div style="position: absolute; inset: -15px; background-image: url('<?php echo $imgUrl; ?>'); background-size: cover; background-position: center; filter: blur(16px) brightness(0.4); opacity: 0.65;"></div>
+                                    <img src="<?php echo $imgUrl; ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="position-relative" style="max-height: 180px; max-width: 100%; object-fit: contain; z-index: 1; padding: 6px;" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
+                                </div>
                                 <div class="card-body p-4 d-flex flex-column">
                                     <div class="d-flex flex-wrap gap-2 mb-2">
                                         <span class="badge bg-soft-primary text-primary rounded-pill px-3"><?php echo htmlspecialchars($c['category']); ?></span>
@@ -135,14 +126,27 @@ try {
                                     <div class="mb-3">
                                         <div class="d-flex justify-content-between small mb-1">
                                             <span class="text-muted">Progres Belajar</span>
-                                            <span class="fw-bold text-primary"><?php echo $pct; ?>% (<?php echo $done; ?>/<?php echo $total; ?> materi)</span>
+                                            <span class="fw-bold <?php echo $pct >= 100 ? 'text-success' : 'text-primary'; ?>"><?php echo $pct; ?>% (<?php echo $done; ?>/<?php echo $total; ?> materi)</span>
                                         </div>
                                         <div class="progress" style="height: 8px; border-radius: 10px;">
-                                            <div class="progress-bar bg-primary rounded-pill" style="width: <?php echo $pct; ?>%"></div>
+                                            <div class="progress-bar <?php echo $pct >= 100 ? 'bg-success' : 'bg-primary'; ?> rounded-pill" style="width: <?php echo $pct; ?>%"></div>
                                         </div>
                                     </div>
                                     <div class="mt-auto">
-                                        <a href="course.php?class_id=<?php echo (int)$c['id']; ?>" class="btn btn-primary w-100 rounded-pill fw-bold"><?php echo $total > 0 ? 'Mulai Belajar' : 'Lihat Kelas'; ?></a>
+                                        <?php
+                                        $btnLabel = 'Mulai Belajar';
+                                        $btnClass = 'btn-primary';
+                                        if ($total === 0) {
+                                            $btnLabel = 'Lihat Kelas';
+                                        } elseif ($pct >= 100) {
+                                            $btnLabel = 'Kelas Selesai';
+                                            $btnClass = 'btn-success';
+                                        }
+                                        ?>
+                                        <a href="course.php?class_id=<?php echo (int)$c['id']; ?>" class="btn <?php echo $btnClass; ?> w-100 rounded-pill fw-bold">
+                                            <?php if ($pct >= 100 && $total > 0): ?><i class="fas fa-check-circle me-1"></i><?php endif; ?>
+                                            <?php echo $btnLabel; ?>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -159,7 +163,11 @@ try {
                     <?php foreach ($offline as $c): ?>
                         <div class="col-md-6 col-lg-4">
                             <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
-                                <img src="../<?php echo htmlspecialchars($c['image']); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="card-img-top" style="height: 160px; object-fit: cover;" onerror="this.src='../assets/img/logo.png';">
+                                <div class="position-relative d-flex align-items-center justify-content-center" style="height: 180px; background:#0f172a; overflow: hidden;">
+                                    <?php $imgUrl = htmlspecialchars(asset_src($c['image'])); ?>
+                                    <div style="position: absolute; inset: -15px; background-image: url('<?php echo $imgUrl; ?>'); background-size: cover; background-position: center; filter: blur(16px) brightness(0.4); opacity: 0.65;"></div>
+                                    <img src="<?php echo $imgUrl; ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="position-relative" style="max-height: 180px; max-width: 100%; object-fit: contain; z-index: 1; padding: 6px;" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='../assets/img/logo.png';">
+                                </div>
                                 <div class="card-body p-4 d-flex flex-column">
                                     <div class="d-flex flex-wrap gap-2 mb-2">
                                         <span class="badge bg-soft-primary text-primary rounded-pill px-3"><?php echo htmlspecialchars($c['category']); ?></span>
@@ -218,5 +226,10 @@ try {
     </section>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <?php
+    $base_url = '../';
+    require_once '../config/database.php';
+    require_once __DIR__ . '/../includes/chat_widget.php';
+    ?>
 </body>
-</html>
+</html>

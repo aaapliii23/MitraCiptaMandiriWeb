@@ -1,12 +1,13 @@
 <!-- Instructor Modal -->
 <div class="modal fade" id="instructorModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow" style="border-radius: 1rem;">
             <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
                 <h5 class="modal-title fw-bold" id="instructorModalTitle">Tambah Instruktur / Asesor</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="instructorForm" action="<?php echo $adminBase; ?>/actions/manage_instructors.php" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault(); submitAjaxForm('instructorForm');">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(mcm_csrf_token()); ?>">
                 <div class="modal-body p-4">
                     <input type="hidden" name="action" id="instructorAction" value="create">
                     <input type="hidden" name="id" id="instructorId">
@@ -27,6 +28,11 @@
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Spesialisasi / Gelar</label>
                         <input type="text" class="form-control" name="specialization" id="instructorSpec" required placeholder="Contoh: Ahli Tata Rias">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Sertifikasi / Lisensi</label>
+                        <textarea class="form-control" name="certifications" id="instructorCerts" rows="3" placeholder="Certified Social Media Strategist, TikTok E-commerce Specialist"></textarea>
+                        <small class="text-muted">Pisahkan dengan koma atau baris baru — akan tampil sebagai badge di halaman publik.</small>
                     </div>
                     <div class="mb-1">
                         <label class="form-label small fw-bold">Foto Profil</label>

@@ -52,13 +52,19 @@
             </button>
         </div>
 
+        <div data-bulk-table="cert_templates">
+        <div class="admin-table-toolbar d-none" data-bulk-toolbar>
+            <div class="small fw-bold text-primary"><i class="fas fa-check-square me-1"></i><span data-bulk-count>0 dipilih</span></div>
+            <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" data-bulk-delete><i class="fas fa-trash me-1"></i>Hapus Terpilih (<span data-bulk-count-num>0</span>)</button>
+        </div>
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table align-middle mb-0">
+                <div class="table-responsive table-responsive--no-scroll">
+                    <table class="table align-middle admin-compact mb-0">
                         <thead class="bg-light">
                             <tr>
-                                <th class="ps-4">Template</th>
+                                <th class="col-check"><input type="checkbox" class="bulk-select-all js-bulk-select-all"></th>
+                                <th>Template</th>
                                 <th>Program</th>
                                 <th>Layout</th>
                                 <th>Aksen</th>
@@ -68,20 +74,21 @@
                         </thead>
                         <tbody>
                             <?php if (empty($certTemplates)): ?>
-                                <tr><td colspan="6" class="text-center py-5 text-muted">Belum ada template sertifikat.</td></tr>
+                                <tr><td colspan="7" class="text-center py-5 text-muted">Belum ada template sertifikat.</td></tr>
                             <?php else: ?>
                                 <?php foreach ($certTemplates as $tm):
                                     $layoutLabels = ['default' => 'Standar', 'elegant' => 'Elegant', 'modern' => 'Modern', 'premium' => 'Premium'];
                                 ?>
                                 <tr>
-                                    <td class="ps-4">
-                                        <span class="fw-bold text-dark"><?php echo htmlspecialchars($tm['name']); ?></span>
+                                    <td class="col-check"><input type="checkbox" class="bulk-row-check js-bulk-row" value="<?php echo (int)$tm['id']; ?>"></td>
+                                    <td>
+                                        <span class="fw-bold text-dark cell-ellipsis" title="<?php echo htmlspecialchars($tm['name']); ?>" style="max-width:160px;"><?php echo htmlspecialchars($tm['name']); ?></span>
                                         <?php if (!empty($tm['bg_image'])): ?>
-                                            <span class="text-muted small d-block"><i class="fas fa-image me-1" style="font-size: 0.7rem;"></i>Dengan gambar latar</span>
+                                            <span class="text-muted small d-block" style="font-size:0.65rem;"><i class="fas fa-image me-1"></i>bg</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="text-muted small"><?php echo htmlspecialchars($tm['class_name'] ?? 'Semua Program'); ?></td>
-                                    <td><span class="badge badge-soft-primary"><?php echo $layoutLabels[$tm['layout']] ?? $tm['layout']; ?></span></td>
+                                    <td><span class="cell-ellipsis small text-muted" title="<?php echo htmlspecialchars($tm['class_name'] ?? ''); ?>" style="max-width:140px;"><?php echo htmlspecialchars($tm['class_name'] ?? 'Semua Program'); ?></span></td>
+                                    <td><span class="badge badge-soft-primary" style="font-size:0.68rem;"><?php echo $layoutLabels[$tm['layout']] ?? $tm['layout']; ?></span></td>
                                     <td>
                                         <?php if (!empty($tm['accent_color'])): ?>
                                             <span class="d-inline-block rounded-circle border" style="width: 18px; height: 18px; background: <?php echo htmlspecialchars($tm['accent_color']); ?>;"></span>
@@ -102,4 +109,5 @@
                     </table>
                 </div>
             </div>
+        </div>
         </div>

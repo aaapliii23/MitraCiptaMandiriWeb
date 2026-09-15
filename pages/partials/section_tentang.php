@@ -5,7 +5,7 @@
                 <div class="col-lg-6 mb-5 mb-lg-0" data-aos="fade-right">
                     <!-- Placeholder for About Image, using a colored div or unspash placeholder -->
                     <div class="position-relative">
-                        <img src="<?php echo htmlspecialchars(asset_src('assets/img/gallery/slide_landingpages/WhatsApp Image 2026-08-14 at 14.44.00.jpeg')); ?>" alt="Tentang MCM" class="img-fluid rounded-4 shadow-lg w-100" style="object-fit: cover; max-height: 450px;" onerror="this.onerror=null;this.src='assets/img/hero-bg.jpg';">
+                        <img src="<?php echo htmlspecialchars(asset_src('assets/img/gallery/slide_landingpages/WhatsApp Image 2026-08-14 at 14.44.00.jpeg')); ?>" alt="Tentang MCM" class="img-fluid rounded-4 shadow-lg w-100" style="object-fit: cover; max-height: 450px;" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='assets/img/hero-bg.jpg';">
                     </div>
                 </div>
                 <div class="col-lg-6 ps-lg-5" data-aos="fade-left">

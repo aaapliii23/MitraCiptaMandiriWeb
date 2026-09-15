@@ -8,6 +8,17 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 }
 
 require_once '../../config/database.php';
+require_once '../../includes/security.php';
+mcm_cors_headers();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!mcm_csrf_verify($_POST['csrf_token'] ?? $_POST['_token'] ?? '')) {
+        echo json_encode(['status'=>'error','message'=>'CSRF token tidak valid. Muat ulang halaman.']); exit;
+    }
+    $rateKey = 'admin_' . basename(__FILE__, '.php') . '_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    $rl = mcm_rate_limit($rateKey, 30, 60);
+    if (!$rl['allowed']) { echo json_encode(['status'=>'error','message'=>$rl['message']]); exit; }
+}
+require_once '../../includes/cloudinary.php';
 
 // Auto-create tables
 try {
@@ -29,6 +40,8 @@ try {
       `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    $colsFL = $pdo->query("SHOW COLUMNS FROM facility_locations")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('image_public_id', $colsFL)) $pdo->exec("ALTER TABLE facility_locations ADD COLUMN image_public_id VARCHAR(255) DEFAULT NULL AFTER image");
 
     // Seed default categories if table empty
     $catCount = (int)$pdo->query("SELECT COUNT(*) FROM facility_categories")->fetchColumn();
@@ -49,6 +62,7 @@ try {
         }
     }
 } catch (PDOException $e) {}
+try { $colsFL2 = $pdo->query("SHOW COLUMNS FROM facility_locations")->fetchAll(PDO::FETCH_COLUMN); if (!in_array('image_public_id', $colsFL2)) $pdo->exec("ALTER TABLE facility_locations ADD COLUMN image_public_id VARCHAR(255) DEFAULT NULL AFTER image"); } catch (Throwable $e) {}
 
 $action = $_POST['action'] ?? '';
 
@@ -85,7 +99,27 @@ if ($action === 'create_category') {
             @mkdir($dir, 0777, true);
         }
         echo json_encode(['status' => 'success', 'message' => "Kategori '$name' berhasil ditambahkan."]);
-    } else {
+    
+} elseif ($action === 'bulk_delete') {
+    $raw = $_POST['ids'] ?? '';
+    $ids = [];
+    if (is_array($raw)) $ids = $raw;
+    elseif (is_string($raw) && $raw !== '') { $d=json_decode($raw,true); $ids=is_array($d)?$d:array_filter(array_map('trim',explode(',',$raw))); }
+    $ids = array_values(array_unique(array_filter(array_map('intval',$ids))));
+    if (empty($ids)) { echo json_encode(['status'=>'error','message'=>'Tidak ada data terpilih']); exit; }
+    if (count($ids)>100) { echo json_encode(['status'=>'error','message'=>'Maksimal 100']); exit; }
+    try {
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        try { $stmt=$pdo->prepare("SELECT image, image_public_id FROM facility_locations WHERE id IN ($ph)"); $stmt->execute($ids); $rows=$stmt->fetchAll(); } catch (PDOException $e) { $rows=[]; }
+        $del=$pdo->prepare("DELETE FROM facility_locations WHERE id IN ($ph)"); $del->execute($ids);
+        foreach($rows as $r) {
+            if (!empty($r['image_public_id']) || str_contains($r['image']??'','res.cloudinary.com')) { $pid=$r['image_public_id']?:$r['image']; $res=deleteImageFromCloudinary($pid); if(!$res['ok']) error_log("[Cloudinary bulk facility] ".$res['error']); }
+            if (!empty($r['image']) && strpos($r['image'],'http')!==0 && file_exists('../../'.$r['image'])) @unlink('../../'.$r['image']);
+        }
+        echo json_encode(['status'=>'success','message'=> $del->rowCount().' foto fasilitas dihapus']);
+    } catch (PDOException $e) { echo json_encode(['status'=>'error','message'=>'Gagal hapus massal']); }
+    exit;
+} else {
         echo json_encode(['status' => 'error', 'message' => 'Gagal menambahkan kategori.']);
     }
     exit;
@@ -149,7 +183,6 @@ if ($action === 'create') {
         mkdir($uploadDir, 0777, true);
     }
 
-    $allowed = ['jpg', 'jpeg', 'png', 'webp', 'heic'];
     $successCount = 0;
     $totalFiles = count($_FILES['images']['name']);
     $errors = [];
@@ -157,28 +190,19 @@ if ($action === 'create') {
     for ($i = 0; $i < $totalFiles; $i++) {
         $filename = $_FILES['images']['name'][$i];
         $errCode = $_FILES['images']['error'][$i];
-
         if ($errCode !== UPLOAD_ERR_OK) {
             $errors[] = "'$filename' gagal terupload (error $errCode).";
             continue;
         }
-
-        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        if (!in_array($ext, $allowed)) {
-            $errors[] = "'$filename' format tidak didukung (hanya jpg, jpeg, png, webp).";
-            continue;
-        }
-
-        $newFilename = uniqid('fac_') . '_' . $i . '.' . ($ext === 'heic' ? 'jpg' : $ext);
-        $destination = 'uploads/facilities/' . $newFilename;
-        $fullPath = '../../' . $destination;
-
-        if (move_uploaded_file($_FILES['images']['tmp_name'][$i], $fullPath)) {
-            $itemTitle = ($totalFiles > 1) ? ($title . ' (' . ($i + 1) . ')') : $title;
-            $stmt = $pdo->prepare("INSERT INTO facility_locations (category, title, image, description) VALUES (?, ?, ?, ?)");
-            if ($stmt->execute([$category, $itemTitle, $destination, $description])) {
-                $successCount++;
-            }
+        $file = ['name'=>$filename,'type'=>$_FILES['images']['type'][$i],'tmp_name'=>$_FILES['images']['tmp_name'][$i],'error'=>$errCode,'size'=>$_FILES['images']['size'][$i]];
+        $res = uploadImageToCloudinary($file, 'mcm/facilities');
+        if (!$res['ok']) { $errors[] = "'$filename' ".$res['error']; continue; }
+        $destination = $res['url'];
+        $publicId = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']);
+        $itemTitle = ($totalFiles > 1) ? ($title . ' (' . ($i + 1) . ')') : $title;
+        $stmt = $pdo->prepare("INSERT INTO facility_locations (category, title, image, image_public_id, description) VALUES (?, ?, ?, ?, ?)");
+        if ($stmt->execute([$category, $itemTitle, $destination, $publicId, $description])) {
+            $successCount++;
         }
     }
 
@@ -206,25 +230,17 @@ if ($action === 'update') {
         exit;
     }
 
-    $imagePath = null;
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $allowed = ['jpg', 'jpeg', 'png', 'webp'];
-        $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
-        if (in_array($ext, $allowed)) {
-            $uploadDir = '../../uploads/facilities';
-            if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
-
-            $newFilename = uniqid('fac_') . '.' . $ext;
-            $destination = 'uploads/facilities/' . $newFilename;
-            if (move_uploaded_file($_FILES['image']['tmp_name'], '../../' . $destination)) {
-                $imagePath = $destination;
-            }
-        }
+    $imagePath = null; $imagePublicId = null;
+    if (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        if ($_FILES['image']['error'] !== UPLOAD_ERR_OK) { echo json_encode(['status'=>'error','message'=>'Upload gagal.']); exit; }
+        $res = uploadImageToCloudinary($_FILES['image'], 'mcm/facilities');
+        if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
+        $imagePath = $res['url']; $imagePublicId = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']);
     }
 
     if ($imagePath) {
-        $stmt = $pdo->prepare("UPDATE facility_locations SET category = ?, title = ?, description = ?, image = ? WHERE id = ?");
-        $res = $stmt->execute([$category, $title, $description, $imagePath, $id]);
+        $stmt = $pdo->prepare("UPDATE facility_locations SET category = ?, title = ?, description = ?, image = ?, image_public_id = ? WHERE id = ?");
+        $res = $stmt->execute([$category, $title, $description, $imagePath, $imagePublicId, $id]);
     } else {
         $stmt = $pdo->prepare("UPDATE facility_locations SET category = ?, title = ?, description = ? WHERE id = ?");
         $res = $stmt->execute([$category, $title, $description, $id]);
@@ -246,19 +262,19 @@ if ($action === 'delete') {
         exit;
     }
 
-    $stmt = $pdo->prepare("SELECT image FROM facility_locations WHERE id = ?");
-    $stmt->execute([$id]);
-    $item = $stmt->fetch();
-
-    if ($item && !empty($item['image']) && strpos($item['image'], 'uploads/facilities/') === 0) {
-        $file = '../../' . $item['image'];
-        if (file_exists($file)) {
-            @unlink($file);
-        }
-    }
+    try { $stmt = $pdo->prepare("SELECT image, image_public_id FROM facility_locations WHERE id = ?"); $stmt->execute([$id]); $item = $stmt->fetch(); } catch (PDOException $e) { $stmt = $pdo->prepare("SELECT image FROM facility_locations WHERE id = ?"); $stmt->execute([$id]); $item = $stmt->fetch(); if ($item) $item['image_public_id'] = ''; }
 
     $del = $pdo->prepare("DELETE FROM facility_locations WHERE id = ?");
     if ($del->execute([$id])) {
+        if ($item && (!empty($item['image_public_id']) || str_contains($item['image'] ?? '', 'res.cloudinary.com'))) { $pid = $item['image_public_id'] ?: $item['image']; $delRes = deleteImageFromCloudinary($pid); if (!$delRes['ok']) error_log("[Cloudinary delete facility_locations $id] ".$delRes['error']); }
+        if ($item && !empty($item['image']) && strpos($item['image'], 'uploads/facilities/') === 0) {
+            $file = '../../' . $item['image'];
+            if (file_exists($file)) {
+                @unlink($file);
+            }
+        } elseif ($item && !empty($item['image']) && strpos($item['image'], 'http') !== 0 && file_exists('../../' . $item['image'])) {
+            @unlink('../../' . $item['image']);
+        }
         echo json_encode(['status' => 'success', 'message' => 'Foto lokasi berhasil dihapus.']);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus foto lokasi.']);

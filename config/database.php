@@ -1,8 +1,9 @@
 <?php
-$host = 'localhost';
-$dbname = 'mcm_db';
-$username = 'root';
-$password = '';
+if (file_exists(__DIR__ . '/secrets.php')) require_once __DIR__ . '/secrets.php';
+$host = defined('DB_HOST') ? DB_HOST : (getenv('DB_HOST') ?: 'localhost');
+$dbname = defined('DB_NAME') ? DB_NAME : (getenv('DB_NAME') ?: 'mcm_db');
+$username = defined('DB_USER') ? DB_USER : (getenv('DB_USER') ?: 'root');
+$password = defined('DB_PASS') ? DB_PASS : (getenv('DB_PASS') ?: 'password');
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
@@ -10,6 +11,22 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     // Optional: Set default fetch mode to associative array
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    // Auto-migrate: chat_messages.sender_type (dibutuhkan chat_api.php & whatsapp_client.php terbaru)
+    try {
+        $pdo->query("SELECT sender_type FROM chat_messages LIMIT 1");
+    } catch (PDOException $e) {
+        try { $pdo->exec("ALTER TABLE chat_messages ADD COLUMN sender_type ENUM('visitor','bot','admin') NOT NULL DEFAULT 'visitor' AFTER direction"); } catch (PDOException $e2) {}
+        try { $pdo->exec("ALTER TABLE chat_messages ADD INDEX idx_chat_wa_number (wa_number)"); } catch (PDOException $e2) {}
+        try { $pdo->exec("ALTER TABLE chat_messages ADD INDEX idx_chat_sender_type (sender_type)"); } catch (PDOException $e2) {}
+    }
+    // Auto-migrate: chat_messages.is_read & read_at (dibutuhkan fitur status dibaca/dilihat)
+    try {
+        $pdo->query("SELECT is_read, read_at FROM chat_messages LIMIT 1");
+    } catch (PDOException $e) {
+        try { $pdo->exec("ALTER TABLE chat_messages ADD COLUMN is_read TINYINT(1) NOT NULL DEFAULT 0 AFTER matched_intent"); } catch (PDOException $e2) {}
+        try { $pdo->exec("ALTER TABLE chat_messages ADD COLUMN read_at DATETIME NULL AFTER is_read"); } catch (PDOException $e2) {}
+        try { $pdo->exec("ALTER TABLE chat_messages ADD INDEX idx_chat_is_read (is_read)"); } catch (PDOException $e2) {}
+    }
 } catch (PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }
@@ -49,4 +66,22 @@ function mcm_setting($key, $default = '') {
         } catch (PDOException $e) {}
     }
     return (isset($cache[$key]) && $cache[$key] !== '') ? $cache[$key] : $default;
+}
+
+function mcm_wa_admin_link($text = '') {
+    $raw = mcm_setting('admin_whatsapp', '628978902864');
+    $digits = preg_replace('/\D+/', '', $raw);
+    if (strpos($digits, '0') === 0) {
+        $digits = '62' . substr($digits, 1);
+    } elseif (strpos($digits, '62') !== 0 && $digits !== '') {
+        $digits = '62' . $digits;
+    }
+    if ($digits === '') {
+        $digits = '628978902864';
+    }
+    $url = 'https://wa.me/' . $digits;
+    if ($text !== '') {
+        $url .= '?text=' . rawurlencode($text);
+    }
+    return $url;
 }

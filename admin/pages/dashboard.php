@@ -1,19 +1,22 @@
 <!-- DASHBOARD HOME -->
-        <div class="mb-4 d-flex justify-content-between align-items-end" data-aos="fade-down">
-            <div>
+        <div class="mb-4 d-flex justify-content-between align-items-end position-relative" style="z-index: 20;" data-aos="fade-down">
+            <div class="flex-grow-1" style="min-width: 0;">
                 <div class="d-flex align-items-center mb-1">
-                    <div class="p-2 rounded-3 me-3 bg-white shadow-sm border" style="color: <?php echo $greetColor; ?>;">
+                    <div class="p-2 rounded-3 me-2 me-sm-3 bg-white shadow-sm border flex-shrink-0" style="color: <?php echo $greetColor; ?>;">
                         <i class="fas <?php echo $greetIcon; ?> fs-4"></i>
                     </div>
-                    <h2 class="fw-bold mb-0 text-dark"><?php echo $greeting; ?>, <span class="gradient-text"><?php echo explode(' ', $_SESSION['admin_username'])[0]; ?>!</span></h2>
+                    <h2 class="fw-bold mb-0 text-dark"><?php echo $greeting; ?>, <span class="gradient-text"><?php echo htmlspecialchars(explode(' ', $_SESSION['admin_username'])[0]); ?>!</span></h2>
                 </div>
-                <p class="text-muted mb-0 ps-5 ms-2">Platform MCM berjalan optimal hari ini. Berikut ringkasan performa terbaru.</p>
-                <div class="greet-line ms-5 ps-2"></div>
+                <p class="text-muted mb-0 ps-4 ps-sm-5 ms-1 ms-sm-2" style="font-size: 0.82rem; line-height: 1.35;">Platform MCM berjalan optimal hari ini. Berikut ringkasan performa terbaru.</p>
+                <div class="greet-line ms-4 ms-sm-5 ps-1"></div>
             </div>
-            <div class="d-none d-md-block">
-                <span class="badge bg-white text-dark shadow-sm py-2 px-3 rounded-pill border">
-                    <i class="far fa-calendar-alt me-2 text-primary"></i><?php echo date('d F Y'); ?>
-                </span>
+            <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-3 ms-sm-4 pb-1" style="transform: translateY(16px);">
+                <?php include __DIR__ . '/dashboard_header_notifs.php'; ?>
+                <div class="d-none d-md-block">
+                    <span class="badge bg-white text-dark shadow-sm py-2 px-3 rounded-pill border">
+                        <i class="far fa-calendar-alt me-2 text-primary"></i><?php echo date('d F Y'); ?>
+                    </span>
+                </div>
             </div>
         </div>
 
@@ -274,18 +277,12 @@
                         type: 'doughnut',
                         data: {
                             labels: catLabels,
-                            datasets: [{
-                                data: catCounts,
-                                backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#7c3aed', '#ef4444', '#64748b'],
-                                borderWidth: 0
-                            }]
+                            datasets: [{ data: catCounts, backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#7c3aed', '#ef4444', '#64748b'], borderWidth: 0 }]
                         },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
-                            plugins: {
-                                legend: { position: 'bottom', labels: { boxWidth: 12, padding: 20, font: { family: 'Plus Jakarta Sans', weight: '600' } } }
-                            },
+                            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 20, font: { family: 'Plus Jakarta Sans', weight: '600' } } } },
                             cutout: '75%'
                         }
                     });

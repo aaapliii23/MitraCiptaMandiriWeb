@@ -9,6 +9,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="facilityForm" class="ajax-form" action="<?php echo $adminBase; ?>/actions/manage_facilities.php" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(mcm_csrf_token()); ?>">
                 <input type="hidden" name="action" id="facilityAction" value="create">
                 <input type="hidden" name="id" id="facilityId" value="">
 
@@ -87,6 +88,7 @@
                 <div class="card border-0 bg-light rounded-4 p-3 mb-4">
                     <h6 class="fw-bold text-dark mb-3"><i class="fas fa-plus-circle me-2 text-primary"></i>Tambah Kategori Baru</h6>
                     <form id="facilityCatForm" class="ajax-form" action="<?php echo $adminBase; ?>/actions/manage_facilities.php" method="POST">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(mcm_csrf_token()); ?>">
                         <input type="hidden" name="action" value="create_category">
                         <div class="row g-2 align-items-end">
                             <div class="col-md-5">

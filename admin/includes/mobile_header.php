@@ -1,4 +1,4 @@
-    <div class="d-lg-none sticky-top bg-white py-2 px-3 shadow-sm border-bottom mb-3 d-flex justify-content-between align-items-center" style="z-index: 1030;">
+    <div class="d-lg-none sticky-top bg-white py-2 px-3 shadow-sm border-bottom mb-3 d-flex justify-content-between align-items-center" style="z-index: 1050;">
         <a href="?page=dashboard" class="d-flex align-items-center text-decoration-none">
             <img src="../assets/img/logo.png" alt="MCM Logo" height="32" class="me-2">
             <div class="brand-text">
@@ -16,7 +16,7 @@
                     </div>
                 </div>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 mt-2" style="min-width: 200px; z-index: 2000;">
+            <ul class="dropdown-menu dropdown-menu-end shadow-lg border rounded-4 mt-2" style="min-width: 210px; background-color: #ffffff !important; border-color: rgba(0,0,0,0.08) !important; z-index: 2000;">
                 <li class="px-3 pt-2 pb-1">
                     <span class="text-muted small fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 1px;">Sistem</span>
                 </li>

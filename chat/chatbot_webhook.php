@@ -49,15 +49,24 @@ if (!is_array($payload)) {
     $payload = $_POST;
 }
 
-// Ekstrak pesan (dukung format Meta Cloud API + format sederhana)
-$from = $payload['entry'][0]['changes'][0]['value']['messages'][0]['from'] ?? null;
-$text = $payload['entry'][0]['changes'][0]['value']['messages'][0]['text']['body'] ?? null;
-if ($from === null && isset($payload['from'])) {
+// Ekstrak pesan — dukung format Fonnte (sender/message) & Meta Cloud API (entry...messages)
+$from = null;
+$text = null;
+if (isset($payload['sender'])) {
+    // Format Fonnte
+    $from = $payload['sender'];
+    $text = $payload['message'] ?? '';
+} elseif (isset($payload['from'])) {
     $from = $payload['from'];
-    $text = $payload['message'] ?? $payload['text'] ?? null;
+    $text = $payload['message'] ?? $payload['text'] ?? '';
+} else {
+    // Format Meta Cloud API
+    $from = $payload['entry'][0]['changes'][0]['value']['messages'][0]['from'] ?? null;
+    $text = $payload['entry'][0]['changes'][0]['value']['messages'][0]['text']['body'] ?? null;
 }
 
 if ($from === null) {
+    error_log('[chatbot_webhook] payload tidak dikenali: ' . substr($body, 0, 300));
     echo json_encode(['status' => 'ok', 'message' => 'No message']);
     exit;
 }

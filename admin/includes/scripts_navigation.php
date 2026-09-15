@@ -57,6 +57,7 @@ async function loadContent(url, pushState = true) {
             initCounters();
             initAjaxLinks();
             reinitBootstrapModals();
+            if (typeof initBulkTables === 'function') initBulkTables();
             
             // Re-init Reports if on reports page
             if (pageName === 'reports' && typeof initReportsChart === 'function') {
@@ -66,6 +67,11 @@ async function loadContent(url, pushState = true) {
             // (b) AJAX nav: init chart keuangan setelah konten finance ter-inject
             if (pageName === 'finance' && typeof initGrafikArusKas === 'function') {
                 initGrafikArusKas();
+            }
+
+            // Clear notification badge when admin opens chat or orders
+            if (typeof window.MCMNotifClearBadges === 'function') {
+                window.MCMNotifClearBadges(pageName);
             }
             
             window.scrollTo(0, 0);

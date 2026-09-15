@@ -43,11 +43,17 @@
                 <div id="<?php echo $accId; ?>" class="accordion-collapse collapse"
                      data-bs-parent="#materialsAccordion">
                     <div class="accordion-body p-0">
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0">
+                        <div data-bulk-table="materials">
+                        <div class="admin-table-toolbar d-none mx-3 mt-3" data-bulk-toolbar>
+                            <div class="small fw-bold text-primary"><i class="fas fa-check-square me-1"></i><span data-bulk-count>0 dipilih</span></div>
+                            <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" data-bulk-delete><i class="fas fa-trash me-1"></i>Hapus (<span data-bulk-count-num>0</span>)</button>
+                        </div>
+                        <div class="table-responsive table-responsive--no-scroll">
+                            <table class="table align-middle admin-compact mb-0">
                                 <thead class="bg-light">
                                     <tr>
-                                        <th class="ps-4">Judul Materi</th>
+                                        <th class="col-check"><input type="checkbox" class="bulk-select-all js-bulk-select-all"></th>
+                                        <th>Judul Materi</th>
                                         <th>Tipe</th>
                                         <th class="text-center">Urutan</th>
                                         <th class="text-end pe-4">Aksi</th>
@@ -56,7 +62,8 @@
                                 <tbody>
                                     <?php foreach ($items as $m): ?>
                                     <tr>
-                                        <td class="ps-4 fw-bold text-dark"><?php echo htmlspecialchars($m['title']); ?></td>
+                                        <td class="col-check"><input type="checkbox" class="bulk-row-check js-bulk-row" value="<?php echo (int)$m['id']; ?>"></td>
+                                        <td class="fw-bold text-dark"><span class="cell-ellipsis" title="<?php echo htmlspecialchars($m['title']); ?>" style="max-width:220px;"><?php echo htmlspecialchars($m['title']); ?></span></td>
                                         <td>
                                             <span class="badge rounded-pill px-3 text-uppercase
                                                 <?php echo $m['type'] === 'video' ? 'bg-danger bg-opacity-10 text-danger' : ($m['type'] === 'pdf' ? 'bg-warning bg-opacity-10 text-warning' : 'bg-info bg-opacity-10 text-info'); ?>">
@@ -75,6 +82,7 @@
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
+                        </div>
                         </div>
                     </div>
                 </div>

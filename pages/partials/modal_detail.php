@@ -26,8 +26,9 @@
                             <!-- Hero Brief -->
                             <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
                                 <div class="row g-0">
-                                    <div class="col-md-5">
-                                        <img src="" id="detailModalImage" class="w-100 h-100" style="object-fit: cover; min-height: 250px;" alt="Banner">
+                                    <div class="col-md-5 position-relative d-flex align-items-center justify-content-center" style="background:#0f172a; min-height: 260px; overflow: hidden;">
+                                        <div id="detailModalImageBg" style="position: absolute; inset: -20px; background-size: cover; background-position: center; filter: blur(20px) brightness(0.4); opacity: 0.7;"></div>
+                                        <img src="" id="detailModalImage" class="img-fluid position-relative" style="max-height: 280px; max-width: 100%; object-fit: contain; z-index: 1; padding: 8px;" alt="Banner">
                                     </div>
                                     <div class="col-md-7 p-4 p-md-5 d-flex flex-column justify-content-center">
                                         <div class="badge mb-3 p-2 px-3 rounded-pill d-inline-block" style="width: fit-content; background-color: rgba(14, 165, 233, 0.1); color: #0ea5e9;">PROFIL PROGRAM</div>
@@ -159,13 +160,13 @@
                                 
                                 <div class="text-start">
                                     <h6 class="fw-bold mb-3 small text-uppercase" style="letter-spacing: 1px;">Konsultasi Gratis</h6>
-                                    <div class="d-flex align-items-center p-3 rounded-4 bg-light border border-light">
+                                    <a href="<?php echo mcm_wa_admin_link('Halo Admin MCM, saya ingin konsultasi program pelatihan.'); ?>" target="_blank" rel="noopener" class="d-flex align-items-center p-3 rounded-4 bg-light border border-light text-decoration-none shadow-sm transition-all hover-lift" id="modalDetailWaLink" data-wa-digits="<?php echo preg_replace('/\D+/', '', mcm_wa_admin_link()); ?>" style="cursor: pointer;">
                                         <i class="fab fa-whatsapp fs-3 text-success me-3"></i>
                                         <div>
-                                            <p class="small fw-bold mb-0">Hubungi Admin</p>
-                                            <a href="<?php echo "https://wa.me/" . preg_replace("/\D/", "", mcm_setting("admin_whatsapp", "6285793935707")); ?>" target="_blank" class="small text-decoration-none text-primary">Tanya lewat WA</a>
+                                            <p class="small fw-bold mb-0 text-dark">Hubungi Admin</p>
+                                            <span class="small text-primary">Tanya lewat WA <i class="fas fa-arrow-right ms-1" style="font-size: 0.7rem;"></i></span>
                                         </div>
-                                    </div>
+                                    </a>
                                 </div>
 
                                 <div class="mt-4 p-3 rounded-4 border border-dashed text-center">

@@ -46,6 +46,17 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 }
 
 require_once '../../config/database.php';
+require_once '../../includes/security.php';
+mcm_cors_headers();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!mcm_csrf_verify($_POST['csrf_token'] ?? $_POST['_token'] ?? '')) {
+        echo json_encode(['status'=>'error','message'=>'CSRF token tidak valid. Muat ulang halaman.']); exit;
+    }
+    $rateKey = 'admin_' . basename(__FILE__, '.php') . '_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    $rl = mcm_rate_limit($rateKey, 30, 60);
+    if (!$rl['allowed']) { echo json_encode(['status'=>'error','message'=>$rl['message']]); exit; }
+}
+require_once '../../includes/cloudinary.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['action'])) {
     $maxPost = parseIniSize(ini_get('post_max_size'));
@@ -108,23 +119,18 @@ if ($action === 'create') {
                 continue;
             }
 
-            $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-            
-            if (in_array($ext, $allowed)) {
-                $newFilename = uniqid() . '_' . $i . '.' . $ext;
-                $destination = 'uploads/gallery/' . $newFilename;
-                
-                if (move_uploaded_file($_FILES['images']['tmp_name'][$i], '../../' . $destination)) {
-                    $itemTitle = ($totalFiles > 1) ? ($title . ' (' . ($i + 1) . ')') : $title;
-                    $stmt = $pdo->prepare("INSERT INTO gallery (category, title, image, show_on_home) VALUES (?, ?, ?, ?)");
-                    if ($stmt->execute([$category, $itemTitle, $destination, $showOnHome])) {
-                        $successCount++;
-                    }
-                } else {
-                    $errors[] = "'$filename' gagal disimpan (cek permission folder uploads/gallery).";
+            $file = ['name'=>$_FILES['images']['name'][$i],'type'=>$_FILES['images']['type'][$i],'tmp_name'=>$_FILES['images']['tmp_name'][$i],'error'=>$_FILES['images']['error'][$i],'size'=>$_FILES['images']['size'][$i]];
+            $res = uploadImageToCloudinary($file, 'mcm/gallery');
+            if ($res['ok']) {
+                $destination = $res['url'];
+                $publicId = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']);
+                $itemTitle = ($totalFiles > 1) ? ($title . ' (' . ($i + 1) . ')') : $title;
+                $stmt = $pdo->prepare("INSERT INTO gallery (category, title, image, image_public_id, show_on_home) VALUES (?, ?, ?, ?, ?)");
+                if ($stmt->execute([$category, $itemTitle, $destination, $publicId, $showOnHome])) {
+                    $successCount++;
                 }
             } else {
-                $errors[] = "'$filename' format tidak didukung (hanya jpg/jpeg/png/webp).";
+                $errors[] = "'$filename' " . $res['error'];
             }
         }
 
@@ -153,7 +159,7 @@ if ($action === 'create') {
             respondJson(['status' => 'error', 'message' => 'Semua kolom wajib diisi.']);
         }
 
-        $stmt = $pdo->prepare("SELECT image FROM gallery WHERE id=?");
+        $stmt = $pdo->prepare("SELECT image, image_public_id FROM gallery WHERE id=?");
         $stmt->execute([$id]);
         $photo = $stmt->fetch();
         if (!$photo) {
@@ -161,6 +167,7 @@ if ($action === 'create') {
         }
 
         $image = $photo['image'];
+        $imagePublicId = $photo['image_public_id'] ?? '';
 
         if (isset($_FILES['images']) && !empty($_FILES['images']['name'][0])) {
             $filename = $_FILES['images']['name'][0];
@@ -173,28 +180,17 @@ if ($action === 'create') {
                 respondJson(['status' => 'error', 'message' => 'File gagal terupload, coba lagi.']);
             }
 
-            $allowed = ['jpg', 'jpeg', 'png', 'webp'];
-            $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-
-            if (!in_array($ext, $allowed)) {
-                respondJson(['status' => 'error', 'message' => 'Format gambar tidak didukung (hanya jpg/jpeg/png/webp).']);
-            }
-
-            $newFilename = uniqid() . '_0.' . $ext;
-            $destination = 'uploads/gallery/' . $newFilename;
-
-            if (move_uploaded_file($_FILES['images']['tmp_name'][0], '../../' . $destination)) {
-                if (strpos($photo['image'], 'http') !== 0 && file_exists('../../' . $photo['image'])) {
-                    unlink('../../' . $photo['image']);
-                }
-                $image = $destination;
+            $file = ['name'=>$_FILES['images']['name'][0],'type'=>$_FILES['images']['type'][0],'tmp_name'=>$_FILES['images']['tmp_name'][0],'error'=>$_FILES['images']['error'][0],'size'=>$_FILES['images']['size'][0]];
+            $res = uploadImageToCloudinary($file, 'mcm/gallery');
+            if ($res['ok']) {
+                $image = $res['url']; $imagePublicId = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']);
             } else {
-                respondJson(['status' => 'error', 'message' => 'Gagal menyimpan gambar baru.']);
+                respondJson(['status' => 'error', 'message' => $res['error']]);
             }
         }
 
-        $upd = $pdo->prepare("UPDATE gallery SET title = ?, category = ?, image = ?, show_on_home = ? WHERE id = ?");
-        if ($upd->execute([$title, $category, $image, $showOnHome, $id])) {
+        $upd = $pdo->prepare("UPDATE gallery SET title=?, category=?, image=?, image_public_id=?, show_on_home=? WHERE id=?");
+        if ($upd->execute([$title, $category, $image, $imagePublicId, $showOnHome, $id])) {
             respondJson(['status' => 'success', 'message' => 'Foto berhasil diperbarui.']);
         } else {
             respondJson(['status' => 'error', 'message' => 'Gagal memperbarui foto.']);
@@ -210,12 +206,13 @@ if ($action === 'create') {
         respondJson(['status' => 'error', 'message' => 'ID tidak valid.']);
     }
     
-    $stmt = $pdo->prepare("SELECT image FROM gallery WHERE id=?");
+    $stmt = $pdo->prepare("SELECT image, image_public_id FROM gallery WHERE id=?");
     $stmt->execute([$id]);
     $photo = $stmt->fetch();
     
     $del = $pdo->prepare("DELETE FROM gallery WHERE id=?");
     if ($del->execute([$id])) {
+        if (!empty($photo['image_public_id']) || str_contains($photo['image'], 'res.cloudinary.com')) { $pid = $photo['image_public_id'] ?: $photo['image']; $delRes = deleteImageFromCloudinary($pid); if (!$delRes['ok']) error_log("[Cloudinary delete gallery $id] ".$delRes['error']); }
         if ($photo && strpos($photo['image'], 'http') !== 0 && file_exists('../../' . $photo['image'])) {
             unlink('../../' . $photo['image']);
         }
@@ -223,6 +220,22 @@ if ($action === 'create') {
     } else {
         respondJson(['status' => 'error', 'message' => 'Gagal menghapus foto.']);
     }
+} elseif ($action === 'bulk_delete') {
+    $raw = $_POST['ids'] ?? '';
+    $ids = [];
+    if (is_array($raw)) $ids = $raw;
+    elseif (is_string($raw) && $raw !== '') { $d=json_decode($raw,true); $ids=is_array($d)?$d:array_filter(array_map('trim',explode(',',$raw))); }
+    $ids = array_values(array_unique(array_filter(array_map('intval',$ids))));
+    if (empty($ids)) { respondJson(['status'=>'error','message'=>'Tidak ada data terpilih']); }
+    if (count($ids)>100) { respondJson(['status'=>'error','message'=>'Maksimal 100']); }
+    try {
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        try { $stmt=$pdo->prepare("SELECT image, image_public_id FROM gallery WHERE id IN ($ph)"); $stmt->execute($ids); $rows=$stmt->fetchAll(); } catch (PDOException $e) { $rows=[]; }
+        $stmt=$pdo->prepare("DELETE FROM gallery WHERE id IN ($ph)");
+        $stmt->execute($ids);
+        foreach($rows as $r){ if(!empty($r['image_public_id'])||str_contains($r['image']??'','res.cloudinary.com')){ $pid=$r['image_public_id']?:$r['image']; $res=deleteImageFromCloudinary($pid); if(!$res['ok']) error_log("[Cloudinary bulk gallery] ".$res['error']); } if(!empty($r['image'])&&strpos($r['image'],'http')!==0&&file_exists('../../'.$r['image'])) @unlink('../../'.$r['image']); }
+        respondJson(['status'=>'success','message'=> $stmt->rowCount().' foto berhasil dihapus']);
+    } catch (PDOException $e) { respondJson(['status'=>'error','message'=>'Gagal hapus massal']); }
 } else {
     respondJson(['status' => 'error', 'message' => 'Aksi tidak valid.']);
 }

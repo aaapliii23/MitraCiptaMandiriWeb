@@ -8,6 +8,17 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 }
 
 require_once '../../config/database.php';
+require_once '../../includes/security.php';
+mcm_cors_headers();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!mcm_csrf_verify($_POST['csrf_token'] ?? $_POST['_token'] ?? '')) {
+        echo json_encode(['status'=>'error','message'=>'CSRF token tidak valid. Muat ulang halaman.']); exit;
+    }
+    $rateKey = 'admin_' . basename(__FILE__, '.php') . '_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    $rl = mcm_rate_limit($rateKey, 30, 60);
+    if (!$rl['allowed']) { echo json_encode(['status'=>'error','message'=>$rl['message']]); exit; }
+}
+require_once '../../includes/cloudinary.php';
 
 $action = $_POST['action'] ?? '';
 
@@ -77,27 +88,14 @@ if ($action === 'create' || $action === 'update') {
     $features_array = array_map('trim', explode(',', $features_raw));
     $features_json = json_encode($features_array);
 
-    // Image Upload Handling
+    // Image Upload Handling -> Cloudinary
     $imagePath = '';
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $allowed = ['jpg', 'jpeg', 'png', 'webp'];
-        $filename = $_FILES['image']['name'];
-        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        
-        if (!in_array($ext, $allowed)) {
-            echo json_encode(['status' => 'error', 'message' => 'Format file tidak didukung.']);
-            exit;
-        }
-        
-        $newFilename = uniqid() . '.' . $ext;
-        $destination = 'uploads/classes/' . $newFilename;
-        
-        if (move_uploaded_file($_FILES['image']['tmp_name'], '../../' . $destination)) {
-            $imagePath = $destination;
-        } else {
-            echo json_encode(['status' => 'error', 'message' => 'Gagal mengupload gambar.']);
-            exit;
-        }
+    $imagePublicId = null;
+    if (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        $res = uploadImageToCloudinary($_FILES['image'], 'mcm/classes');
+        if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
+        $imagePath = $res['url'];
+        $imagePublicId = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']);
     }
 
     // Cek kolom baru ada atau tidak (untuk backward compat)
@@ -111,6 +109,8 @@ if ($action === 'create' || $action === 'update') {
     } catch (PDOException $e) { $hasDescCols = false; }
     $hasWaLink = true;
     try { $pdo->query("SELECT whatsapp_group_link FROM classes LIMIT 1"); } catch (PDOException $e) { $hasWaLink = false; }
+    $hasImgPubId = true;
+    try { $pdo->query("SELECT image_public_id FROM classes LIMIT 1"); } catch (PDOException $e) { $hasImgPubId = false; try { $pdo->exec("ALTER TABLE classes ADD COLUMN image_public_id VARCHAR(255) DEFAULT NULL AFTER image"); $hasImgPubId = true; } catch (PDOException $e2) {} }
 
     if (empty($description_online)) $description_online = $description;
     if (empty($description_offline)) $description_offline = $description;
@@ -121,14 +121,29 @@ if ($action === 'create' || $action === 'update') {
             exit;
         }
         if ($hasNewCols && $hasDescCols) {
-            $stmt = $pdo->prepare("INSERT INTO classes (name, start_date, category, description, description_online, description_offline, image, features, price, price_online, price_offline, mode_available) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $ok = $stmt->execute([$name, $start_date, $category, $description, $description_online, $description_offline, $imagePath, $features_json, $price, $price_online, $price_offline, $mode_available]);
+            if ($hasImgPubId) {
+                $stmt = $pdo->prepare("INSERT INTO classes (name, start_date, category, description, description_online, description_offline, image, image_public_id, features, price, price_online, price_offline, mode_available) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $ok = $stmt->execute([$name, $start_date, $category, $description, $description_online, $description_offline, $imagePath, $imagePublicId, $features_json, $price, $price_online, $price_offline, $mode_available]);
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO classes (name, start_date, category, description, description_online, description_offline, image, features, price, price_online, price_offline, mode_available) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $ok = $stmt->execute([$name, $start_date, $category, $description, $description_online, $description_offline, $imagePath, $features_json, $price, $price_online, $price_offline, $mode_available]);
+            }
         } elseif ($hasNewCols) {
-            $stmt = $pdo->prepare("INSERT INTO classes (name, start_date, category, description, image, features, price, price_online, price_offline, mode_available) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $ok = $stmt->execute([$name, $start_date, $category, $description, $imagePath, $features_json, $price, $price_online, $price_offline, $mode_available]);
+            if ($hasImgPubId) {
+                $stmt = $pdo->prepare("INSERT INTO classes (name, start_date, category, description, image, image_public_id, features, price, price_online, price_offline, mode_available) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $ok = $stmt->execute([$name, $start_date, $category, $description, $imagePath, $imagePublicId, $features_json, $price, $price_online, $price_offline, $mode_available]);
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO classes (name, start_date, category, description, image, features, price, price_online, price_offline, mode_available) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $ok = $stmt->execute([$name, $start_date, $category, $description, $imagePath, $features_json, $price, $price_online, $price_offline, $mode_available]);
+            }
         } else {
-            $stmt = $pdo->prepare("INSERT INTO classes (name, start_date, category, description, image, features, price) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $ok = $stmt->execute([$name, $start_date, $category, $description, $imagePath, $features_json, $price]);
+            if ($hasImgPubId) {
+                $stmt = $pdo->prepare("INSERT INTO classes (name, start_date, category, description, image, image_public_id, features, price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $ok = $stmt->execute([$name, $start_date, $category, $description, $imagePath, $imagePublicId, $features_json, $price]);
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO classes (name, start_date, category, description, image, features, price) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $ok = $stmt->execute([$name, $start_date, $category, $description, $imagePath, $features_json, $price]);
+            }
         }
         if ($ok && $hasWaLink) {
             try {
@@ -144,14 +159,29 @@ if ($action === 'create' || $action === 'update') {
     } else { // Update
         if (!empty($imagePath)) {
             if ($hasNewCols && $hasDescCols) {
-                $stmt = $pdo->prepare("UPDATE classes SET name=?, start_date=?, category=?, description=?, description_online=?, description_offline=?, image=?, features=?, price=?, price_online=?, price_offline=?, mode_available=? WHERE id=?");
-                $res = $stmt->execute([$name, $start_date, $category, $description, $description_online, $description_offline, $imagePath, $features_json, $price, $price_online, $price_offline, $mode_available, $id]);
+                if ($hasImgPubId) {
+                    $stmt = $pdo->prepare("UPDATE classes SET name=?, start_date=?, category=?, description=?, description_online=?, description_offline=?, image=?, image_public_id=?, features=?, price=?, price_online=?, price_offline=?, mode_available=? WHERE id=?");
+                    $res = $stmt->execute([$name, $start_date, $category, $description, $description_online, $description_offline, $imagePath, $imagePublicId, $features_json, $price, $price_online, $price_offline, $mode_available, $id]);
+                } else {
+                    $stmt = $pdo->prepare("UPDATE classes SET name=?, start_date=?, category=?, description=?, description_online=?, description_offline=?, image=?, features=?, price=?, price_online=?, price_offline=?, mode_available=? WHERE id=?");
+                    $res = $stmt->execute([$name, $start_date, $category, $description, $description_online, $description_offline, $imagePath, $features_json, $price, $price_online, $price_offline, $mode_available, $id]);
+                }
             } elseif ($hasNewCols) {
-                $stmt = $pdo->prepare("UPDATE classes SET name=?, start_date=?, category=?, description=?, image=?, features=?, price=?, price_online=?, price_offline=?, mode_available=? WHERE id=?");
-                $res = $stmt->execute([$name, $start_date, $category, $description, $imagePath, $features_json, $price, $price_online, $price_offline, $mode_available, $id]);
+                if ($hasImgPubId) {
+                    $stmt = $pdo->prepare("UPDATE classes SET name=?, start_date=?, category=?, description=?, image=?, image_public_id=?, features=?, price=?, price_online=?, price_offline=?, mode_available=? WHERE id=?");
+                    $res = $stmt->execute([$name, $start_date, $category, $description, $imagePath, $imagePublicId, $features_json, $price, $price_online, $price_offline, $mode_available, $id]);
+                } else {
+                    $stmt = $pdo->prepare("UPDATE classes SET name=?, start_date=?, category=?, description=?, image=?, features=?, price=?, price_online=?, price_offline=?, mode_available=? WHERE id=?");
+                    $res = $stmt->execute([$name, $start_date, $category, $description, $imagePath, $features_json, $price, $price_online, $price_offline, $mode_available, $id]);
+                }
             } else {
-                $stmt = $pdo->prepare("UPDATE classes SET name=?, start_date=?, category=?, description=?, image=?, features=?, price=? WHERE id=?");
-                $res = $stmt->execute([$name, $start_date, $category, $description, $imagePath, $features_json, $price, $id]);
+                if ($hasImgPubId) {
+                    $stmt = $pdo->prepare("UPDATE classes SET name=?, start_date=?, category=?, description=?, image=?, image_public_id=?, features=?, price=? WHERE id=?");
+                    $res = $stmt->execute([$name, $start_date, $category, $description, $imagePath, $imagePublicId, $features_json, $price, $id]);
+                } else {
+                    $stmt = $pdo->prepare("UPDATE classes SET name=?, start_date=?, category=?, description=?, image=?, features=?, price=? WHERE id=?");
+                    $res = $stmt->execute([$name, $start_date, $category, $description, $imagePath, $features_json, $price, $id]);
+                }
             }
         } else {
             if ($hasNewCols && $hasDescCols) {
@@ -181,13 +211,22 @@ if ($action === 'create' || $action === 'update') {
     }
 
     // Get image to delete from disk
-    $stmt = $pdo->prepare("SELECT image FROM classes WHERE id=?");
-    $stmt->execute([$id]);
-    $class = $stmt->fetch();
+    try {
+        $stmt = $pdo->prepare("SELECT image, image_public_id FROM classes WHERE id=?");
+        $stmt->execute([$id]);
+        $class = $stmt->fetch();
+        if ($class && !array_key_exists('image_public_id', $class)) $class['image_public_id'] = '';
+    } catch (PDOException $e) {
+        $stmt = $pdo->prepare("SELECT image FROM classes WHERE id=?");
+        $stmt->execute([$id]);
+        $class = $stmt->fetch();
+        if ($class) $class['image_public_id'] = '';
+    }
 
     try {
         $del = $pdo->prepare("DELETE FROM classes WHERE id=?");
         $del->execute([$id]);
+        if ($class && (!empty($class['image_public_id']) || str_contains($class['image'] ?? '', 'res.cloudinary.com'))) { $pid = $class['image_public_id'] ?: $class['image']; $delRes = deleteImageFromCloudinary($pid); if (!$delRes['ok']) error_log("[Cloudinary delete classes $id] ".$delRes['error']); }
         if ($class && strpos($class['image'], 'http') !== 0 && file_exists('../../' . $class['image'])) {
             unlink('../../' . $class['image']);
         }
@@ -202,6 +241,30 @@ if ($action === 'create' || $action === 'update') {
             echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus kelas: ' . $e->getMessage()]);
         }
     }
+
+} elseif ($action === 'bulk_delete') {
+    $raw = $_POST['ids'] ?? '';
+    $ids = [];
+    if (is_array($raw)) $ids = $raw;
+    elseif (is_string($raw) && $raw !== '') { $d=json_decode($raw,true); $ids=is_array($d)?$d:array_filter(array_map('trim',explode(',',$raw))); }
+    $ids = array_values(array_unique(array_filter(array_map('intval',$ids))));
+    if (empty($ids)) { echo json_encode(['status'=>'error','message'=>'Tidak ada data terpilih']); exit; }
+    if (count($ids)>100) { echo json_encode(['status'=>'error','message'=>'Maksimal 100']); exit; }
+    $deleted=0; $fail=[]; foreach($ids as $id) {
+        try {
+            // ambil image untuk cleanup
+            try { $st=$pdo->prepare("SELECT image, image_public_id FROM classes WHERE id=?"); $st->execute([$id]); $cls=$st->fetch(); } catch (PDOException $e) { $st=$pdo->prepare("SELECT image FROM classes WHERE id=?"); $st->execute([$id]); $cls=$st->fetch(); if($cls) $cls['image_public_id']=''; }
+            $del=$pdo->prepare("DELETE FROM classes WHERE id=?"); $del->execute([$id]);
+            if($del->rowCount()>0){
+                $deleted++;
+                if($cls && (!empty($cls['image_public_id']) || str_contains($cls['image']??'','res.cloudinary.com'))){ $pid=$cls['image_public_id']?:$cls['image']; $res=deleteImageFromCloudinary($pid); if(!$res['ok']) error_log("[Cloudinary bulk classes $id] ".$res['error']); }
+                if($cls && !empty($cls['image']) && strpos($cls['image'],'http')!==0 && file_exists('../../'.$cls['image'])) @unlink('../../'.$cls['image']);
+            }
+        } catch (PDOException $e) { if($e->getCode()==23000) $fail[]=$id; }
+    }
+    if($fail) echo json_encode(['status'=>'error','message'=> $deleted.' terhapus, '.count($fail).' gagal (masih punya relasi)']);
+    else echo json_encode(['status'=>'success','message'=> $deleted.' data berhasil dihapus']);
+    exit;
 } else {
     echo json_encode(['status' => 'error', 'message' => 'Aksi tidak valid.']);
 }

@@ -5,6 +5,7 @@ if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) 
     exit;
 }
 require_once '../config/database.php';
+require_once '../includes/security.php';
 
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -15,6 +16,12 @@ $errorMessage = '';
 $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Rate limiting 5x / 15 menit per IP+email
+    $rateKey = 'user_login_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . '_' . strtolower(trim($_POST['email'] ?? ''));
+    $rl = mcm_rate_limit($rateKey, 5, 900);
+    if (!$rl['allowed']) {
+        $errorMessage = $rl['message'];
+    } else {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $postedToken = $_POST['csrf_token'] ?? '';
@@ -29,11 +36,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$email]);
             $user = $stmt->fetch();
             if ($user && password_verify($password, $user['password'])) {
+                mcm_rate_limit_reset($rateKey);
                 session_regenerate_id(true);
                 $_SESSION['user_logged_in'] = true;
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_name'] = $user['name'];
                 $_SESSION['user_email'] = $user['email'];
+                $cv = preg_replace('/[^a-f0-9]/', '', strtolower($_POST['chat_visitor_id'] ?? ''));
+                if ($cv !== '' && strlen($cv) === 12) {
+                    try { $pdo->prepare("UPDATE chat_messages SET user_id=? WHERE wa_number=? AND (user_id IS NULL OR user_id=0)")->execute([$user['id'], 'web-'.$cv]); } catch (Exception $e) {}
+                    $_SESSION['chat_visitor_id'] = $cv;
+                    setcookie('mcmChatVid', $cv, time()+90*24*60*60, '/');
+                }
                 if ($isAjax) {
                     header('Content-Type: application/json');
                     echo json_encode(['status' => 'success']);
@@ -42,12 +56,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: ../lms/dashboard.php');
                 exit;
             } else {
+                mcm_rate_limit_hit($rateKey);
                 $errorMessage = 'Email atau password salah.';
             }
         } catch (PDOException $e) {
+            mcm_rate_limit_hit($rateKey);
             $errorMessage = 'Terjadi kesalahan sistem.';
         }
     }
+    } // end rate limit allowed
 
     if ($isAjax) {
         header('Content-Type: application/json');
@@ -58,59 +75,171 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 ?>
 <?php include '../includes/header.php'; ?>
+<link rel="stylesheet" href="<?php echo $base_url; ?>assets/css/auth.css?v=<?php echo time(); ?>">
 
-<section class="pt-5 pb-5" style="margin-top: 80px; min-height: 70vh;">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-5">
-                <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
-                    <div class="text-center mb-4">
-                        <h3 class="fw-bold text-dark">Masuk LMS</h3>
-                        <p class="text-muted mb-0">Akses kelas dan materi pelatihan Anda.</p>
+<section class="auth-wrapper">
+    <div class="container auth-container">
+        <div class="auth-split auth-anim">
+            <div class="auth-branding">
+                <img src="<?php echo $base_url; ?>assets/img/hero_workspace.jpg" alt="" class="auth-branding-photo" aria-hidden="true">
+                <div class="auth-branding-inner">
+                    <div class="auth-brand-badge">
+                        <img src="<?php echo $base_url; ?>assets/img/logo.png" alt="MCM"> Mitra Cipta Mandiri
                     </div>
-                    <?php if (!empty($errorMessage)): ?>
-                        <div class="alert alert-danger py-2 small"><?php echo htmlspecialchars($errorMessage); ?></div>
-                    <?php endif; ?>
-                    <form method="POST" action="user_login.php">
-                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">Email</label>
-                            <input type="email" class="form-control" name="email" required autocomplete="email">
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label small fw-bold">Password</label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" name="password" id="password" required autocomplete="current-password">
-                                <button class="btn bg-white toggle-pass-btn" type="button" id="togglePassword" tabindex="-1" aria-label="Lihat password" style="border:1px solid #E2E8F0; border-left:0; border-top-right-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md); color:#94a3b8;"><i class="fas fa-eye"></i></button>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold py-2">Masuk</button>
-                    </form>
-                    <p class="text-center text-muted small mt-4 mb-0">Belum punya akun?
-                        <a href="user_register.php" class="fw-bold text-primary text-decoration-none">Daftar sekarang</a>
-                    </p>
+                    <h2 class="auth-brand-title">Selamat datang kembali!</h2>
+                    <p class="auth-brand-sub">Masuk untuk melanjutkan pembelajaran, mengakses materi pelatihan, dan mengunduh sertifikat resmi Anda.</p>
+                    <ul class="auth-brand-features">
+                        <li><i class="fas fa-book-open"></i><span>Akses materi & video pelatihan kapan saja dari LMS</span></li>
+                        <li><i class="fas fa-award"></i><span>Sertifikat bernomor unik dengan verifikasi QR</span></li>
+                        <li><i class="fas fa-headset"></i><span>Pendampingan instruktur & CS yang responsif</span></li>
+                    </ul>
+                    <div class="auth-brand-visual" aria-hidden="true">
+                        <div class="auth-visual-card"><i class="fas fa-graduation-cap"></i></div>
+                        <div class="auth-visual-card small"><i class="fas fa-certificate"></i></div>
+                    </div>
+                    <div class="auth-brand-foot"><i class="fas fa-shield-alt"></i> Platform resmi MCM, aman & terpercaya sejak 2021</div>
                 </div>
+                <div class="auth-branding-deco deco-1"></div>
+                <div class="auth-branding-deco deco-2"></div>
+            </div>
+
+            <div class="auth-form-panel">
+                <div class="auth-form-head">
+                    <h3>Masuk LMS</h3>
+                    <p>Akses kelas dan materi pelatihan Anda. Belum punya akun? Daftar sekarang gratis.</p>
+                </div>
+
+                <?php if (!empty($errorMessage)): ?>
+                    <div class="auth-alert" role="alert"><i class="fas fa-exclamation-circle me-1"></i> <?php echo htmlspecialchars($errorMessage); ?></div>
+                <?php endif; ?>
+
+                <form method="POST" action="user_login.php" id="authLoginForm" novalidate>
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                    <input type="hidden" name="chat_visitor_id" id="chatVisitorId" value="">
+
+                    <div class="auth-field">
+                        <label class="auth-label" for="authEmail"><i class="fas fa-envelope"></i> Email</label>
+                        <input type="email" class="form-control auth-input" id="authEmail" name="email" required autocomplete="email" placeholder="nama@email.com" value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
+                        <div class="auth-feedback" id="emailFeedback"></div>
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label" for="password"><i class="fas fa-lock"></i> Password</label>
+                        <div class="auth-input-group">
+                            <input type="password" class="form-control auth-input" name="password" id="password" required autocomplete="current-password" placeholder="Masukkan password Anda">
+                            <button class="auth-eye-btn" type="button" id="togglePassword" tabindex="-1" aria-label="Lihat password"><i class="fas fa-eye"></i></button>
+                        </div>
+                        <div class="auth-feedback" id="passFeedback"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-end mb-3" style="margin-top:-8px;">
+                        <a href="forgot_password.php" class="small" style="color:#0ea5e9; font-weight:600; text-decoration:none; font-size:0.82rem;">Lupa password?</a>
+                    </div>
+
+                    <button type="submit" class="btn auth-btn" id="authSubmitBtn"><span class="btn-text">Masuk</span> <i class="fas fa-arrow-right"></i></button>
+
+                    <div class="auth-divider"><span>atau</span></div>
+                    <p class="auth-switch">Belum punya akun? <a href="user_register.php">Daftar sekarang</a></p>
+                    <p class="auth-terms">Dengan masuk, Anda menyetujui <a href="../pages/syarat_layanan.php">Syarat Layanan</a> &amp; <a href="../pages/kebijakan_privasi.php">Kebijakan Privasi</a> MCM.</p>
+                </form>
             </div>
         </div>
     </div>
 </section>
 
-<style>
-.toggle-pass-btn:hover { color: #0ea5e9 !important; }
-.toggle-pass-btn:focus { box-shadow: none; }
-</style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    var btn = document.getElementById('togglePassword');
-    var input = document.getElementById('password');
-    if (!btn || !input) return;
-    btn.addEventListener('click', function() {
-        var isPassword = input.getAttribute('type') === 'password';
-        input.setAttribute('type', isPassword ? 'text' : 'password');
-        var icon = this.querySelector('i');
-        icon.classList.toggle('fa-eye');
-        icon.classList.toggle('fa-eye-slash');
-    });
+    var email = document.getElementById('authEmail');
+    var pass = document.getElementById('password');
+    var toggleBtn = document.getElementById('togglePassword');
+    var emailFb = document.getElementById('emailFeedback');
+    var passFb = document.getElementById('passFeedback');
+    var form = document.getElementById('authLoginForm');
+    var submitBtn = document.getElementById('authSubmitBtn');
+
+    function setFeedback(el, input, msg, ok) {
+        if (!el) return;
+        if (!msg) { el.textContent=''; el.className='auth-feedback'; if(input) input.classList.remove('is-invalid','is-valid'); return; }
+        el.textContent = msg;
+        el.className = ok ? 'auth-feedback show ok' : 'auth-feedback show';
+        if (input) {
+            input.classList.toggle('is-invalid', !ok);
+            input.classList.toggle('is-valid', !!ok);
+        }
+    }
+
+    if (toggleBtn && pass) {
+        toggleBtn.addEventListener('click', function() {
+            var isPw = pass.getAttribute('type') === 'password';
+            pass.setAttribute('type', isPw ? 'text' : 'password');
+            var ic = this.querySelector('i');
+            if (ic) { ic.classList.toggle('fa-eye'); ic.classList.toggle('fa-eye-slash'); }
+            this.style.color = isPw ? '#0ea5e9' : '#94a3b8';
+        });
+        toggleBtn.addEventListener('mouseenter', function(){ this.style.color='#0ea5e9'; });
+        toggleBtn.addEventListener('mouseleave', function(){
+            var isText = pass.getAttribute('type')==='text';
+            this.style.color = isText ? '#0ea5e9' : '#94a3b8';
+        });
+    }
+
+    function validateEmail(showOk){
+        if(!email) return true;
+        var v = email.value.trim();
+        if(!v){ setFeedback(emailFb,email,'',false); return false; }
+        var re = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+        if(!re.test(v)){ setFeedback(emailFb,email,'Format email tidak valid.',false); return false; }
+        if(showOk) setFeedback(emailFb,email,'Format email valid.',true);
+        else setFeedback(emailFb,email,'',false);
+        if(showOk && email.classList.contains('is-valid')) setTimeout(function(){ setFeedback(emailFb,email,'',false); }, 1800);
+        return true;
+    }
+    function validatePass(){
+        if(!pass) return true;
+        var v = pass.value;
+        if(!v){ setFeedback(passFb,pass,'Password wajib diisi.',false); return false; }
+        if(v.length < 6){ setFeedback(passFb,pass,'Minimal 6 karakter.',false); return false; }
+        setFeedback(passFb,pass,'',false);
+        return true;
+    }
+
+    if(email){
+        email.addEventListener('blur', function(){ validateEmail(false); });
+        email.addEventListener('input', function(){
+            if(emailFb.classList.contains('show') && !emailFb.classList.contains('ok')) validateEmail(false);
+            if(email.classList.contains('is-valid')) email.classList.remove('is-valid');
+        });
+    }
+    if(pass){
+        pass.addEventListener('blur', validatePass);
+        pass.addEventListener('input', function(){
+            if(passFb.classList.contains('show')) validatePass();
+            pass.classList.remove('is-invalid');
+        });
+        pass.addEventListener('focus', function(){ this.style.transition='all .2s ease'; });
+    }
+
+    if(form && submitBtn){
+        form.addEventListener('submit', function(e){
+            var okE = validateEmail(false);
+            var okP = validatePass();
+            if(!okE || !okP){ e.preventDefault(); var firstInvalid = form.querySelector('.is-invalid'); if(firstInvalid) firstInvalid.focus(); return; }
+            // sync chat visitor id before submit
+            var cv = localStorage.getItem('mcmChatVid') || (document.cookie.match(/(?:^|; )mcmChatVid=([a-f0-9]{12})/) || [])[1] || '';
+            var hiddenCv = document.getElementById('chatVisitorId');
+            if (hiddenCv) hiddenCv.value = cv;
+            var txt = submitBtn.querySelector('.btn-text');
+            submitBtn.disabled = true;
+            if(txt) txt.textContent = 'Memproses...';
+            var ic = submitBtn.querySelector('i.fa-arrow-right');
+            if(ic){ ic.className='btn-spinner'; }
+        });
+    }
+
+    // init hidden chat visitor id on load
+    var cvInit = localStorage.getItem('mcmChatVid') || (document.cookie.match(/(?:^|; )mcmChatVid=([a-f0-9]{12})/) || [])[1] || '';
+    var elInit = document.getElementById('chatVisitorId');
+    if (elInit) elInit.value = cvInit;
 });
 </script>
 

@@ -26,6 +26,7 @@
                 <hr>
                 <label class="form-label small fw-bold" id="quizFormTitle">Tambah Soal</label>
                 <form id="quizForm" class="mb-1" action="<?php echo $adminBase; ?>/actions/manage_quiz.php" method="POST" onsubmit="event.preventDefault(); submitQuizQuestionForm();">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(mcm_csrf_token()); ?>">
                     <input type="hidden" name="action" id="quizAction" value="create">
                     <input type="hidden" name="id" id="quizId">
                     <input type="hidden" name="material_id" id="quizMaterialInput">

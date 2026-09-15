@@ -1,6 +1,6 @@
 <!-- Sidebar -->
 <?php
-$groupMap = ['dashboard' => 'utama', 'classes' => 'program', 'categories' => 'program', 'instructors' => 'program', 'materials' => 'program', 'users' => 'program', 'gallery' => 'program', 'facilities' => 'program', 'certs' => 'program', 'orders' => 'penjualan', 'finance' => 'penjualan', 'testimonials' => 'penjualan', 'chat' => 'penjualan', 'chatbot' => 'penjualan', 'reports' => 'laporan', 'admins' => 'sistem', 'settings' => 'sistem'];
+$groupMap = ['dashboard' => 'utama', 'classes' => 'program', 'categories' => 'program', 'instructors' => 'program', 'materials' => 'program', 'users' => 'program', 'gallery' => 'program', 'facilities' => 'program', 'certs' => 'program', 'orders' => 'penjualan', 'finance' => 'penjualan', 'payment_methods' => 'penjualan', 'testimonials' => 'penjualan', 'chat' => 'penjualan', 'chatbot' => 'penjualan', 'reports' => 'laporan', 'admins' => 'sistem', 'settings' => 'sistem', 'doku_channels' => 'sistem'];
 $activeGroup = $groupMap[$page] ?? 'utama';
 function mcm_group($id, $label, $key, $activeGroup) {
     $open = $activeGroup === $key ? ' show' : '';
@@ -56,8 +56,17 @@ function mcm_item($page, $target, $icon, $label) {
         <ul class="nav flex-column px-2">
             <?php echo mcm_item($page, 'orders', 'fas fa-shopping-cart', 'Pesanan &amp; Transaksi'); ?>
             <?php echo mcm_item($page, 'finance', 'fas fa-money-bill-wave', 'Keuangan'); ?>
+            <?php echo mcm_item($page, 'payment_methods', 'fas fa-wallet', 'Metode Pembayaran'); ?>
             <?php echo mcm_item($page, 'testimonials', 'fas fa-comment-dots', 'Testimoni'); ?>
-            <?php echo mcm_item($page, 'chat', 'fab fa-whatsapp', 'Chat WhatsApp'); ?>
+            <?php
+            $chatUnread = 0;
+            try {
+                if (isset($pdo)) {
+                    $chatUnread = (int)$pdo->query("SELECT COUNT(*) FROM (SELECT MAX(id) AS mid FROM chat_messages GROUP BY wa_number) t JOIN chat_messages m ON m.id=t.mid WHERE m.direction='in' AND m.sender_type='visitor'")->fetchColumn();
+                }
+            } catch (Exception $e) {}
+            ?>
+            <li class="nav-item mb-1"><a href="?page=chat" class="nav-link <?php echo $page==='chat'?'active':''; ?>"><i class="fab fa-whatsapp"></i> Chat WhatsApp <?php if($chatUnread>0 && $page!=='chat') echo '<span class="badge bg-danger rounded-pill ms-auto js-chat-badge" style="font-size:0.65rem;">'.$chatUnread.'</span>'; ?></a></li>
             <?php echo mcm_item($page, 'chatbot', 'fas fa-robot', 'Chatbot &amp; Balasan'); ?>
         </ul>
         </div>
@@ -70,6 +79,7 @@ function mcm_item($page, $target, $icon, $label) {
         <ul class="nav flex-column px-2">
             <?php echo mcm_item($page, 'admins', 'fas fa-users-cog', 'Kelola Admin'); ?>
             <?php echo mcm_item($page, 'settings', 'fas fa-cog', 'Pengaturan Web'); ?>
+            <?php echo mcm_item($page, 'doku_channels', 'fas fa-credit-card', 'Cek Channel DOKU'); ?>
         </ul>
         </div>
     </div>

@@ -3,8 +3,8 @@
 // MCM - Konfigurasi Secrets (Jangan di-commit ke repository!)
 // =============================================================
 
-// Payment Mode: 'mock' | 'sandbox' | 'production'
-if (!defined('PAYMENT_MODE')) define('PAYMENT_MODE', 'mock');
+// Payment Mode: 'sandbox' | 'production' (mock dihapus)
+if (!defined('PAYMENT_MODE')) define('PAYMENT_MODE', 'production');
 
 // WhatsApp Business API (Meta/Facebook Graph API)
 // Isi jika ingin mengaktifkan pengiriman pesan WhatsApp nyata.

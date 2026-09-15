@@ -3,6 +3,17 @@ session_start();
 header('Content-Type: application/json');
 if (!isset($_SESSION['admin_logged_in'])) exit;
 require_once '../../config/database.php';
+require_once '../../includes/security.php';
+mcm_cors_headers();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!mcm_csrf_verify($_POST['csrf_token'] ?? $_POST['_token'] ?? '')) {
+        echo json_encode(['status'=>'error','message'=>'CSRF token tidak valid.']); exit;
+    }
+    $rateKey = 'admin_' . basename(__FILE__, '.php') . '_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    $rl = mcm_rate_limit($rateKey, 30, 60);
+    if (!$rl['allowed']) { echo json_encode(['status'=>'error','message'=>$rl['message']]); exit; }
+}
+require_once '../../includes/cloudinary.php';
 
 // Pastikan tabel settings ada
 try {
@@ -21,23 +32,23 @@ $isLogoUpload = isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ER
 
 foreach ($textKeys as $k) {
     if (array_key_exists($k, $_POST)) {
-        $upsert->execute([$k, trim($_POST[$k])]);
+        $val = trim($_POST[$k]);
+        if ($k === 'admin_whatsapp') {
+            $digits = preg_replace('/\D+/', '', $val);
+            if (strpos($digits, '0') === 0) $digits = '62' . substr($digits, 1);
+            if ($digits !== '') $val = $digits;
+        }
+        $upsert->execute([$k, $val]);
     }
 }
 
-// Form "Update Logo": timpa file logo statis agar header/footer/favicon publik ikut berubah
+// Form "Update Logo": upload ke Cloudinary, simpan URL di settings (logo_url)
 if ($isLogoUpload) {
-    $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
-    if (!in_array($ext, ['png', 'jpg', 'jpeg', 'webp'], true)) {
-        echo json_encode(['status' => 'error', 'message' => 'Format logo harus PNG/JPG/WEBP.']);
-        exit;
-    }
-    // ponytail: timpa selalu assets/img/logo.png (browser sniff konten, ekstensi tetap konsisten dengan semua template)
-    $dest = dirname(__DIR__, 2) . '/assets/img/logo.png';
-    if (!move_uploaded_file($_FILES['logo']['tmp_name'], $dest)) {
-        echo json_encode(['status' => 'error', 'message' => 'Gagal menyimpan file logo.']);
-        exit;
-    }
+    $res = uploadImageToCloudinary($_FILES['logo'], 'mcm/logo');
+    if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
+    $upsert->execute(['logo_url', $res['url']]);
+    $logoPublicId = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']);
+    $upsert->execute(['logo_public_id', $logoPublicId]);
 }
 
 echo json_encode(['status' => 'success', 'message' => 'Pengaturan website berhasil diperbarui.']);

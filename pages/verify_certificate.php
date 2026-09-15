@@ -90,7 +90,7 @@ include '../includes/header.php';
                 <p><?php echo htmlspecialchars($error); ?></p>
                 <p class="small text-muted mt-3" style="font-size:0.78rem;">Jika Anda merasa ini kesalahan, hubungi admin MCM dengan menyertakan nomor sertifikat dan foto sertifikat fisik Anda.</p>
                 <div class="mt-4 d-flex justify-content-center gap-2 flex-wrap">
-                    <a href="../index.php" class="btn btn-primary rounded-pill px-4 fw-bold"><i class="fas fa-home me-1"></i> Kembali ke Beranda</a>
+                    <a href="<?php echo htmlspecialchars($__homeAbs ?? '/index.php'); ?>" class="btn btn-primary rounded-pill px-4 fw-bold"><i class="fas fa-home me-1"></i> Kembali ke Beranda</a>
                     <a href="about.php" class="btn btn-outline-secondary rounded-pill px-4 fw-bold">Hubungi Kami</a>
                 </div>
             </div>
@@ -191,7 +191,7 @@ include '../includes/header.php';
                 </div>
 
                 <div class="verify-actions">
-                    <a href="../index.php" class="btn btn-outline-secondary rounded-pill"><i class="fas fa-home me-1"></i> Beranda</a>
+                    <a href="<?php echo htmlspecialchars($__homeAbs ?? '/index.php'); ?>" class="btn btn-outline-secondary rounded-pill"><i class="fas fa-home me-1"></i> Beranda</a>
                     <a href="../lms/certificate.php?class_id=<?php echo (int)$cert['class_id']; ?>" class="btn btn-primary rounded-pill" style="background: linear-gradient(135deg,#0c4a6e,#0ea5e9); border:none;"><i class="fas fa-certificate me-1"></i> Lihat Sertifikat</a>
                     <button type="button" onclick="window.print()" class="btn btn-light border rounded-pill"><i class="fas fa-print me-1"></i> Cetak Halaman</button>
                 </div>

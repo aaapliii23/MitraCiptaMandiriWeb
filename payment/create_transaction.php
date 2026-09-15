@@ -3,6 +3,7 @@ session_start();
 header('Content-Type: application/json');
 require_once '../config/database.php';
 require_once '../includes/payment_gateway.php';
+require_once '../includes/whatsapp_client.php';
 
 function validateFullName($name)
 {
@@ -144,10 +145,21 @@ if ($hasClassMode) {
 }
 $orderId = (int)$pdo->lastInsertId();
 
-$res = pg_create_transaction($pdo, ['id' => $orderId, 'order_number' => $orderNumber, 'amount' => $amount], $class);
-if ($res['status'] !== 'success') {
-    echo json_encode(['status' => 'error', 'message' => 'Gagal membuat transaksi pembayaran.']);
-    exit;
-}
+// Notifikasi admin pesanan baru (Fonnte) — gagal kirim tidak boleh gagalkan transaksi
+try {
+    $adminWa = defined('MCM_WA_ADMIN') ? MCM_WA_ADMIN : (defined('FONNTE_TOKEN') ? '' : '');
+    if ($adminWa !== '') {
+        $adminMsg = "*PESANAN BARU - MCM*\n\n";
+        $adminMsg .= "Order: $orderNumber\n";
+        $adminMsg .= "Peserta: $customerName ($digits)\n";
+        $adminMsg .= "Kelas: {$class['name']} (" . ($classMode === 'online' ? 'Online' : 'Offline') . ")\n";
+        $adminMsg .= "Nominal: Rp " . number_format($amount, 0, ',', '.') . "\n";
+        $adminMsg .= "Status: Menunggu pembayaran";
+        wa_send_message($pdo, $adminWa, $adminMsg, 'admin_notif');
+    }
+} catch (Throwable $e) { error_log("[Fonnte admin notif] " . $e->getMessage()); }
 
-echo json_encode(['status' => 'success', 'payment_url' => $res['payment_url'], 'order_number' => $orderNumber]);
+// Tahap custom payment: arahkan ke halaman pembayaran custom (VA/QRIS/E-wallet), bukan langsung ke hosted DOKU
+// Kartu kredit tetap via hosted DOKU, tapi ditangani di custom_payment.php (method cc) — pakai URL absolut agar benar dari halaman mana pun (index.php atau pages/class_detail.php)
+$customUrl = pg_base_url() . '/payment/custom_payment.php?order=' . urlencode($orderNumber);
+echo json_encode(['status' => 'success', 'payment_url' => $customUrl, 'order_number' => $orderNumber]);

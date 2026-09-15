@@ -94,7 +94,6 @@ $instructorRole = $instructor['specialization'] ?? 'Asesor Kompetensi';
         <div class="cert-front-body">
             <div class="cert-presented-label">Diberikan kepada</div>
             <div class="cert-recipient-name"><?php echo htmlspecialchars($user['name']); ?></div>
-            <div class="cert-recipient-email"><?php echo htmlspecialchars($user['email']); ?></div>
 
             <div class="cert-desc">Telah berhasil menyelesaikan program pelatihan dan dinyatakan <strong>LULUS / KOMPETEN</strong> pada program:</div>
             <div class="cert-class-name"><?php echo htmlspecialchars($class['name']); ?></div>
@@ -103,11 +102,9 @@ $instructorRole = $instructor['specialization'] ?? 'Asesor Kompetensi';
 
         <!-- Bottom: signatures + meta + QR -->
         <div class="cert-front-footer">
-            <div class="cert-sign cert-sign-left">
-                <div class="cert-signature-hand"><?php echo htmlspecialchars(explode(' ', $instructorName)[0] ?? 'Asesor'); ?></div>
-                <div class="cert-sign-line"></div>
-                <div class="cert-sign-name"><?php echo htmlspecialchars($instructorName); ?></div>
-                <div class="cert-sign-role"><?php echo htmlspecialchars($instructorRole); ?></div>
+            <div class="cert-sign cert-sign-left" style="text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;">
+                <div class="cert-issued-label" style="margin-bottom:4px;"><i class="fas fa-map-marker-alt me-1"></i>Alamat Lembaga</div>
+                <div class="small fw-bold text-dark" style="line-height:1.5; font-size:0.68rem; max-width:210px;"><?php echo nl2br(htmlspecialchars(mcm_setting('admin_address', 'Jl. Khp Hasan Mustopa No.57, Neglasari, Kec. Cibeunying Kaler, Kota Bandung, Jawa Barat 40124'))); ?></div>
             </div>
 
             <div class="cert-center-meta">

@@ -4,18 +4,93 @@ if (file_exists(__DIR__ . '/../config/secrets.php')) {
 }
 
 function wa_log_inbound($pdo, $fromNumber, $message, $matchedIntent = null, $userId = null) {
-    $stmt = $pdo->prepare("INSERT INTO chat_messages (user_id, wa_number, direction, message, matched_intent) VALUES (?, ?, 'in', ?, ?)");
+    $stmt = $pdo->prepare("INSERT INTO chat_messages (user_id, wa_number, direction, sender_type, message, matched_intent) VALUES (?, ?, 'in', 'visitor', ?, ?)");
     $stmt->execute([$userId, $fromNumber, $message, $matchedIntent]);
 }
 
-function wa_send_message($pdo, $toNumber, $message, $matchedIntent = null) {
-    $stmt = $pdo->prepare("INSERT INTO chat_messages (wa_number, direction, message, matched_intent) VALUES (?, 'out', ?, ?)");
-    $stmt->execute([$toNumber, $message, $matchedIntent]);
+function wa_normalize_number($number) {
+    $d = preg_replace('/\D+/', '', $number);
+    if ($d === '') return '';
+    if (strpos($d, '0') === 0) $d = '62' . substr($d, 1);
+    return $d;
+}
+function sendWhatsAppNotification($toNumber, $message) {
+    $to = wa_normalize_number($toNumber);
+    if (!preg_match('/^62[0-9]{9,13}$/', $to)) {
+        return ['ok' => false, 'error' => 'Format nomor tidak valid: ' . $toNumber];
+    }
+    if (trim($message) === '') {
+        return ['ok' => false, 'error' => 'Pesan kosong'];
+    }
+    $token = defined('FONNTE_TOKEN') ? FONNTE_TOKEN : '';
+    if ($token === '') {
+        error_log("[Fonnte] FONNTE_TOKEN kosong, skip kirim ke $to");
+        return ['ok' => false, 'error' => 'FONNTE_TOKEN belum dikonfigurasi'];
+    }
+    $ch = curl_init('https://api.fonnte.com/send');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => ['Authorization: ' . $token],
+        CURLOPT_POSTFIELDS => ['target' => $to, 'message' => $message],
+        CURLOPT_TIMEOUT => 15,
+    ]);
+    $resp = curl_exec($ch);
+    $err = curl_error($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($resp === false) {
+        error_log("[Fonnte] curl gagal ke $to: $err");
+        return ['ok' => false, 'error' => 'Koneksi Fonnte gagal: ' . $err];
+    }
+    $data = json_decode($resp, true);
+    $ok = $data && isset($data['status']) && ($data['status'] == true || $data['status'] === 'true' || $data['status'] == 1);
+    // Fonnte kadang pakai {"status":false,"reason":"..."}
+    if (!$ok) {
+        $reason = $data['reason'] ?? $data['detail'] ?? $resp;
+        if ($code === 401) $reason = 'Token invalid / device tidak aktif';
+        error_log("[Fonnte] gagal ke $to (HTTP $code): " . substr($resp, 0, 500));
+        return ['ok' => false, 'error' => is_string($reason) ? $reason : json_encode($reason)];
+    }
+    return ['ok' => true, 'data' => $data];
+}
+function wa_send_message($pdo, $toNumber, $message, $matchedIntent = null, $senderType = 'bot', $userId = null) {
+    if (!in_array($senderType, ['bot','admin','visitor'], true)) $senderType = 'bot';
 
-    if (strpos($toNumber, 'web-') === 0) {
+    // Resolve user_id sesuai tipe thread
+    if ($userId === null) {
+        if (strpos($toNumber, 'user-') === 0) {
+            // Thread Siswa LMS: user_id dari prefix
+            $userId = (int)substr($toNumber, 5);
+        } elseif (strpos($toNumber, 'web-') === 0) {
+            // Thread anonim: SELALU NULL — jangan pernah isi user_id
+            $userId = null;
+        } else {
+            // Thread WhatsApp asli: cari dari nomor telepon
+            try {
+                $cleanDigits = preg_replace('/\D+/', '', $toNumber);
+                if ($cleanDigits !== '') {
+                    $sU = $pdo->prepare("SELECT id FROM users WHERE phone = ? OR phone = ? LIMIT 1");
+                    $sU->execute([$cleanDigits, '+' . $cleanDigits]);
+                    $foundUid = (int)$sU->fetchColumn();
+                    if ($foundUid > 0) $userId = $foundUid;
+                }
+            } catch (Exception $e) {}
+        }
+    }
+
+    $stmt = $pdo->prepare("INSERT INTO chat_messages (wa_number, user_id, direction, sender_type, message, matched_intent) VALUES (?, ?, 'out', ?, ?, ?)");
+    $stmt->execute([$toNumber, $userId, $senderType, $message, $matchedIntent]);
+
+    if (strpos($toNumber, 'web-') === 0 || strpos($toNumber, 'user-') === 0) {
         return true;
     }
 
+    // ponytail: Fonnte first (server-side), fallback ke Cloud API, jangan gagalkan flow utama
+    $r = sendWhatsAppNotification($toNumber, $message);
+    if ($r['ok']) return true;
+    error_log('[Fonnte] wa_send_message gagal ke ' . $toNumber . ': ' . ($r['error'] ?? 'unknown'));
+    // log sudah di sendWhatsAppNotification, lanjut fallback
     if (defined('WA_ACCESS_TOKEN') && WA_ACCESS_TOKEN !== '' && defined('WA_PHONE_NUMBER_ID') && WA_PHONE_NUMBER_ID !== '') {
         $ch = curl_init('https://graph.facebook.com/v19.0/' . WA_PHONE_NUMBER_ID . '/messages');
         curl_setopt_array($ch, [
@@ -33,7 +108,7 @@ function wa_send_message($pdo, $toNumber, $message, $matchedIntent = null) {
         curl_close($ch);
         return $resp !== false;
     }
-    return true;
+    return $r['ok'];
 }
 
 function wa_seed_intent_defaults($pdo) {
@@ -80,6 +155,8 @@ function wa_match_intent($message, $pdo = null) {
     $bestPos = PHP_INT_MAX;
     foreach ($intents as $intent => $keywords) {
         foreach ($keywords as $kw) {
+            $kw = strtolower(trim($kw));
+            if ($kw === '') continue;
             $pos = strpos($msg, $kw);
             if ($pos !== false && $pos < $bestPos) {
                 $bestPos = $pos;

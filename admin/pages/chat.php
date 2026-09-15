@@ -1,157 +1,150 @@
 <?php
+// admin/pages/chat.php - Panel Percakapan Chatbot, WhatsApp, dan Siswa LMS
 $threadNumber = isset($threadNumber) ? $threadNumber : '';
 
 $conversations = [];
 $messages = [];
+$usersMap = [];
+
+// Pre-load data pengguna untuk memetakan nama siswa
+try {
+    $uRows = $pdo->query("SELECT id, name, phone, email FROM users")->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($uRows as $ur) {
+        $usersMap[(int)$ur['id']] = $ur;
+    }
+} catch (Exception $e) {}
+
 if (empty($threadNumber)) {
     $tmp = [];
-    foreach ($chats as $ch) {
+    try {
+        $allChats = $pdo->query("SELECT * FROM chat_messages ORDER BY created_at DESC, id DESC LIMIT 1000")->fetchAll();
+    } catch (Exception $e) {
+        $allChats = $chats ?? [];
+    }
+    foreach ($allChats as $ch) {
         $num = $ch['wa_number'];
         if (!isset($tmp[$num])) {
-            $tmp[$num] = ['number' => $num, 'last' => $ch, 'in_count' => 0];
+            $uName = '';
+            $uPhone = '';
+            if (str_starts_with($num, 'user-')) {
+                $uid = (int)substr($num, 5);
+                $uName = $usersMap[$uid]['name'] ?? ('Siswa #' . $uid);
+                $uPhone = $usersMap[$uid]['phone'] ?? '';
+            }
+            $tmp[$num] = [
+                'number' => $num,
+                'last' => $ch,
+                'in_count' => 0,
+                'user_id' => $ch['user_id'],
+                'user_name' => $uName,
+                'user_phone' => $uPhone
+            ];
         }
-        if ($ch['direction'] === 'in') $tmp[$num]['in_count']++;
+        if ($ch['direction'] === 'in' && empty($ch['is_read'])) $tmp[$num]['in_count']++;
     }
     $conversations = array_values($tmp);
 } else {
-    foreach ($chats as $ch) {
-        if ($ch['wa_number'] === $threadNumber) $messages[] = $ch;
+    try {
+        // Tandai pesan masuk thread ini sebagai sudah dibaca
+        $pdo->prepare("UPDATE chat_messages SET is_read = 1, read_at = NOW() WHERE wa_number = ? AND direction = 'in' AND is_read = 0")->execute([$threadNumber]);
+
+        if (str_starts_with($threadNumber, 'user-') || str_starts_with($threadNumber, 'web-')) {
+            $stmt = $pdo->prepare("SELECT * FROM chat_messages WHERE wa_number = ? ORDER BY id ASC");
+            $stmt->execute([$threadNumber]);
+        } else {
+            $cleanDigits = preg_replace('/\D+/', '', $threadNumber);
+            $stmt = $pdo->prepare("SELECT * FROM chat_messages WHERE wa_number = ? OR wa_number = ? OR wa_number = ? ORDER BY id ASC");
+            $stmt->execute([$threadNumber, '+' . $cleanDigits, $cleanDigits]);
+        }
+        $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        foreach ($chats as $ch) {
+            if ($ch['wa_number'] === $threadNumber) $messages[] = $ch;
+        }
     }
-    $messages = array_reverse($messages);
+
+    $threadStudent = null;
+    if (str_starts_with($threadNumber, 'user-')) {
+        $tUid = (int)substr($threadNumber, 5);
+        $threadStudent = $usersMap[$tUid] ?? null;
+        if (!$threadStudent) {
+            try {
+                $uStmt = $pdo->prepare("SELECT id, name, phone, email FROM users WHERE id = ?");
+                $uStmt->execute([$tUid]);
+                $threadStudent = $uStmt->fetch(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {}
+        }
+    }
 }
 ?>
 <!-- CHAT PAGE -->
-        <div class="row align-items-center mb-4 g-3" data-aos="fade-down">
-            <div class="col-md-6">
-                <h2 class="fw-bold mb-1 text-dark">Chat WhatsApp</h2>
-                <p class="text-muted mb-0">Pantau percakapan chatbot dan balas pertanyaan peserta.</p>
-            </div>
-            <div class="col-md-6 text-md-end d-flex justify-content-md-end gap-2 align-items-center flex-wrap">
-                <?php if (empty($threadNumber)): ?>
-                <div class="input-group shadow-sm rounded-3 overflow-hidden" style="max-width: 280px;">
-                    <span class="input-group-text bg-white border-end-0 text-muted ps-3"><i class="fas fa-search"></i></span>
-                    <input type="text" id="chatThreadSearch" class="form-control border-start-0 py-2" placeholder="Cari nomor / pesan..." autocomplete="off">
-                </div>
-                <?php endif; ?>
-                <?php if (!empty($threadNumber)): ?>
-                    <a href="?page=chat" class="btn btn-light border rounded-pill px-4 fw-bold"><i class="fas fa-arrow-left me-2"></i>Semua Percakapan</a>
-                <?php endif; ?>
-            </div>
-        </div>
-
+<div class="row align-items-center mb-4 g-3" data-aos="fade-down">
+    <div class="col-md-6">
+        <h2 class="fw-bold mb-1 text-dark">Chat WhatsApp & Bantuan</h2>
+        <p class="text-muted mb-0">Pantau percakapan chatbot dan balas pertanyaan siswa maupun pengunjung.</p>
+    </div>
+    <div class="col-md-6 text-md-end d-flex justify-content-md-end gap-2 align-items-center flex-wrap">
         <?php if (empty($threadNumber)): ?>
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table align-middle mb-0">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th class="ps-4">Nomor WhatsApp</th>
-                                    <th>Pesan Terakhir</th>
-                                    <th class="text-center">Intensitas Masuk</th>
-                                    <th class="text-end pe-4">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="conversationTableBody">
-                                <?php if (empty($conversations)): ?>
-                                    <tr><td colspan="4" class="text-center py-5 text-muted">Belum ada percakapan.</td></tr>
-                                <?php else: ?>
-                                    <?php foreach ($conversations as $cv): ?>
-                                        <tr>
-                                            <td class="ps-4">
-                                                <div class="fw-bold text-dark">
-                                                    <i class="fab fa-whatsapp text-success me-2"></i><?php echo htmlspecialchars($cv['number']); ?>
-                                                    <?php if ($cv['in_count'] > 0): ?>
-                                                        <span class="badge bg-success rounded-pill ms-1"><?php echo $cv['in_count']; ?></span>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
-                                            <td class="text-muted small" style="max-width: 380px;">
-                                                <div class="text-truncate"><?php echo htmlspecialchars(mb_strimwidth($cv['last']['message'], 0, 90, '...')); ?></div>
-                                                <div class="small text-muted">
-                                                    <?php echo date('d M Y H:i', strtotime($cv['last']['created_at'])); ?>
-                                                    <?php if ($cv['last']['matched_intent']): ?>
-                                                        <span class="badge bg-soft-primary text-primary ms-1"><?php echo htmlspecialchars($cv['last']['matched_intent']); ?></span>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
-                                            <td class="text-center text-muted small"><?php echo (int)$cv['in_count']; ?></td>
-                                            <td class="text-end pe-4">
-                                                <div class="d-inline-flex gap-2">
-                                                    <a href="?page=chat&thread=<?php echo urlencode($cv['number']); ?>" class="btn btn-action btn-soft-primary" title="Buka Percakapan"><i class="fas fa-comment-dots"></i></a>
-                                                    <button class="btn btn-action btn-soft-danger" title="Hapus Percakapan" onclick="deleteConversation('<?php echo urlencode($cv['number']); ?>')"><i class="fas fa-trash"></i></button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <div class="input-group shadow-sm rounded-3 overflow-hidden" style="max-width: 280px;">
+                <span class="input-group-text bg-white border-end-0 text-muted ps-3"><i class="fas fa-search"></i></span>
+                <input type="text" id="chatThreadSearch" class="form-control border-start-0 py-2" placeholder="Cari nama / nomor / pesan..." autocomplete="off">
             </div>
-            <script>attachTableSearch('chatThreadSearch', 'conversationTableBody', 4);</script>
         <?php else: ?>
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="card-header bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between">
-                    <div class="fw-bold text-dark"><i class="fab fa-whatsapp text-success me-2"></i><?php echo htmlspecialchars($threadNumber); ?></div>
-                    <span class="badge bg-light text-dark border rounded-pill px-3"><?php echo count($messages); ?> pesan</span>
-                </div>
-                <div class="card-body p-4" style="max-height: 460px; overflow-y: auto; background: #f8fafc;">
-                    <?php if (empty($messages)): ?>
-                        <div class="text-center text-muted py-5">Belum ada pesan di percakapan ini.</div>
-                    <?php else: ?>
-                        <?php foreach ($messages as $msg): ?>
-                            <div class="d-flex mb-3 <?php echo $msg['direction'] === 'in' ? '' : 'justify-content-end'; ?>">
-                                <div class="rounded-3 px-3 py-2 shadow-sm small <?php echo $msg['direction'] === 'in' ? 'bg-white border' : 'bg-primary text-white'; ?>" style="max-width: 75%;">
-                                    <div><?php echo nl2br(htmlspecialchars($msg['message'])); ?></div>
-                                    <div class="small mt-1 <?php echo $msg['direction'] === 'in' ? 'text-muted' : 'text-white-50'; ?>">
-                                        <?php echo date('d M Y H:i', strtotime($msg['created_at'])); ?>
-                                        <?php if ($msg['matched_intent']): ?>
-                                            <span class="badge <?php echo $msg['direction'] === 'in' ? 'bg-soft-primary text-primary' : 'bg-white bg-opacity-25 text-white'; ?> ms-1"><?php echo htmlspecialchars($msg['matched_intent']); ?></span>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-                <div class="card-footer bg-white border-0 p-4">
-                    <form id="chatReplyForm" class="ajax-form d-flex gap-2" action="<?php echo $adminBase; ?>/actions/manage_chat.php" method="POST">
-                        <input type="hidden" name="action" value="send_reply">
-                        <input type="hidden" name="wa_number" value="<?php echo htmlspecialchars($threadNumber); ?>">
-                        <input type="text" class="form-control rounded-pill" name="message" required placeholder="Tulis balasan...">
-                        <button type="submit" class="btn btn-success rounded-pill fw-bold px-4"><i class="fab fa-whatsapp me-2"></i>Kirim</button>
-                    </form>
-                </div>
-            </div>
+            <a href="?page=chat" class="btn btn-light border rounded-pill px-4 fw-bold"><i class="fas fa-arrow-left me-2"></i>Semua Percakapan</a>
+        <?php endif; ?>
+    </div>
+</div>
 
-            <script>
-            function deleteConversation(number) {
-                Swal.fire({
-                    title: 'Hapus percakapan ini?',
-                    text: 'Semua pesan dari nomor ini akan dihapus.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Ya, Hapus!',
-                    cancelButtonText: 'Batal'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        const adminBase = '<?php echo $adminBase; ?>';
-                        const formData = new FormData();
-                        formData.append('action', 'delete_thread');
-                        formData.append('wa_number', number);
-                        fetch(adminBase + '/actions/manage_chat.php', { method: 'POST', body: formData })
-                        .then(res => res.json())
-                        .then(data => {
-                            Swal.fire(data.status === 'success' ? 'Terhapus!' : 'Gagal', data.message, data.status).then(() => {
-                                if (data.status === 'success') window.location.href = '?page=chat';
-                            });
-                        });
+<?php if (empty($threadNumber)): ?>
+    <?php require __DIR__ . '/chat_list.php'; ?>
+<?php else: ?>
+    <?php require __DIR__ . '/chat_thread.php'; ?>
+<?php endif; ?>
+
+<script>
+function deleteConversation(number) {
+    if (!window.Swal) {
+        if (!confirm('Hapus percakapan ini?')) return;
+    }
+    const doDelete = function() {
+        const adminBase = '<?php echo $adminBase; ?>';
+        const cleanNumber = decodeURIComponent(number);
+        const formData = new FormData();
+        formData.append('action', 'delete_thread');
+        formData.append('wa_number', cleanNumber);
+        const csrf = document.querySelector('input[name="csrf_token"]')?.value || window.MCM_CSRF_TOKEN || '';
+        if (csrf) formData.append('csrf_token', csrf);
+        fetch(adminBase + '/actions/manage_chat.php', { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(data => {
+            const ok = data.status === 'success';
+            if (window.Swal) {
+                Swal.fire({ icon: ok?'success':'error', title: ok?'Terhapus!':'Gagal', text:data.message, timer: ok?1500:undefined, showConfirmButton: !ok }).then(() => {
+                    if (ok) {
+                        const tr = document.querySelector('tr[data-thread="'+cleanNumber+'"]') || document.querySelector('a[href*="thread='+encodeURIComponent(number)+'"]')?.closest('tr');
+                        if (tr) tr.remove();
                     }
                 });
+            } else {
+                alert(data.message);
+                if (ok) location.reload();
             }
-            </script>
-        <?php endif; ?>
+        }).catch(err => { if(window.Swal) Swal.fire('Gagal', err.message || 'Gagal', 'error'); else alert('Gagal'); });
+    };
+
+    if (window.Swal) {
+        Swal.fire({
+            title: 'Hapus percakapan ini?',
+            text: 'Semua pesan dari nomor/siswa ini akan dihapus.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal'
+        }).then((result) => { if (result.isConfirmed) doDelete(); });
+    } else {
+        doDelete();
+    }
+}
+</script>

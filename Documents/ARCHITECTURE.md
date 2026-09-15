@@ -84,7 +84,7 @@ Wrapper tipis yang meng-include partial dari `partials/`:
 - `create_transaction.php` — dipanggil dari modal checkout (POST, CSRF): validasi kelas & (opsional) **Instruktur terpilih**, insert `orders` (`payment_status = 'unpaid'`), panggil `includes/payment_gateway.php` untuk membuat transaksi di Payment Gateway, simpan `orders.payment_gateway_ref`, kembalikan URL/Snap token pembayaran ke browser.
 - `payment_status.php` — halaman status transaksi untuk user (pending/paid/failed/expired), polling ringan atau tampil dari DB.
 - `payment_webhook.php` — endpoint callback dari Payment Gateway (POST, **tanpa sesi**, verifikasi signature via `payment_gateway.php`), update `orders.payment_status` (`paid`/`failed`/`expired`) dan `orders.paid_at`. Jika `paid`, otomatis membuat baris `enrollments` (akses LMS terbuka) dan mengirim notifikasi WhatsApp via `whatsapp_client.php`.
-- Alur lama (redirect WhatsApp manual ke `6285793935707` + `generate_pdf.php`) **dipertahankan sebagai bukti/invoice**, kini dipicu setelah `payment_status = paid`, bukan langsung setelah checkout.
+- Alur lama (redirect WhatsApp manual ke `628978902864` + `generate_pdf.php`) **dipertahankan sebagai bukti/invoice**, kini dipicu setelah `payment_status = paid`, bukan langsung setelah checkout.
 
 ### 3.5 Chatbot Terintegrasi WhatsApp API (BARU)
 - `chatbot_webhook.php` — satu endpoint untuk dua metode:
@@ -202,7 +202,7 @@ Aturan: **file PHP yang melebihi 300 baris harus dipecah menjadi partials.**
 
 ## 7. Variabel Lingkungan / Konfigurasi
 - DB: `includes/db_config.php` (`host localhost`, `dbname mcm_db`, `user root`, password diisi di file ini).
-- Nomor WhatsApp admin (checkout lama & notifikasi): hardcoded `6285793935707`.
+- Nomor WhatsApp admin (checkout lama & notifikasi): hardcoded `628978902864`.
 - Admin login seed di schema: `admin` / `admin` (hash bcrypt). DB produksi: `superadmin` / `AdminMCM2026`.
 - **Payment Gateway**: `includes/config_secrets.php` — `PAYMENT_SERVER_KEY`, `PAYMENT_CLIENT_KEY`, `PAYMENT_MODE` (`sandbox`/`production`), `PAYMENT_WEBHOOK_SIGNATURE_KEY`.
 - **WhatsApp Cloud API**: `includes/config_secrets.php` — `WA_PHONE_NUMBER_ID`, `WA_ACCESS_TOKEN`, `WA_VERIFY_TOKEN` (dicocokkan saat `GET chatbot_webhook.php`).

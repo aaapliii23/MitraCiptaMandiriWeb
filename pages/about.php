@@ -53,7 +53,7 @@ include '../includes/header.php';
             </div>
             <div class="col-lg-6">
                 <div class="position-relative">
-                    <img src="<?php echo htmlspecialchars(asset_src('assets/img/gallery/slide_landingpages/WhatsApp Image 2026-08-14 at 14.44.00.jpeg')); ?>" alt="MCM Office" class="img-fluid rounded-5 shadow-lg w-100" style="object-fit: cover; max-height: 450px;" onerror="this.onerror=null;this.src='../assets/img/hero-bg.jpg';">
+                    <img src="<?php echo htmlspecialchars(asset_src('assets/img/gallery/slide_landingpages/WhatsApp Image 2026-08-14 at 14.44.00.jpeg')); ?>" alt="MCM Office" class="img-fluid rounded-5 shadow-lg w-100" style="object-fit: cover; max-height: 450px;" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='../assets/img/hero-bg.jpg';">
                 </div>
             </div>
         </div>
@@ -115,9 +115,11 @@ include '../includes/header.php';
             <p class="text-muted">Metodologi kami dalam mentransformasi potensi menjadi kompetensi nyata</p>
         </div>
 
-        <div class="row g-4 position-relative mb-5">
-            <!-- Connection Line (Desktop) -->
-            <div class="position-absolute top-50 start-0 end-0 d-none d-lg-block" style="height: 2px; background: linear-gradient(90deg, #0c4a6e 0%, #0ea5e9 100%); transform: translateY(-50%); z-index: 0; opacity: 0.2;"></div>
+        <div class="row g-4 position-relative mb-5 alur-row">
+            <!-- Arrow connectors desktop (→) — between 1-2, 2-3, 3-4 -->
+            <div class="alur-arrow d-none d-lg-flex" style="left: 25%;"><i class="fas fa-arrow-right"></i></div>
+            <div class="alur-arrow d-none d-lg-flex" style="left: 50%;"><i class="fas fa-arrow-right"></i></div>
+            <div class="alur-arrow d-none d-lg-flex" style="left: 75%;"><i class="fas fa-arrow-right"></i></div>
             
             <div class="col-lg-3 col-md-6">
                 <div class="card border-0 shadow-sm rounded-5 p-4 text-center h-100 bg-white position-relative" style="z-index: 1;">
@@ -128,6 +130,7 @@ include '../includes/header.php';
                     <p class="small text-muted mb-0">Identifikasi minat dan pemilihan program pelatihan yang tepat.</p>
                 </div>
             </div>
+            <div class="col-12 d-lg-none d-flex justify-content-center my-1"><div class="alur-arrow-mobile"><i class="fas fa-arrow-down"></i></div></div>
             
             <div class="col-lg-3 col-md-6">
                 <div class="card border-0 shadow-sm rounded-5 p-4 text-center h-100 bg-white position-relative" style="z-index: 1;">
@@ -138,6 +141,7 @@ include '../includes/header.php';
                     <p class="small text-muted mb-0">Penguasaan keahlian melalui praktik langsung dengan alat standar industri.</p>
                 </div>
             </div>
+            <div class="col-12 d-lg-none d-flex justify-content-center my-1"><div class="alur-arrow-mobile"><i class="fas fa-arrow-down"></i></div></div>
             
             <div class="col-lg-3 col-md-6">
                 <div class="card border-0 shadow-sm rounded-5 p-4 text-center h-100 bg-white position-relative" style="z-index: 1;">
@@ -148,6 +152,7 @@ include '../includes/header.php';
                     <p class="small text-muted mb-0">Uji kompetensi menyeluruh untuk memastikan standar penguasaan materi.</p>
                 </div>
             </div>
+            <div class="col-12 d-lg-none d-flex justify-content-center my-1"><div class="alur-arrow-mobile"><i class="fas fa-arrow-down"></i></div></div>
             
             <div class="col-lg-3 col-md-6">
                 <div class="card border-0 shadow-sm rounded-5 p-4 text-center h-100 bg-white position-relative" style="z-index: 1;">
@@ -159,6 +164,33 @@ include '../includes/header.php';
                 </div>
             </div>
         </div>
+        <style>
+            .alur-row { overflow: visible; }
+            .alur-arrow {
+                position: absolute;
+                top: 52px;
+                width: 36px; height: 36px;
+                background: #fff;
+                border: 1px solid #e2e8f0;
+                border-radius: 50%;
+                display: flex; align-items: center; justify-content: center;
+                color: #0c4a6e;
+                box-shadow: 0 4px 12px rgba(12,74,110,0.10);
+                z-index: 2;
+                transform: translateX(-50%);
+            }
+            .alur-arrow i { font-size: 0.85rem; color: #0ea5e9; }
+            .alur-arrow-mobile {
+                width: 32px; height: 32px;
+                background: #fff;
+                border: 1px solid #e2e8f0;
+                border-radius: 50%;
+                display: flex; align-items: center; justify-content: center;
+                color: #0ea5e9;
+                box-shadow: 0 2px 8px rgba(12,74,110,0.08);
+            }
+            .alur-arrow-mobile i { font-size: 0.8rem; }
+        </style>
 
         <hr class="my-5 opacity-10">
 
@@ -364,7 +396,7 @@ include '../includes/header.php';
                     <div class="col-lg-4 col-md-6 facility-item" data-category="<?php echo htmlspecialchars($item['category']); ?>" data-src="<?php echo htmlspecialchars(asset_src($item['src'])); ?>" data-title="<?php echo htmlspecialchars($item['title']); ?>" data-cat="<?php echo htmlspecialchars($item['cat_name']); ?>">
                         <div class="card border-0 shadow-sm rounded-5 overflow-hidden h-100 bg-white facility-card" style="transition: all 0.3s ease; border: 1px solid rgba(12, 74, 110, 0.08) !important;">
                             <div class="position-relative overflow-hidden facility-thumb" style="height: 250px; cursor: pointer;">
-                                <img src="<?php echo htmlspecialchars(asset_src($item['src'])); ?>" alt="<?php echo htmlspecialchars($item['title']); ?>" class="w-100 h-100 facility-img" style="object-fit: cover; transition: transform 0.5s ease;" onerror="this.onerror=null;this.src='../assets/img/hero-bg.jpg';">
+                                <img src="<?php echo htmlspecialchars(asset_src($item['src'])); ?>" alt="<?php echo htmlspecialchars($item['title']); ?>" class="w-100 h-100 facility-img" style="object-fit: cover; transition: transform 0.5s ease; background:#e2e8f0;" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='../assets/img/hero-bg.jpg';">
                                 <div class="facility-overlay position-absolute inset-0 d-flex align-items-center justify-content-center" style="background: rgba(12, 74, 110, 0.4); opacity: 0; transition: all 0.3s ease;">
                                     <span class="btn btn-light rounded-circle shadow-sm" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #0c4a6e;">
                                         <i class="fas fa-expand-alt"></i>

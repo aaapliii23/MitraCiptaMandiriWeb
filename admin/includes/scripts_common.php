@@ -32,12 +32,27 @@ if (detailPesananModal) {
             'detailInstansi': 'data-instansi',
             'detailAlamat': 'data-alamat',
             'detailKelas': 'data-kelas',
-            'detailHarga': 'data-harga'
+            'detailHarga': 'data-harga',
+            'detailMetode': 'data-metode'
         };
 
         for (const [id, attr] of Object.entries(map)) {
             const el = document.getElementById(id);
             if (el) el.textContent = btn.getAttribute(attr) || '-';
+        }
+        // Bukti transfer manual — gambar tampil langsung, PDF sebagai link
+        const proof = btn.getAttribute('data-proof') || '';
+        const wrap = document.getElementById('detailProofWrap');
+        const img = document.getElementById('detailProofImg');
+        const pdf = document.getElementById('detailProofPdf');
+        if (wrap && img && pdf) {
+            img.classList.add('d-none'); pdf.classList.add('d-none'); wrap.classList.add('d-none');
+            if (proof) {
+                const src = /^https?:\/\//i.test(proof) ? proof : '../' + proof.replace(/^\/+/, '');
+                wrap.classList.remove('d-none');
+                if (/\.pdf(\?.*)?$/i.test(proof)) { pdf.href = src; pdf.classList.remove('d-none'); }
+                else { img.src = src; img.classList.remove('d-none'); }
+            }
         }
         // Mode khusus — badge Online/Offline
         const modeEl = document.getElementById('detailMode');
@@ -74,6 +89,45 @@ function toggleWaLinkVisibility() {
         input.value = '';
     }
 }
+let currentEditingClassImage = null;
+
+function resolveAdminImgSrc(path) {
+    if (!path) return '../assets/img/logo.png';
+    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('../') || path.startsWith('data:')) {
+        return path;
+    }
+    return '../' + path.replace(/^\/+/, '');
+}
+
+function showClassImagePreview(src, label, isNew) {
+    const container = document.getElementById('classImagePreviewContainer');
+    const imgEl = document.getElementById('classImagePreview');
+    const bgEl = document.getElementById('classImagePreviewBg');
+    const lblEl = document.getElementById('classImagePreviewLabel');
+    const clearBtn = document.getElementById('classImageClearBtn');
+    if (!container || !imgEl) return;
+    
+    imgEl.src = src;
+    if (bgEl) bgEl.style.backgroundImage = 'url("' + src.replace(/"/g, '\\"') + '")';
+    if (lblEl) lblEl.innerHTML = '<i class="fas fa-image me-1 text-primary"></i>' + (label || 'Pratinjau Foto');
+    if (clearBtn) clearBtn.style.display = isNew ? '' : 'none';
+    container.style.display = '';
+}
+
+function clearClassImagePreview() {
+    const fileInput = document.getElementById('classImage');
+    if (fileInput) fileInput.value = '';
+    
+    if (currentEditingClassImage) {
+        showClassImagePreview(resolveAdminImgSrc(currentEditingClassImage), 'Foto Saat Ini (Utuh)', false);
+    } else {
+        const container = document.getElementById('classImagePreviewContainer');
+        const imgEl = document.getElementById('classImagePreview');
+        if (container) container.style.display = 'none';
+        if (imgEl) imgEl.src = '';
+    }
+}
+
 function resetClassForm() {
     document.getElementById('classForm').reset();
     document.getElementById('classAction').value = 'create';
@@ -91,6 +145,8 @@ function resetClassForm() {
     if (ma) ma.value = 'both';
     if (wa) wa.value = '';
     toggleWaLinkVisibility();
+    currentEditingClassImage = null;
+    clearClassImagePreview();
 }
 
 function editClass(data) {
@@ -130,6 +186,12 @@ function editClass(data) {
     document.getElementById('classImage').required = false;
     document.getElementById('classModalTitle').textContent = 'Edit Paket Pelatihan';
     
+    // Tampilkan foto saat ini (secara utuh tanpa terpotong)
+    currentEditingClassImage = data.image || null;
+    if (data.image) {
+        showClassImagePreview(resolveAdminImgSrc(data.image), 'Foto Saat Ini (Utuh)', false);
+    }
+    
     new bootstrap.Modal(document.getElementById('classModal')).show();
 }
 document.addEventListener('DOMContentLoaded', function(){
@@ -140,6 +202,20 @@ document.addEventListener('DOMContentLoaded', function(){
     const ma = document.getElementById('classModeAvailable');
     if (ma) ma.addEventListener('change', toggleWaLinkVisibility);
     toggleWaLinkVisibility();
+
+    // Listener ganti foto pelatihan (instant preview utuh)
+    const classImgInput = document.getElementById('classImage');
+    if (classImgInput) {
+        classImgInput.addEventListener('change', function(){
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    showClassImagePreview(e.target.result, 'Pratinjau Foto Baru (Tampak Utuh)', true);
+                };
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    }
 });
 
 function editInstructor(data) {
@@ -149,6 +225,8 @@ function editInstructor(data) {
     document.getElementById('instructorName').value = data.name;
     document.getElementById('instructorCategory').value = data.category;
     document.getElementById('instructorSpec').value = data.specialization;
+    const certEl = document.getElementById('instructorCerts');
+    if (certEl) certEl.value = (data.certifications || '').replace(/,\s*/g, ', ');
     document.getElementById('instructorImage').required = false;
     document.getElementById('instructorModalTitle').textContent = 'Edit Data Instruktur';
     new bootstrap.Modal(document.getElementById('instructorModal')).show();
@@ -242,10 +320,10 @@ async function submitAjaxForm(formId) {
                     icon: 'success',
                     title: 'Berhasil!',
                     text: successMsg,
-                    timer: 2000,
+                    timer: 1800,
                     showConfirmButton: false
                 }).then(() => {
-                    location.reload();
+                    window.mcmCloseModalsAndRefresh();
                 });
             } else {
                 Swal.fire({
@@ -285,7 +363,7 @@ async function submitAjaxForm(formId) {
                 timer: 1500,
                 showConfirmButton: false
             }).then(() => {
-                location.reload();
+                window.mcmCloseModalsAndRefresh();
             });
         } else {
             Swal.fire({
@@ -310,6 +388,22 @@ async function submitAjaxForm(formId) {
         }
     });
 }
+
+// Partial refresh helper — tutup modal & reload konten tanpa full page reload (konsisten dengan loadContent)
+window.mcmCloseModalsAndRefresh = function() {
+    document.querySelectorAll('.modal.show').forEach(function(el){
+        const m = bootstrap.Modal.getInstance(el);
+        if (m) m.hide();
+    });
+    document.querySelectorAll('.modal-backdrop').forEach(function(el){ el.remove(); });
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+    const page = new URLSearchParams(window.location.search).get('page') || 'dashboard';
+    if (typeof loadContent === 'function') {
+        loadContent('?page=' + page, false);
+    }
+};
 
 // Debounce util: tunda eksekusi fn sampai user berhenti memicu selama `ms` ms.
 // Pemakaian: input.addEventListener('input', window.debounce(function(){...}, 400));

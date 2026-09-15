@@ -8,6 +8,17 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 }
 
 require_once '../../config/database.php';
+require_once '../../includes/security.php';
+mcm_cors_headers();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!mcm_csrf_verify($_POST['csrf_token'] ?? $_POST['_token'] ?? '')) {
+        echo json_encode(['status'=>'error','message'=>'CSRF token tidak valid. Muat ulang halaman.']); exit;
+    }
+    $rateKey = 'admin_' . basename(__FILE__, '.php') . '_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    $rl = mcm_rate_limit($rateKey, 30, 60);
+    if (!$rl['allowed']) { echo json_encode(['status'=>'error','message'=>$rl['message']]); exit; }
+}
+require_once '../../includes/cloudinary.php';
 
 // Auto-create & upgrade table
 try {
@@ -34,6 +45,7 @@ try {
     if (!in_array('unit_price', $cols)) $pdo->exec("ALTER TABLE finance_transactions ADD COLUMN unit_price INT(11) NOT NULL DEFAULT 0");
     if (!in_array('receipt_image', $cols)) $pdo->exec("ALTER TABLE finance_transactions ADD COLUMN receipt_image VARCHAR(255) DEFAULT NULL");
     if (!in_array('order_id', $cols)) $pdo->exec("ALTER TABLE finance_transactions ADD COLUMN order_id INT(11) DEFAULT NULL");
+    if (!in_array('receipt_public_id', $cols)) $pdo->exec("ALTER TABLE finance_transactions ADD COLUMN receipt_public_id VARCHAR(255) DEFAULT NULL AFTER receipt_image");
 } catch (PDOException $e) {}
 
 $action = $_POST['action'] ?? '';
@@ -108,28 +120,29 @@ if ($action === 'create' || $action === 'update') {
         $transaction_date = date('Y-m-d');
     }
 
-    // Handle receipt image upload
-    $receipt_image = null;
-    if (isset($_FILES['receipt_image']) && $_FILES['receipt_image']['error'] === UPLOAD_ERR_OK) {
-        $allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+    // Handle receipt image upload -> Cloudinary for images, local for pdf
+    $receipt_image = null; $receipt_public_id = null;
+    if (isset($_FILES['receipt_image']) && $_FILES['receipt_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        if ($_FILES['receipt_image']['error'] !== UPLOAD_ERR_OK) { echo json_encode(['status'=>'error','message'=>'Upload nota gagal.']); exit; }
         $ext = strtolower(pathinfo($_FILES['receipt_image']['name'], PATHINFO_EXTENSION));
-        if (in_array($ext, $allowed)) {
+        if (in_array($ext, ['jpg','jpeg','png','webp'], true)) {
+            $res = uploadImageToCloudinary($_FILES['receipt_image'], 'mcm/finance');
+            if (!$res['ok']) { echo json_encode(['status'=>'error','message'=>$res['error']]); exit; }
+            $receipt_image = $res['url']; $receipt_public_id = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']);
+        } elseif ($ext === 'pdf') {
             $uploadDir = '../../uploads/finance';
             if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
-
-            $newFilename = uniqid('rec_') . '.' . $ext;
-            $dest = 'uploads/finance/' . $newFilename;
-            if (move_uploaded_file($_FILES['receipt_image']['tmp_name'], '../../' . $dest)) {
-                $receipt_image = $dest;
-            }
-        }
+            $dest = 'uploads/finance/' . uniqid('rec_') . '.pdf';
+            if (move_uploaded_file($_FILES['receipt_image']['tmp_name'], '../../' . $dest)) $receipt_image = $dest;
+            else { echo json_encode(['status'=>'error','message'=>'Gagal menyimpan PDF.']); exit; }
+        } else { echo json_encode(['status'=>'error','message'=>'Format nota harus JPG/PNG/WEBP/PDF.']); exit; }
     }
 
     try {
         if ($action === 'create') {
-            $stmt = $pdo->prepare("INSERT INTO finance_transactions (type, category, item_name, quantity, unit_price, amount, description, receipt_image, transaction_date) 
-                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$type, $category, $item_name, $quantity, $unit_price, $amount, $description ?: null, $receipt_image, $transaction_date]);
+            $stmt = $pdo->prepare("INSERT INTO finance_transactions (type, category, item_name, quantity, unit_price, amount, description, receipt_image, receipt_public_id, transaction_date) 
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$type, $category, $item_name, $quantity, $unit_price, $amount, $description ?: null, $receipt_image, $receipt_public_id, $transaction_date]);
             echo json_encode(['status' => 'success', 'message' => 'Transaksi keuangan berhasil dicatat.']);
         } else {
             if ($id <= 0) {
@@ -137,8 +150,8 @@ if ($action === 'create' || $action === 'update') {
                 exit;
             }
             if ($receipt_image) {
-                $stmt = $pdo->prepare("UPDATE finance_transactions SET type = ?, category = ?, item_name = ?, quantity = ?, unit_price = ?, amount = ?, description = ?, receipt_image = ?, transaction_date = ? WHERE id = ?");
-                $stmt->execute([$type, $category, $item_name, $quantity, $unit_price, $amount, $description ?: null, $receipt_image, $transaction_date, $id]);
+                $stmt = $pdo->prepare("UPDATE finance_transactions SET type = ?, category = ?, item_name = ?, quantity = ?, unit_price = ?, amount = ?, description = ?, receipt_image = ?, receipt_public_id = ?, transaction_date = ? WHERE id = ?");
+                $stmt->execute([$type, $category, $item_name, $quantity, $unit_price, $amount, $description ?: null, $receipt_image, $receipt_public_id, $transaction_date, $id]);
             } else {
                 $stmt = $pdo->prepare("UPDATE finance_transactions SET type = ?, category = ?, item_name = ?, quantity = ?, unit_price = ?, amount = ?, description = ?, transaction_date = ? WHERE id = ?");
                 $stmt->execute([$type, $category, $item_name, $quantity, $unit_price, $amount, $description ?: null, $transaction_date, $id]);
@@ -160,19 +173,41 @@ if ($action === 'delete') {
     }
 
     try {
-        $stmt = $pdo->prepare("SELECT receipt_image FROM finance_transactions WHERE id = ?");
-        $stmt->execute([$id]);
-        $rec = $stmt->fetch();
-        if ($rec && !empty($rec['receipt_image'])) {
-            @unlink('../../' . $rec['receipt_image']);
-        }
-
+        try { $stmt = $pdo->prepare("SELECT receipt_image, receipt_public_id FROM finance_transactions WHERE id = ?"); $stmt->execute([$id]); $rec = $stmt->fetch(); } catch (PDOException $e) { $stmt = $pdo->prepare("SELECT receipt_image FROM finance_transactions WHERE id = ?"); $stmt->execute([$id]); $rec = $stmt->fetch(); if ($rec) $rec['receipt_public_id'] = ''; }
         $del = $pdo->prepare("DELETE FROM finance_transactions WHERE id = ?");
         $del->execute([$id]);
+        if ($rec && (!empty($rec['receipt_public_id']) || str_contains($rec['receipt_image'] ?? '', 'res.cloudinary.com'))) { $pid = $rec['receipt_public_id'] ?: $rec['receipt_image']; $delRes = deleteImageFromCloudinary($pid); if (!$delRes['ok']) error_log("[Cloudinary delete finance $id] ".$delRes['error']); }
+        if ($rec && !empty($rec['receipt_image']) && strpos($rec['receipt_image'], 'http') !== 0) {
+            @unlink('../../' . $rec['receipt_image']);
+        }
         echo json_encode(['status' => 'success', 'message' => 'Transaksi berhasil dihapus.']);
     } catch (PDOException $e) {
         echo json_encode(['status' => 'error', 'message' => 'Gagal menghapus transaksi.']);
     }
+    exit;
+}
+if ($action === 'bulk_delete') {
+    $raw = $_POST['ids'] ?? '';
+    $ids = [];
+    if (is_array($raw)) $ids = $raw;
+    elseif (is_string($raw) && $raw !== '') { $d=json_decode($raw,true); $ids=is_array($d)?$d:array_filter(array_map('trim',explode(',',$raw))); }
+    $ids = array_values(array_unique(array_filter(array_map('intval',$ids))));
+    if (empty($ids)) { echo json_encode(['status'=>'error','message'=>'Tidak ada data terpilih']); exit; }
+    if (count($ids)>100) { echo json_encode(['status'=>'error','message'=>'Maksimal 100 data']); exit; }
+    try {
+        // hapus file terkait dulu
+        $ph = implode(',', array_fill(0,count($ids),'?'));
+        $stmt = $pdo->prepare("SELECT receipt_image, receipt_public_id FROM finance_transactions WHERE id IN ($ph)");
+        $stmt->execute($ids);
+        $recs = $stmt->fetchAll();
+        $del = $pdo->prepare("DELETE FROM finance_transactions WHERE id IN ($ph)");
+        $del->execute($ids);
+        foreach ($recs as $rec){
+            if (!empty($rec['receipt_public_id']) || str_contains($rec['receipt_image'] ?? '', 'res.cloudinary.com')){ $pid=$rec['receipt_public_id']?:$rec['receipt_image']; $r=deleteImageFromCloudinary($pid); if(!$r['ok']) error_log("[Cloudinary bulk finance] ".$r['error']); }
+            if (!empty($rec['receipt_image']) && strpos($rec['receipt_image'],'http')!==0) @unlink('../../'.$rec['receipt_image']);
+        }
+        echo json_encode(['status'=>'success','message'=> $del->rowCount().' transaksi berhasil dihapus.']);
+    } catch(PDOException $e){ echo json_encode(['status'=>'error','message'=>'Gagal hapus massal']); }
     exit;
 }
 

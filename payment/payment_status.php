@@ -8,11 +8,11 @@ try { $pdo->query("SELECT class_mode FROM orders LIMIT 1"); } catch (Exception $
 $hasWaCol = true;
 try { $pdo->query("SELECT whatsapp_group_link FROM classes LIMIT 1"); } catch (Exception $e) { $hasWaCol = false; }
 if ($hasMode && $hasWaCol) {
-    $stmt = $pdo->prepare("SELECT o.*, c.name AS class_name, c.whatsapp_group_link FROM orders o LEFT JOIN classes c ON o.class_id = c.id WHERE o.order_number = ?");
+    $stmt = $pdo->prepare("SELECT o.*, c.name AS class_name, c.whatsapp_group_link, i.name AS instructor_name, i.specialization AS instructor_spec FROM orders o LEFT JOIN classes c ON o.class_id = c.id LEFT JOIN instructors i ON o.instructor_id = i.id WHERE o.order_number = ?");
 } elseif ($hasMode) {
-    $stmt = $pdo->prepare("SELECT o.*, c.name AS class_name FROM orders o LEFT JOIN classes c ON o.class_id = c.id WHERE o.order_number = ?");
+    $stmt = $pdo->prepare("SELECT o.*, c.name AS class_name, i.name AS instructor_name, i.specialization AS instructor_spec FROM orders o LEFT JOIN classes c ON o.class_id = c.id LEFT JOIN instructors i ON o.instructor_id = i.id WHERE o.order_number = ?");
 } else {
-    $stmt = $pdo->prepare("SELECT o.*, c.name AS class_name FROM orders o LEFT JOIN classes c ON o.class_id = c.id WHERE o.order_number = ?");
+    $stmt = $pdo->prepare("SELECT o.*, c.name AS class_name, i.name AS instructor_name, i.specialization AS instructor_spec FROM orders o LEFT JOIN classes c ON o.class_id = c.id LEFT JOIN instructors i ON o.instructor_id = i.id WHERE o.order_number = ?");
 }
 $stmt->execute([$orderNumber]);
 $order = $stmt->fetch();
@@ -55,6 +55,10 @@ $statusMeta = [
     'expired' => ['icon' => 'fa-clock', 'color' => '#dc2626', 'title' => 'Pembayaran Kedaluwarsa', 'desc' => 'Waktu pembayaran habis. Silakan lakukan pembayaran ulang.'],
 ];
 $meta = $statusMeta[$order['payment_status'] ?? 'unpaid'] ?? $statusMeta['unpaid'];
+if ($order && ($order['payment_status'] ?? '') === 'pending' && ($order['payment_method'] ?? '') === 'manual_transfer') {
+    $meta = ['icon' => 'fa-user-check', 'color' => '#7c3aed', 'title' => 'Menunggu Konfirmasi Admin', 'desc' => 'Bukti pembayaran berhasil dikirim, mohon tunggu konfirmasi dari admin (maks 1x24 jam).'];
+}
+$isAwaitingProof = $order && ($order['payment_status'] ?? '') === 'pending' && ($order['payment_method'] ?? '') === 'manual_transfer';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -87,6 +91,10 @@ $meta = $statusMeta[$order['payment_status'] ?? 'unpaid'] ?? $statusMeta['unpaid
                         <div class="d-flex justify-content-between py-1">
                             <span class="text-muted small">Program</span>
                             <span class="fw-bold small"><?php echo htmlspecialchars($order['class_name'] ?? '-'); ?></span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span class="text-muted small">Instruktur</span>
+                            <span class="fw-bold small text-end" style="max-width:160px;"><?php echo !empty($order['instructor_name']) ? htmlspecialchars($order['instructor_name']) . '<br><span class="fw-normal text-muted" style="font-size:0.7rem;">'.htmlspecialchars($order['instructor_spec']??'').'</span>' : '<span class="text-muted">Instruktur akan ditentukan oleh admin</span>'; ?></span>
                         </div>
                         <div class="d-flex justify-content-between py-1">
                             <span class="text-muted small">Mode</span>
@@ -141,12 +149,18 @@ $meta = $statusMeta[$order['payment_status'] ?? 'unpaid'] ?? $statusMeta['unpaid
                         </div>
                     <?php elseif (in_array($order['payment_status'], ['failed', 'expired', 'unpaid'])): ?>
                         <div class="d-grid gap-2">
-                            <a href="payment_mock.php?order=<?php echo urlencode($order['order_number']); ?>&token=retry" class="btn rounded-pill py-2 fw-bold text-white" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9);">
-                                <i class="fas fa-redo me-2"></i>Coba Bayar Lagi
+                            <p class="small text-muted">Pembayaran belum selesai. Silakan hubungi admin atau buat pesanan baru.</p>
+                            <a href="../index.php#paket" class="btn rounded-pill py-2 fw-bold text-white" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9);">
+                                <i class="fas fa-redo me-2"></i>Pesan Ulang
                             </a>
                         </div>
                     <?php else: ?>
                         <div class="d-grid gap-2">
+                            <?php if ($isAwaitingProof): ?>
+                            <a href="custom_payment.php?order=<?php echo urlencode($order['order_number']); ?>" class="btn rounded-pill py-2 fw-bold text-white" style="background: linear-gradient(135deg, #0c4a6e, #0ea5e9);">
+                                <i class="fas fa-receipt me-2"></i>Lihat Halaman Pembayaran
+                            </a>
+                            <?php endif; ?>
                             <a href="../index.php" class="btn btn-outline-primary rounded-pill py-2 fw-bold">Kembali ke Beranda</a>
                         </div>
                     <?php endif; ?>

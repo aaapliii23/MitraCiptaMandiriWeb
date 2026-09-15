@@ -1,6 +1,8 @@
-<?php
+﻿<?php
 require_once '../includes/auth_user.php';
 require_once '../config/database.php';
+require_once '../includes/cloudinary.php';
+try { $cols = $pdo->query("SHOW COLUMNS FROM testimonials")->fetchAll(PDO::FETCH_COLUMN); if (!in_array('image_public_id', $cols)) $pdo->exec("ALTER TABLE testimonials ADD COLUMN image_public_id VARCHAR(255) DEFAULT NULL AFTER image"); } catch (Throwable $e) {}
 
 $userId = (int)$_SESSION['user_id'];
 
@@ -41,33 +43,31 @@ if ($testimonialType === 'testimonial') {
     } elseif (empty($review)) {
         $testimonialMessage = 'Ulasan wajib diisi.';
     } else {
-        $image = null;
-        if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-            $allowed = ['jpg', 'jpeg', 'png', 'webp'];
-            $ext = strtolower(pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION));
-            if (in_array($ext, $allowed)) {
-                $dir = dirname(__DIR__) . '/uploads/testimonials/';
-                if (!is_dir($dir)) mkdir($dir, 0775, true);
-                $dest = $dir . uniqid() . '.' . $ext;
-                if (move_uploaded_file($_FILES['photo']['tmp_name'], $dest)) {
-                    $image = 'uploads/testimonials/' . basename($dest);
-                }
-            }
+        $image = null; $imagePublicId = null;
+        $uploadErr = null;
+        if (isset($_FILES['photo']) && $_FILES['photo']['error'] !== UPLOAD_ERR_NO_FILE) {
+            $res = uploadImageToCloudinary($_FILES['photo'], 'mcm/testimonials');
+            if (!$res['ok']) { $uploadErr = $res['error']; $testimonialMessage = $res['error']; }
+            else { $image = $res['url']; $imagePublicId = $res['public_id'] ?? cloudinaryPublicIdFromUrl($res['url']); }
         }
 
+        if ($uploadErr) {
+            // tetap tampilkan pesan error upload, skip insert
+        } else {
         try {
             $stmtName = $pdo->prepare("SELECT name FROM users WHERE id = ? LIMIT 1");
             $stmtName->execute([$userId]);
             $nameRow = $stmtName->fetch();
             $name = $nameRow['name'] ?? $_SESSION['user_name'] ?? '';
-            $stmt = $pdo->prepare("INSERT INTO testimonials (user_id, name, rating, review, image, class_id, graduation_year, job, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
-            if ($stmt->execute([$userId, $name, $rating, $review, $image, $classId, $graduationYear ?: null, $job ?: null])) {
+            $stmt = $pdo->prepare("INSERT INTO testimonials (user_id, name, rating, review, image, image_public_id, class_id, graduation_year, job, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
+            if ($stmt->execute([$userId, $name, $rating, $review, $image, $imagePublicId, $classId, $graduationYear ?: null, $job ?: null])) {
                 $testimonialMessage = 'Testimoni berhasil dikirim dan menunggu persetujuan admin.';
             } else {
                 $testimonialMessage = 'Gagal menyimpan testimoni. Silakan coba lagi.';
             }
         } catch (PDOException $e) {
             $testimonialMessage = 'Terjadi kesalahan sistem.';
+        }
         }
     }
     if (strpos($testimonialMessage, 'berhasil') !== false) {
@@ -167,20 +167,7 @@ try {
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg fixed-top shadow-sm bg-white" style="transition: all 0.4s ease;">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="../index.php">
-                <img src="../assets/img/logo.png" alt="MCM Logo" style="height: 40px;">
-                <span class="fw-bold ms-2" style="font-size: 0.9rem; letter-spacing: 1px;">LMS MITRA CIPTA MANDIRI</span>
-            </a>
-            <div class="d-flex align-items-center gap-2">
-                <span class="text-muted small d-none d-md-inline"><i class="fas fa-user me-1"></i><?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
-                <a href="dashboard.php" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a>
-                <a href="../index.php" class="btn btn-outline-primary btn-sm rounded-pill px-3">Beranda</a>
-                <a href="../auth/user_logout.php" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="fas fa-sign-out-alt me-1"></i>Keluar</a>
-            </div>
-        </div>
-    </nav>
+    <?php $lms_nav_active = 'profile'; require __DIR__ . '/partials/navbar.php'; ?>
 
     <section class="pt-5" style="margin-top: 56px; min-height: 80vh; background: #f8fafc;">
         <div class="container py-4">
@@ -240,5 +227,10 @@ try {
     </section>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <?php
+    $base_url = '../';
+    require_once '../config/database.php';
+    require_once __DIR__ . '/../includes/chat_widget.php';
+    ?>
 </body>
 </html>

@@ -142,13 +142,18 @@ document.addEventListener('DOMContentLoaded', function () {
         const matchingItems = [];
         galleryItems.forEach(item => {
             const cat = item.getAttribute('data-category');
-            if (filter === 'all' || cat === filter) {
+            const isMatch = filter === 'all' || cat === filter;
+            if (isMatch) {
                 matchingItems.push(item);
             } else {
-                item.style.display = 'none';
-                item.classList.remove('gallery-more-trigger');
+                // fade-out before hide — premium transition
+                item.classList.add('is-hidden');
+                item.classList.remove('is-visible', 'gallery-more-trigger');
                 const prevBadge = item.querySelector('.overlay-more-badge');
                 if (prevBadge) prevBadge.remove();
+                setTimeout(() => {
+                    if (item.classList.contains('is-hidden')) item.style.display = 'none';
+                }, 320);
             }
         });
 
@@ -167,6 +172,18 @@ document.addEventListener('DOMContentLoaded', function () {
         const maxVisible = 6;
         const showLimit = (expanded || totalMatching <= maxVisible) ? totalMatching : maxVisible;
 
+        // R-27 empty state
+        const emptyEl = document.getElementById('galleryEmptyState');
+        if (emptyEl) {
+            if (totalMatching === 0) {
+                emptyEl.classList.remove('d-none');
+                if (galleryGrid) galleryGrid.setAttribute('aria-hidden', 'true');
+            } else {
+                emptyEl.classList.add('d-none');
+                if (galleryGrid) galleryGrid.removeAttribute('aria-hidden');
+            }
+        }
+
         matchingItems.forEach((item, index) => {
             item.classList.remove('gallery-more-trigger');
             const prevBadge = item.querySelector('.overlay-more-badge');
@@ -174,10 +191,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (index < showLimit) {
                 item.style.display = 'block';
-                setTimeout(() => {
-                    item.style.opacity = '1';
-                    item.style.transform = 'scale(1)';
-                }, 30);
+                item.classList.remove('is-hidden');
+                // trigger reflow then fade-in
+                void item.offsetWidth;
+                item.classList.add('is-visible');
+                item.style.opacity = '';
+                item.style.transform = '';
 
                 // If not expanded and this is the 6th item (index == 5) and there are more items
                 if (!expanded && index === maxVisible - 1 && totalMatching > maxVisible) {
@@ -196,8 +215,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     item.appendChild(moreOverlay);
                 }
             } else {
+                item.classList.add('is-hidden');
+                item.classList.remove('is-visible');
                 item.style.display = 'none';
-                item.style.opacity = '0';
             }
         });
 
@@ -224,7 +244,25 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // R-32 keyboard: Enter/Space on gallery-item
     if (galleryGrid) {
+        galleryGrid.addEventListener('keydown', function(e) {
+            const item = e.target.closest('.gallery-item');
+            if (!item) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                item.click();
+            }
+        });
+        // empty state "Semua" button
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-empty-filter="all"]');
+            if (!btn) return;
+            filterBtns.forEach(b => b.classList.remove('active'));
+            const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
+            if (allBtn) allBtn.classList.add('active');
+            renderGallery('all', false);
+        });
         galleryGrid.addEventListener('click', function(e) {
             const moreTrigger = e.target.closest('.gallery-more-trigger');
             if (moreTrigger) {
@@ -299,26 +337,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
-        // Swiper Initialization
+        // Swiper — smooth, snap, tidak potong card
         const swiper = new Swiper('.paketSwiper', {
             slidesPerView: 1,
-            spaceBetween: 30,
-            autoHeight: false, 
+            spaceBetween: 16,
+            autoHeight: false,
             observer: true,
             observeParents: true,
             resizeObserver: true,
             loop: false,
+            speed: 420,
+            grabCursor: true,
             pagination: {
-                el: '.swiper-pagination',
+                el: '.paket-pagination',
                 clickable: true,
+                dynamicBullets: false,
             },
             navigation: {
-                nextEl: '.swiper-button-next',
-                prevEl: '.swiper-button-prev',
+                nextEl: '.paket-controls .swiper-button-next',
+                prevEl: '.paket-controls .swiper-button-prev',
             },
             breakpoints: {
-                768: { slidesPerView: 2 },
-                1024: { slidesPerView: 3 }
+                576: { slidesPerView: 1.1, spaceBetween: 16 },
+                768: { slidesPerView: 2, spaceBetween: 18 },
+                1024: { slidesPerView: 3, spaceBetween: 20 }
             }
         });
 
@@ -349,6 +391,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 const imgEl = document.getElementById('detailModalImage');
                 if (imgEl) imgEl.src = data.image;
+                const imgBgEl = document.getElementById('detailModalImageBg');
+                if (imgBgEl) imgBgEl.style.backgroundImage = 'url("' + data.image + '")';
                 
                 const featuresContainer = document.getElementById('detailModalFeatures');
                 featuresContainer.innerHTML = '';
@@ -478,5 +522,28 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
         });
+
+        // Lazy load for background-image via data-bg (native loading="lazy" tidak berlaku untuk CSS background)
+        const lazyBgs = document.querySelectorAll('[data-bg]');
+        if (lazyBgs.length) {
+            if ('IntersectionObserver' in window) {
+                const bgObserver = new IntersectionObserver((entries, obs) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const el = entry.target;
+                            el.style.backgroundImage = "url('" + el.dataset.bg + "')";
+                            el.removeAttribute('data-bg');
+                            obs.unobserve(el);
+                        }
+                    });
+                }, { rootMargin: '200px' });
+                lazyBgs.forEach(el => bgObserver.observe(el));
+            } else {
+                lazyBgs.forEach(el => {
+                    el.style.backgroundImage = "url('" + el.dataset.bg + "')";
+                    el.removeAttribute('data-bg');
+                });
+            }
+        }
     });
 });

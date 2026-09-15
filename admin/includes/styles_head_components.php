@@ -121,6 +121,7 @@
         .badge-soft-success { background: #f0fdf4; color: #16a34a; }
         .badge-soft-primary { background: #eff6ff; color: #2563eb; }
         .badge-soft-danger { background: #fef2f2; color: #dc2626; }
+        .badge-soft-purple { background: #f5f3ff; color: #7c3aed; }
 
         /* Action Buttons */
         .btn-action {
@@ -147,8 +148,73 @@
 
         @media screen and (max-width: 991px) {
             .sidebar { display: none !important; }
-            .main-content { margin-left: 0 !important; padding: 20px 20px 100px 20px !important; }
-            .card { border-radius: 1rem; }
-            .table thead { display: none; } /* Hide headers on very small mobile if card fallback is used, but for now we keep table-responsive */
+            .main-content {
+                margin-left: 0 !important;
+                padding: 20px 15px 100px 15px !important;
+                -webkit-overflow-scrolling: touch;
+            }
+            .card { border-radius: 1rem; overflow: hidden; }
+            .table-responsive,
+            .table-responsive--no-scroll {
+                display: block !important;
+                width: 100% !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+            .table.admin-compact {
+                min-width: 680px !important;
+                width: 100%;
+            }
+
+            /* Perbaiki modal di HP agar form bisa di-scroll penuh sampai tombol simpan, dan modal berada di atas navbar bawah (70px) */
+            .modal {
+                padding-bottom: 75px !important;
+            }
+            .modal-dialog {
+                margin: 0.5rem auto 75px auto !important;
+                max-width: 96% !important;
+            }
+            .modal-dialog-scrollable .modal-content {
+                max-height: calc(100vh - 85px) !important;
+                border-radius: 1rem !important;
+            }
+            .modal-dialog .modal-footer {
+                position: static !important;
+                background: #ffffff;
+                border-top: 1px solid #f1f5f9;
+                padding: 1rem !important;
+            }
         }
+
+        /* ===== Compact admin tables — no horizontal scroll on desktop (>=992px) ===== */
+        .admin-table-toolbar {
+            display:flex; align-items:center; justify-content:space-between; gap:12px;
+            padding:10px 14px; margin-bottom:10px;
+            background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px;
+        }
+        .admin-table-toolbar.d-none { display:none !important; }
+        .bulk-select-all, .bulk-row-check { width:16px; height:16px; cursor:pointer; accent-color:#2563eb; }
+        th.col-check, td.col-check { width:38px; text-align:center; padding:0.5rem 0.3rem !important; }
+        .table.admin-compact { width:100%; table-layout:auto; }
+        .table.admin-compact thead th { padding:0.7rem 0.75rem; font-size:0.68rem; white-space:nowrap; }
+        .table.admin-compact tbody td { padding:0.65rem 0.75rem; font-size:0.82rem; vertical-align:middle; }
+        .cell-ellipsis { max-width:165px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-block; vertical-align:middle; }
+        .cell-ellipsis-lg { max-width:240px; }
+        .cell-stack { display:flex; flex-direction:column; gap:2px; line-height:1.25; }
+        .cell-stack .line-main { font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
+        .cell-stack .line-sub { font-size:0.72rem; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
+        .table.admin-compact .badge { font-size:0.68rem; padding:0.35rem 0.6rem; }
+        .table.admin-compact .btn-action { width:32px; height:32px; border-radius:0.6rem; font-size:0.8rem; }
+        /* wrapper tanpa scroll — hanya untuk desktop */
+        @media (min-width: 992px) {
+            .table-responsive--no-scroll { overflow:visible !important; overflow-x:visible !important; }
+        }
+        /* Sembunyikan kolom sekunder di layar sempit, tampilkan via expand */
+        .col-optional { }
+        @media (max-width: 1280px) {
+            .col-optional { display:none !important; }
+        }
+        .row-expand-detail { display:none; background:#f8fafc; }
+        .row-expand-detail.open { display:table-row; }
+        .row-expand-detail td { padding:0.75rem 1rem !important; font-size:0.8rem; color:#475569; }
 </style>

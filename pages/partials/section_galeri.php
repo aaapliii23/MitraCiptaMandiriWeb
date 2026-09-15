@@ -28,20 +28,31 @@
                 <?php endforeach; ?>
             </div>
 
-            <!-- Gallery Grid -->
-            <div class="row g-4" id="galleryGrid" data-aos="fade-up" data-aos-delay="200">
-                <?php foreach ($galleryItems as $item): ?>
+            <!-- Gallery Grid — featured first item, rest uniform (DESIGN.md: ENERGY 2 / RHYTHM 2 / MOTION 1, hierarchy: flagship) -->
+            <div class="row g-3 g-md-4" id="galleryGrid" data-aos="fade-up" data-aos-delay="200">
+                <?php foreach ($galleryItems as $idx => $item): ?>
                 <?php 
                     $itemCat = strtolower(trim($item['category'] ?? ''));
                     if ($itemCat === 'all' || $itemCat === '') $itemCat = 'umum';
+                    $isFeatured = $idx === 0;
                 ?>
-                <div class="col-md-4 col-sm-6 gallery-item" data-category="<?php echo htmlspecialchars($itemCat); ?>">
-                    <img src="<?php echo htmlspecialchars(asset_src($item['image'])); ?>" alt="<?php echo htmlspecialchars($item['title']); ?>" onerror="this.onerror=null;this.src='<?php echo htmlspecialchars(asset_src('assets/img/hero-bg.jpg')); ?>';">
-                    <div class="overlay"><h5><?php echo htmlspecialchars($item['title']); ?></h5></div>
+                <div class="<?php echo $isFeatured ? 'col-md-8 col-sm-12' : 'col-md-4 col-sm-6'; ?> gallery-item <?php echo $isFeatured ? 'gallery-item--featured' : ''; ?>" data-category="<?php echo htmlspecialchars($itemCat); ?>" tabindex="0" role="button" aria-label="Lihat foto <?php echo htmlspecialchars($item['title']); ?>">
+                    <img src="<?php echo htmlspecialchars(asset_src($item['image'])); ?>" alt="<?php echo htmlspecialchars($item['title']); ?>" loading="lazy" onerror="this.onerror=null;this.src='<?php echo htmlspecialchars(asset_src('assets/img/hero-bg.jpg')); ?>';">
+                    <div class="overlay">
+                        <span class="overlay-cat"><?php echo htmlspecialchars(galleryCatLabel($itemCat)); ?></span>
+                        <h5><?php echo htmlspecialchars($item['title']); ?></h5>
+                    </div>
                 </div>
                 <?php endforeach; ?>
             </div>
 
+            <div id="galleryEmptyState" class="text-center py-5 d-none" role="status" aria-live="polite">
+                <div class="d-inline-flex flex-column align-items-center gap-2">
+                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width:56px;height:56px;"><i class="fas fa-images text-muted"></i></div>
+                    <div class="fw-semibold text-dark">Tidak ada foto untuk kategori ini</div>
+                    <div class="small text-muted">Coba pilih <button type="button" class="btn btn-link btn-sm p-0 fw-bold" data-empty-filter="all">Semua</button> atau kategori lain.</div>
+                </div>
+            </div>
             <!-- Expand / Collapse Button -->
             <div class="text-center mt-5" id="galleryExpandContainer" style="display: none;"></div>
         </div>
@@ -79,62 +90,76 @@
     </div>
 
     <style>
+        /* Galeri — DESIGN.md: ENERGY 2 / RHYTHM 2 / MOTION 1 — purpose per R-31 */
         .gallery-item {
             position: relative;
             cursor: pointer;
             overflow: hidden;
-            border-radius: 1.25rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 14px rgba(15,23,42,0.08);
+            transition: transform 0.35s ease, box-shadow 0.35s ease, opacity 0.35s ease;
+            height: 280px;
+            background: #e2e8f0;
         }
-        .gallery-more-trigger {
-            cursor: pointer;
+        .gallery-item--featured { height: 380px; }
+        @media (max-width: 767px) {
+            .gallery-item, .gallery-item--featured { height: 240px; }
         }
-        .gallery-more-trigger .overlay {
-            display: none !important;
+        .gallery-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(15,23,42,0.14);
         }
+        .gallery-item img {
+            width: 100%; height: 100%; object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+        .gallery-item:hover img { transform: scale(1.03); }
+        .gallery-item .overlay {
+            position: absolute; left: 0; right: 0; bottom: 0;
+            padding: 44px 16px 14px;
+            background: linear-gradient(to top, rgba(15,23,42,0.78) 0%, rgba(15,23,42,0.32) 55%, transparent 100%);
+            display: flex; flex-direction: column; justify-content: flex-end;
+            opacity: 0; transform: translateY(8px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .gallery-item:hover .overlay,
+        .gallery-item:focus-within .overlay { opacity: 1; transform: translateY(0); }
+        .gallery-item .overlay-cat {
+            display: inline-block; align-self: flex-start;
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+            color: #0c4a6e; background: rgba(255,255,255,0.92);
+            padding: 3px 8px; border-radius: 999px; margin-bottom: 6px;
+        }
+        .gallery-item .overlay h5 {
+            color: #fff; font-size: 0.92rem; font-weight: 700; line-height: 1.3; margin: 0;
+            text-shadow: 0 1px 8px rgba(0,0,0,0.35);
+            transform: translateY(0);
+        }
+        /* Filter transition — JS toggles .is-hidden */
+        .gallery-item.is-hidden { opacity: 0; transform: scale(0.96); pointer-events: none; }
+        .gallery-item.is-visible { opacity: 1; transform: scale(1); }
+        /* +N card — foto asli jadi background, overlay gelap tipis + blur */
+        .gallery-more-trigger { cursor: pointer; }
+        .gallery-more-trigger .overlay { display: none !important; }
         .overlay-more-badge {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(12, 74, 110, 0.88), rgba(14, 165, 233, 0.82));
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: #ffffff;
-            z-index: 10;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: absolute; inset: 0;
+            background: rgba(15,23,42,0.52);
+            backdrop-filter: blur(3px) saturate(1.05);
+            -webkit-backdrop-filter: blur(3px) saturate(1.05);
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; color: #fff; z-index: 2;
+            transition: background 0.3s ease;
             padding: 20px;
         }
-        .gallery-more-trigger:hover .overlay-more-badge {
-            background: linear-gradient(135deg, rgba(12, 74, 110, 0.95), rgba(14, 165, 233, 0.92));
-            transform: scale(1.02);
-        }
-        .overlay-more-badge .more-icon {
-            font-size: 2rem;
-            margin-bottom: 6px;
-            opacity: 0.95;
-            animation: float-icon 2s ease-in-out infinite;
-        }
-        .overlay-more-badge .more-number {
-            font-size: 1.5rem;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            margin-bottom: 4px;
-        }
+        .gallery-more-trigger:hover .overlay-more-badge { background: rgba(15,23,42,0.62); }
+        .gallery-more-trigger img { filter: blur(1.5px) brightness(0.92); }
+        .gallery-more-trigger:hover img { filter: blur(0px) brightness(1); }
+        .overlay-more-badge .more-icon { font-size: 1.6rem; margin-bottom: 8px; opacity: 0.9; }
+        .overlay-more-badge .more-number { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px; }
         .overlay-more-badge .more-text {
-            font-size: 0.85rem;
-            font-weight: 600;
-            opacity: 0.95;
-            background: rgba(255, 255, 255, 0.25);
-            padding: 6px 16px;
-            border-radius: 50px;
-            display: inline-block;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        @keyframes float-icon {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-4px); }
+            font-size: 0.8rem; font-weight: 600; opacity: 0.95;
+            background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.22);
+            padding: 6px 14px; border-radius: 999px; display: inline-block;
         }
 
         /* === Gallery Lightbox Premium === */
@@ -178,9 +203,7 @@
             height: 44px;
             border: none;
             border-radius: 50%;
-            background: rgba(15, 23, 42, 0.58);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(15, 23, 42, 0.78);
             border: 1px solid rgba(255,255,255,0.22);
             color: #fff;
             display: flex;
@@ -207,9 +230,7 @@
             height: 48px;
             border: none;
             border-radius: 50%;
-            background: rgba(15, 23, 42, 0.52);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(15, 23, 42, 0.72);
             border: 1px solid rgba(255,255,255,0.18);
             color: #fff;
             display: flex;
