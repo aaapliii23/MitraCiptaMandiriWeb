@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /admin_login.php
+Disallow: /lms/
+Disallow: /payment/
+Disallow: /auth/
+Disallow: /chat/
+Disallow: /agent/
+Disallow: /legacy/
+Disallow: /tools/
+Disallow: /config/
+Disallow: /database/
+Disallow: /includes/
+Disallow: /logs/
+
+Sitemap: https://lpkmcm.com/sitemap.xml

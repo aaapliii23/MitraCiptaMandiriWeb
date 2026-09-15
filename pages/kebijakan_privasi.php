@@ -1,8 +1,8 @@
 <?php
 require_once '../config/database.php';
-$waNumber = mcm_setting('contact_whatsapp', '628123456789');
+$waNumber = mcm_setting('contact_whatsapp', '+628978902864');
 $waClean = preg_replace('/[^0-9]/', '', $waNumber);
-$email = mcm_setting('contact_email', 'info@mitraciptamandiri.com');
+$email = mcm_setting('contact_email', 'mitraciptamandiri74@gmail.com');
 $address = mcm_setting('admin_address', 'Jl. Khp Hasan Mustopa No.57, Neglasari, Kec. Cibeunying Kaler, Kota Bandung, Jawa Barat 40124');
 include '../includes/header.php';
 

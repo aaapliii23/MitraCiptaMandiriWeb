@@ -3,9 +3,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Login Administrator | Mitra Cipta Mandiri</title>
-    <link rel="icon" type="image/png" href="../assets/img/logo.png">
-    <link rel="shortcut icon" type="image/png" href="../assets/img/logo.png">
-    <link rel="apple-touch-icon" href="../assets/img/logo.png">
+    <?php $favicon_base = '..'; require __DIR__ . '/../../includes/favicon.php'; ?>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome -->

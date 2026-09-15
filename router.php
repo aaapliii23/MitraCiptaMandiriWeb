@@ -14,6 +14,11 @@ if ($uri !== '/' && $exists) {
 // normalisasi untuk cek 404 (izinkan / dan /index.php dan /Mitra.../index.php)
 $norm = rtrim($uri, '/');
 if ($norm === '') $norm = '/';
+// sitemap.xml dinamis (prod: rewrite .htaccess; dev php -S: route di sini)
+if ($norm === '/sitemap.xml' || $norm === '/MitraCiptaMandiriWeb/sitemap.xml') {
+    include __DIR__ . '/sitemap.php';
+    exit;
+}
 $allow = ['/', '/index.php', '/404.php', '/router.php', '/MitraCiptaMandiriWeb', '/MitraCiptaMandiriWeb/index.php', '/MitraCiptaMandiriWeb/404.php'];
 if (!in_array($norm, $allow, true) && !$exists) {
     http_response_code(404);
