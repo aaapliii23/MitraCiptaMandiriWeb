@@ -272,6 +272,7 @@ async function submitAjaxForm(formId) {
 
             let successCount = 0;
             let errorMessages = [];
+            const csrfGal = form.querySelector('input[name="csrf_token"]')?.value || window.MCM_CSRF_TOKEN || '';
 
             for (let i = 0; i < totalFiles; i++) {
                 if (submitBtn) {
@@ -284,6 +285,7 @@ async function submitAjaxForm(formId) {
                 singleFormData.append('category', category);
                 singleFormData.append('show_on_home', document.getElementById('galleryShowHome').checked ? '1' : '0');
                 singleFormData.append('images[]', files[i]);
+                if (csrfGal) singleFormData.append('csrf_token', csrfGal);
 
                 try {
                     const res = await fetch(endpoint, { method: 'POST', body: singleFormData });

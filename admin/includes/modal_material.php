@@ -6,7 +6,7 @@
                 <h5 class="modal-title fw-bold" id="materialModalTitle">Tambah Materi</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="materialForm" action="<?php echo $adminBase; ?>/actions/manage_materials.php" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault(); submitAjaxForm('materialForm');">
+            <form id="materialForm" action="<?php echo $adminBase; ?>/actions/manage_materials.php" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault(); if (validateMaterialForm()) submitAjaxForm('materialForm');">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(mcm_csrf_token()); ?>">
                 <div class="modal-body p-4">
                     <input type="hidden" name="action" id="materialAction" value="create">
@@ -51,13 +51,24 @@
                     </div>
 
                     <div class="mt-3 d-none" id="materialPdfWrap">
-                        <div class="mb-3">
+                        <label class="form-label small fw-bold d-block">Sumber PDF <span class="text-muted fw-normal">(pilih salah satu)</span></label>
+                        <div class="d-flex gap-2 mb-3">
+                            <div>
+                                <input type="radio" class="btn-check" name="pdf_source" id="pdfSourceUpload" value="upload" checked onchange="materialPdfSourceChanged()">
+                                <label class="btn btn-outline-primary btn-sm rounded-pill px-3" for="pdfSourceUpload"><i class="fas fa-upload me-1"></i>Upload File</label>
+                            </div>
+                            <div>
+                                <input type="radio" class="btn-check" name="pdf_source" id="pdfSourceUrl" value="url" onchange="materialPdfSourceChanged()">
+                                <label class="btn btn-outline-primary btn-sm rounded-pill px-3" for="pdfSourceUrl"><i class="fas fa-link me-1"></i>URL Eksternal</label>
+                            </div>
+                        </div>
+                        <div class="mb-3" id="materialFileWrap">
                             <label class="form-label small fw-bold">Upload File PDF</label>
                             <input type="file" class="form-control" name="content_file" id="materialFile" accept="application/pdf">
                             <small class="text-muted" id="materialFileHint">Unggah file PDF (maksimal berapa pun; jenis .pdf).</small>
                         </div>
-                        <div class="mb-1">
-                            <label class="form-label small fw-bold">atau URL PDF Eksternal</label>
+                        <div class="mb-1 d-none" id="materialUrlWrap">
+                            <label class="form-label small fw-bold">URL PDF Eksternal</label>
                             <input type="text" class="form-control" name="content" id="materialPdfUrl" placeholder="https://contoh.com/file.pdf">
                         </div>
                     </div>

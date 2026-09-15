@@ -99,8 +99,14 @@ if ($action === 'create_category') {
             @mkdir($dir, 0777, true);
         }
         echo json_encode(['status' => 'success', 'message' => "Kategori '$name' berhasil ditambahkan."]);
-    
-} elseif ($action === 'bulk_delete') {
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Gagal menambahkan kategori.']);
+    }
+    exit;
+}
+
+// ACTION: BULK DELETE PHOTOS
+if ($action === 'bulk_delete') {
     $raw = $_POST['ids'] ?? '';
     $ids = [];
     if (is_array($raw)) $ids = $raw;
@@ -118,10 +124,6 @@ if ($action === 'create_category') {
         }
         echo json_encode(['status'=>'success','message'=> $del->rowCount().' foto fasilitas dihapus']);
     } catch (PDOException $e) { echo json_encode(['status'=>'error','message'=>'Gagal hapus massal']); }
-    exit;
-} else {
-        echo json_encode(['status' => 'error', 'message' => 'Gagal menambahkan kategori.']);
-    }
     exit;
 }
 

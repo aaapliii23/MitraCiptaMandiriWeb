@@ -44,6 +44,8 @@ function uploadPdf($field)
     if (!isset($_FILES[$field]) || $_FILES[$field]['error'] !== UPLOAD_ERR_OK) return null;
     $ext = strtolower(pathinfo($_FILES[$field]['name'], PATHINFO_EXTENSION));
     if ($ext !== 'pdf') return null;
+    $dir = dirname(__DIR__, 2) . '/uploads/materials';
+    if (!is_dir($dir)) mkdir($dir, 0755, true); // direktori belum ada -> move_uploaded_file pasti gagal
     $dest = 'uploads/materials/' . uniqid() . '.pdf';
     if (move_uploaded_file($_FILES[$field]['tmp_name'], '../../' . $dest)) {
         return $dest;
@@ -72,8 +74,17 @@ if ($action === 'create') {
     }
 
     if ($type === 'pdf') {
-        $uploaded = uploadPdf('content_file');
-        if ($uploaded) {
+        if (($_POST['pdf_source'] ?? 'upload') === 'url') {
+            if (!preg_match('#^https?://.+\..+#i', $content)) {
+                echo json_encode(['status' => 'error', 'message' => 'URL PDF eksternal tidak valid.']);
+                exit;
+            }
+        } else {
+            $uploaded = uploadPdf('content_file');
+            if (!$uploaded) {
+                echo json_encode(['status' => 'error', 'message' => 'Unggah file PDF terlebih dahulu.']);
+                exit;
+            }
             $content = $uploaded;
         }
     }
@@ -104,10 +115,23 @@ if ($action === 'create') {
     $oldContent = $stmt->fetchColumn();
 
     if ($type === 'pdf') {
-        $uploaded = uploadPdf('content_file');
-        if ($uploaded) {
-            deleteMaterialFile($oldContent);
-            $content = $uploaded;
+        if (($_POST['pdf_source'] ?? 'upload') === 'url') {
+            if (!preg_match('#^https?://.+\..+#i', $content)) {
+                echo json_encode(['status' => 'error', 'message' => 'URL PDF eksternal tidak valid.']);
+                exit;
+            }
+            deleteMaterialFile($oldContent); // ganti file lama -> URL, hapus file agar tak ganda
+        } else {
+            $uploaded = uploadPdf('content_file');
+            if ($uploaded) {
+                deleteMaterialFile($oldContent);
+                $content = $uploaded;
+            } elseif ($oldContent && strpos($oldContent, 'uploads/materials/') === 0) {
+                $content = $oldContent; // edit tanpa file baru: pertahankan file lama
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Unggah file PDF terlebih dahulu.']);
+                exit;
+            }
         }
     } elseif ($oldContent && strpos($oldContent, 'uploads/materials/') === 0) {
         deleteMaterialFile($oldContent);
