@@ -27,7 +27,7 @@ try {
 $upsert = $pdo->prepare("INSERT INTO settings (`key`,`value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)");
 
 // Form "Simpan Konfigurasi" (teks)
-$textKeys = ['admin_whatsapp', 'admin_email', 'admin_address', 'social_ig', 'social_fb', 'social_tt', 'maps_url', 'manual_bank_name', 'manual_bank_account', 'manual_bank_holder'];
+$textKeys = ['admin_whatsapp', 'admin_email', 'admin_address', 'social_ig', 'social_fb', 'social_tt', 'maps_url'];
 $isLogoUpload = isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK;
 
 foreach ($textKeys as $k) {

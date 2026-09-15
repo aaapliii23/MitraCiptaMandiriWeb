@@ -167,21 +167,7 @@ try {
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg fixed-top shadow-sm bg-white" style="transition: all 0.4s ease;">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="../index.php">
-                <img src="../assets/img/logo.png" alt="MCM Logo" style="height: 40px;">
-                <span class="fw-bold ms-2" style="font-size: 0.9rem; letter-spacing: 1px;">LMS MITRA CIPTA MANDIRI</span>
-            </a>
-            <div class="d-flex align-items-center gap-2">
-                <span class="text-muted small d-none d-md-inline"><i class="fas fa-user me-1"></i><?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
-                <a href="dashboard.php" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a>
-                <a href="cart.php" class="btn btn-outline-warning btn-sm rounded-pill px-3"><i class="fas fa-shopping-cart me-1"></i>Keranjang</a>
-                <a href="../index.php" class="btn btn-outline-primary btn-sm rounded-pill px-3">Beranda</a>
-                <a href="../auth/user_logout.php" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="fas fa-sign-out-alt me-1"></i>Keluar</a>
-            </div>
-        </div>
-    </nav>
+    <?php $lms_nav_active = 'profile'; require __DIR__ . '/partials/navbar.php'; ?>
 
     <section class="pt-5" style="margin-top: 56px; min-height: 80vh; background: #f8fafc;">
         <div class="container py-4">

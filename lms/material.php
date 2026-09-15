@@ -95,22 +95,7 @@ $csrf = $_SESSION['csrf_token'] ?? '';
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg fixed-top shadow-sm bg-white" style="transition: all 0.4s ease;">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="../index.php">
-                <img src="../assets/img/logo.png" alt="MCM Logo" style="height: 40px;">
-                <span class="fw-bold ms-2" style="font-size: 0.9rem; letter-spacing: 1px;">LMS MITRA CIPTA MANDIRI</span>
-            </a>
-            <div class="d-flex align-items-center gap-2">
-                <?php if (!$notEnrolled): ?>
-                    <a href="course.php?class_id=<?php echo (int)$material['class_id']; ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-arrow-left me-1"></i><?php echo htmlspecialchars($material['class_name']); ?></a>
-                <?php endif; ?>
-                <a href="dashboard.php" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a>
-                <a href="profile.php" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-user-cog me-1"></i>Profil</a>
-                <a href="../auth/user_logout.php" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="fas fa-sign-out-alt me-1"></i>Keluar</a>
-            </div>
-        </div>
-    </nav>
+    <?php $lms_nav_active = ''; $lms_back_url = empty($notEnrolled) ? 'course.php?class_id=' . (int)$material['class_id'] : ''; $lms_back_label = $material['class_name']; require __DIR__ . '/partials/navbar.php'; ?>
 
     <section class="pt-5" style="margin-top: 56px; min-height: 80vh; background: #f8fafc;">
         <div class="container py-4">

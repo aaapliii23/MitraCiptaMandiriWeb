@@ -216,10 +216,10 @@ usort($catRecap, function($a, $b) { return strcmp($a['type'], $b['type']) ?: $b[
             <div class="row mt-5 pt-3">
                 <div class="col-7"></div>
                 <div class="col-5 text-center">
-                    <div class="small text-muted mb-1">Cirebon, <?php echo date('d F Y'); ?></div>
-                    <div class="small fw-bold text-dark mb-5">Pimpinan &amp; Bagian Keuangan MCM</div>
-                    <div class="fw-bold text-dark text-decoration-underline">( Hj. Ratu Fitria, S.Pd. )</div>
-                    <div class="small text-muted">Direktur / Pimpinan Lembaga</div>
+                    <div class="small text-muted mb-1">Bandung, <?php echo date('d F Y'); ?></div>
+                    <div class="small fw-bold text-dark mb-5">Staf Keuangan MCM</div>
+                    <div class="fw-bold text-dark text-decoration-underline">( ALVINA MARVA DEARSY S.Pd. )</div>
+                    <div class="small text-muted">Administrasi Keuangan</div>
                 </div>
             </div>
         </div>

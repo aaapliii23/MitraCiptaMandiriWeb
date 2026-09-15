@@ -25,6 +25,17 @@ if ($orderNumber === '') {
 }
 
 pg_ensure_payment_columns($pdo);
+pg_ensure_payment_methods($pdo);
+
+// Tolak metode yang dinonaktifkan admin (kartu di custom_payment.php hanya disable di UI)
+$pmMap = ['va' => 'virtual_account', 'qris' => 'qris', 'ewallet' => 'e_wallet', 'cc' => 'credit_card'];
+if (isset($pmMap[$method])) {
+    $pm = pg_payment_methods($pdo);
+    $st = $pm[$pmMap[$method]] ?? ['is_active' => false, 'note' => ''];
+    if (empty($st['is_active'])) {
+        ob_clean(); echo json_encode(['status' => 'error', 'message' => ($st['note'] !== '' ? $st['note'] : 'Metode pembayaran nonaktif')]); exit;
+    }
+}
 
 // Validasi order milik user (IDOR protection)
 $stmt = $pdo->prepare("SELECT * FROM orders WHERE order_number = ? LIMIT 1");

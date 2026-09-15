@@ -238,6 +238,79 @@ function pg_ensure_payment_columns($pdo) {
     }
 }
 
+// --- Kelola Metode Pembayaran (dikontrol dari admin, dibaca custom_payment.php) ---
+function pg_payment_method_seed() {
+    return [
+        ['virtual_account', 'Virtual Account', 0, 'Masih dalam pengembangan'],
+        ['qris', 'QRIS', 0, 'Masih dalam pengembangan'],
+        ['e_wallet', 'E-Wallet', 0, 'Masih dalam pengembangan'],
+        ['credit_card', 'Kartu Kredit/Debit', 0, 'Masih dalam pengembangan'],
+        ['bank_transfer', 'Transfer Bank Manual', 1, null],
+    ];
+}
+
+function pg_ensure_payment_methods($pdo) {
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `payment_methods` (
+          `id` int(11) NOT NULL AUTO_INCREMENT,
+          `method_key` varchar(50) NOT NULL,
+          `method_name` varchar(100) NOT NULL,
+          `is_active` tinyint(1) NOT NULL DEFAULT 1,
+          `note` varchar(100) DEFAULT NULL,
+          PRIMARY KEY (`id`),
+          UNIQUE KEY `method_key` (`method_key`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        $ins = $pdo->prepare("INSERT IGNORE INTO `payment_methods` (`method_key`,`method_name`,`is_active`,`note`) VALUES (?,?,?,?)");
+        foreach (pg_payment_method_seed() as $s) $ins->execute($s);
+    } catch(Exception $e) { error_log("[Payment] ensure payment_methods: ".$e->getMessage()); }
+}
+
+// Map method_key => ['is_active'=>bool, 'note'=>string]; default = seed bila baris belum ada
+function pg_payment_methods($pdo) {
+    $out = [];
+    foreach (pg_payment_method_seed() as $s) $out[$s[0]] = ['is_active' => (bool)$s[2], 'note' => (string)($s[3] ?? '')];
+    try {
+        foreach ($pdo->query("SELECT method_key, is_active, note FROM payment_methods")->fetchAll() as $r) {
+            if (isset($out[$r['method_key']])) $out[$r['method_key']] = ['is_active' => (bool)$r['is_active'], 'note' => (string)($r['note'] ?? '')];
+        }
+    } catch(Exception $e) {}
+    return $out;
+}
+
+// --- Rekening Transfer Bank Manual (multi-rekening, dikelola admin di ?page=payment_methods) ---
+function pg_ensure_bank_accounts($pdo) {
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `bank_accounts` (
+          `id` int(11) NOT NULL AUTO_INCREMENT,
+          `bank_name` varchar(50) NOT NULL,
+          `account_number` varchar(50) NOT NULL,
+          `account_holder` varchar(100) NOT NULL,
+          `is_active` tinyint(1) NOT NULL DEFAULT 1,
+          `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+          `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+          PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        // Migrasi sekali: 1 rekening lama dari tabel settings (atau default bila belum ada)
+        if ((int)$pdo->query("SELECT COUNT(*) FROM bank_accounts")->fetchColumn() === 0) {
+            $pdo->prepare("INSERT INTO bank_accounts (bank_name, account_number, account_holder, is_active) VALUES (?,?,?,1)")
+                ->execute([
+                    mcm_setting('manual_bank_name', 'BCA'),
+                    mcm_setting('manual_bank_account', '8210101010'),
+                    mcm_setting('manual_bank_holder', 'Mitra Cipta Mandiri'),
+                ]);
+        }
+    } catch(Exception $e) { error_log("[Payment] ensure bank_accounts: ".$e->getMessage()); }
+}
+
+// List rekening urut id; $onlyActive=true untuk dropdown halaman pembayaran
+function pg_bank_accounts($pdo, $onlyActive = false) {
+    try {
+        pg_ensure_bank_accounts($pdo);
+        $sql = "SELECT * FROM bank_accounts" . ($onlyActive ? " WHERE is_active = 1" : "") . " ORDER BY id ASC";
+        return $pdo->query($sql)->fetchAll();
+    } catch(Exception $e) { return []; }
+}
+
 function pg_generate_va($pdo, $orderNumber, $bank) {
     $bank = strtolower($bank);
     $allowed = ['bca','mandiri','bri','bni','danamon','permata','cimb'];

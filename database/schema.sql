@@ -999,6 +999,44 @@ INSERT INTO `users` (`id`, `name`, `email`, `phone`, `password`, `created_at`) V
 ('9', 'Diza Syaichul Adilla', 'dizasyaichul7@gmail.com', '6289289829839', '$2y$10$njHK8Aiy2JTJK.dxzM6S4eTsgGW6ltA6PqpFsbFYEEEcRKWwlXXNy', '2026-08-21 12:36:29'),
 ('10', 'Diza', 'dizasyaichul8@gmail.com', '6289289829839', '$2y$10$hi30YklCemYPCnmm0Z3yWuJOLswUCY5L5S47iY38lpG/9jg9hjPz2', '2026-08-24 13:16:02');
 
+-- Struktur dari tabel `payment_methods`
+--
+
+CREATE TABLE IF NOT EXISTS `payment_methods` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `method_key` varchar(50) NOT NULL,
+  `method_name` varchar(100) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `note` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `method_key` (`method_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Dumping data untuk tabel `payment_methods`
+--
+
+INSERT INTO `payment_methods` (`method_key`,`method_name`,`is_active`,`note`) VALUES
+('virtual_account','Virtual Account',0,'Masih dalam pengembangan'),
+('qris','QRIS',0,'Masih dalam pengembangan'),
+('e_wallet','E-Wallet',0,'Masih dalam pengembangan'),
+('credit_card','Kartu Kredit/Debit',0,'Masih dalam pengembangan'),
+('bank_transfer','Transfer Bank Manual',1,NULL);
+
+-- Struktur dari tabel `bank_accounts`
+-- (Seed baris awal dilakukan runtime via pg_ensure_bank_accounts()
+--  dari tabel settings/tiga default di atas — bukan di dump ini.)
+
+CREATE TABLE IF NOT EXISTS `bank_accounts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `bank_name` varchar(50) NOT NULL,
+  `account_number` varchar(50) NOT NULL,
+  `account_holder` varchar(100) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

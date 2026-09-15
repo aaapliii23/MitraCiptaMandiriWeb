@@ -1,6 +1,6 @@
 <!-- Sidebar -->
 <?php
-$groupMap = ['dashboard' => 'utama', 'classes' => 'program', 'categories' => 'program', 'instructors' => 'program', 'materials' => 'program', 'users' => 'program', 'gallery' => 'program', 'facilities' => 'program', 'certs' => 'program', 'orders' => 'penjualan', 'finance' => 'penjualan', 'testimonials' => 'penjualan', 'chat' => 'penjualan', 'chatbot' => 'penjualan', 'reports' => 'laporan', 'admins' => 'sistem', 'settings' => 'sistem', 'doku_channels' => 'sistem'];
+$groupMap = ['dashboard' => 'utama', 'classes' => 'program', 'categories' => 'program', 'instructors' => 'program', 'materials' => 'program', 'users' => 'program', 'gallery' => 'program', 'facilities' => 'program', 'certs' => 'program', 'orders' => 'penjualan', 'finance' => 'penjualan', 'payment_methods' => 'penjualan', 'testimonials' => 'penjualan', 'chat' => 'penjualan', 'chatbot' => 'penjualan', 'reports' => 'laporan', 'admins' => 'sistem', 'settings' => 'sistem', 'doku_channels' => 'sistem'];
 $activeGroup = $groupMap[$page] ?? 'utama';
 function mcm_group($id, $label, $key, $activeGroup) {
     $open = $activeGroup === $key ? ' show' : '';
@@ -56,6 +56,7 @@ function mcm_item($page, $target, $icon, $label) {
         <ul class="nav flex-column px-2">
             <?php echo mcm_item($page, 'orders', 'fas fa-shopping-cart', 'Pesanan &amp; Transaksi'); ?>
             <?php echo mcm_item($page, 'finance', 'fas fa-money-bill-wave', 'Keuangan'); ?>
+            <?php echo mcm_item($page, 'payment_methods', 'fas fa-wallet', 'Metode Pembayaran'); ?>
             <?php echo mcm_item($page, 'testimonials', 'fas fa-comment-dots', 'Testimoni'); ?>
             <?php
             $chatUnread = 0;

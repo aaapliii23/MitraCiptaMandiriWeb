@@ -318,10 +318,10 @@ try {
             <div class="row mt-5 pt-3">
                 <div class="col-7"></div>
                 <div class="col-5 text-center">
-                    <div class="small text-muted mb-1">Cirebon, <?php echo date('d F Y'); ?></div>
+                    <div class="small text-muted mb-1">Bandung, <?php echo date('d F Y'); ?></div>
                     <div class="small fw-bold text-dark mb-5">Pimpinan LPK Mitra Cipta Mandiri</div>
-                    <div class="fw-bold text-dark text-decoration-underline">( Hj. Ratu Fitria, S.Pd. )</div>
-                    <div class="small text-muted">Direktur / Pimpinan Lembaga</div>
+                    <div class="fw-bold text-dark text-decoration-underline">(AYI LINDA SUTRIYANI,S.Pd.)</div>
+                    <div class="small text-muted">Pimpinan Lembaga</div>
                 </div>
             </div>
         </div>

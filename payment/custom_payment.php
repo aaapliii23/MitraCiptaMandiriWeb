@@ -3,6 +3,8 @@ session_start();
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/payment_gateway.php';
 pg_ensure_payment_columns($pdo);
+pg_ensure_payment_methods($pdo);
+$pm = pg_payment_methods($pdo);
 
 $orderNumber = trim($_GET['order'] ?? '');
 if ($orderNumber === '') { http_response_code(404); include __DIR__ . '/../404.php'; exit; }
@@ -39,11 +41,31 @@ $isEwalletValid = !empty($existingEwalletUrl) && !empty($existingExpiry) && strt
 
 if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 $csrf_token = $_SESSION['csrf_token'];
-// Rekening tujuan bisa diubah admin di ?page=settings
-$bankName = mcm_setting('manual_bank_name', 'BCA');
-$bankAccount = mcm_setting('manual_bank_account', '8210101010');
-$bankHolder = mcm_setting('manual_bank_holder', 'Mitra Cipta Mandiri');
+// Rekening tujuan bisa diubah admin di ?page=payment_methods (tabel bank_accounts)
+pg_ensure_bank_accounts($pdo);
+$bankAccounts = pg_bank_accounts($pdo, true);
+if (empty($bankAccounts)) {
+    // Fallback data lama (tabel settings) bila belum ada rekening aktif
+    $bankAccounts = [[
+        'id' => 0,
+        'bank_name' => mcm_setting('manual_bank_name', 'BCA'),
+        'account_number' => mcm_setting('manual_bank_account', '8210101010'),
+        'account_holder' => mcm_setting('manual_bank_holder', 'Mitra Cipta Mandiri'),
+    ]];
+}
 $isAwaiting = (($order['payment_method'] ?? '') === 'manual_transfer') && ($order['payment_status'] ?? '') !== 'paid' && ($order['status'] ?? '') === 'pending' && !empty($order['transfer_proof']);
+// Status kartu metode dibaca dari DB (admin: Kelola Metode Pembayaran)
+$pmCards = [
+    ['method' => 'va',      'key' => 'virtual_account', 'icon' => 'fa-university',  'title' => 'Virtual Account',     'desc' => 'BCA, Mandiri, BRI...',             'col' => 'col-md-4'],
+    ['method' => 'qris',    'key' => 'qris',            'icon' => 'fa-qrcode',       'title' => 'QRIS',                'desc' => 'Scan QR',                          'col' => 'col-md-4'],
+    ['method' => 'ewallet', 'key' => 'e_wallet',        'icon' => 'fa-wallet',       'title' => 'E-Wallet',            'desc' => 'OVO/DANA/ShopeePay',               'col' => 'col-md-4'],
+    ['method' => 'manual',  'key' => 'bank_transfer',   'icon' => 'fa-landmark',     'title' => 'Transfer Bank Manual','desc' => 'Upload bukti, verifikasi admin', 'col' => 'col-md-6'],
+    ['method' => 'cc',      'key' => 'credit_card',     'icon' => 'fa-credit-card',  'title' => 'Kartu Kredit/Debit',  'desc' => 'Tetap via halaman DOKU resmi',    'col' => 'col-md-6'],
+];
+$pmDefault = 'manual';
+if (empty($pm['bank_transfer']['is_active'])) {
+    foreach ($pmCards as $c) { if (!empty($pm[$c['key']]['is_active'])) { $pmDefault = $c['method']; break; } }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -63,13 +85,31 @@ $isAwaiting = (($order['payment_method'] ?? '') === 'manual_transfer') && ($orde
 .method-tab { border:1px solid #e2e8f0; border-radius:0.9rem; padding:12px 14px; cursor:pointer; transition:all .2s; background:#fff; }
 .method-tab:hover { border-color:#0ea5e9; background:#f0f9ff; }
 .method-tab.active { border-color:#0c4a6e; background:#eff6ff; box-shadow:0 6px 16px rgba(14,165,233,0.15); }
+.method-tab.disabled { opacity:.6; cursor:not-allowed; background:#f8fafc; }
+.method-tab.disabled:hover { border-color:#e2e8f0; background:#f8fafc; }
+.method-tab.disabled i { background:#e2e8f0; color:#94a3b8; }
 .method-tab i { width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; border-radius:0.7rem; background:#f1f5f9; color:#0c4a6e; }
 .method-tab.active i { background:linear-gradient(135deg,#0c4a6e,#0ea5e9); color:#fff; }
 .va-box { background:#f8fafc; border:1px dashed #cbd5e1; border-radius:1rem; padding:16px; text-align:center; }
 .va-number { font-size:1.6rem; font-weight:800; letter-spacing:1px; color:#0c4a6e; font-monospace; }
 .countdown { font-variant-numeric: tabular-nums; font-weight:700; color:#dc2626; }
-.qr-box { background:#fff; border:1px solid #e2e8f0; border-radius:1rem; padding:16px; display:inline-block; }
+.qr-box { background:#fff; border:1px solid #e2e8f0; border-radius:1rem; padding:16px; display:inline-block; box-shadow:0 8px 24px rgba(15,23,42,.08); }
 .instr-select { border-radius:999px; }
+.method-panel { border-top:1px solid #eef2f7; padding-top:1.25rem; }
+.va-number { overflow-wrap:anywhere; }
+.manual-dd { position:relative; text-align:left; }
+.manual-dd-btn { display:flex; align-items:center; gap:8px; width:100%; background:#fff; border:1px solid #dee2e6; border-radius:999px; padding:.375rem .75rem .375rem 1rem; font-size:1rem; line-height:1.5; cursor:pointer; }
+.manual-dd-btn:hover { border-color:#0ea5e9; }
+.manual-dd-btn:focus-visible { outline:none; border-color:#0ea5e9; box-shadow:0 0 0 .25rem rgba(14,165,233,.25); }
+.manual-dd-val { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.manual-dd-chev { color:#0c4a6e; font-size:.8rem; transition:transform .2s; }
+.manual-dd.open .manual-dd-chev { transform:rotate(180deg); }
+.manual-dd-list { position:absolute; top:calc(100% + 6px); left:0; right:0; background:#fff; border:1px solid #e2e8f0; border-radius:1rem; box-shadow:0 12px 32px rgba(15,23,42,.14); padding:6px; z-index:1050; max-height:240px; overflow:auto; }
+.manual-dd-list.dd-fixed { position:fixed; }
+.manual-dd-item { display:block; width:100%; text-align:left; background:transparent; border:0; border-radius:.65rem; padding:10px 12px; cursor:pointer; }
+.manual-dd-item:hover { background:#f0f9ff; }
+.manual-dd-item.active { background:#eff6ff; }
+.manual-dd-item.active .manual-dd-bank { color:#0c4a6e; }
 </style>
 </head>
 <body>
@@ -119,25 +159,33 @@ $isAwaiting = (($order['payment_method'] ?? '') === 'manual_transfer') && ($orde
       <div class="payment-card p-4">
         <h6 class="fw-bold mb-3">Pilih Metode Pembayaran</h6>
         <div class="row g-3 mb-4" id="methodGrid">
-          <div class="col-md-4"><div class="method-tab active" data-method="va"><div class="d-flex align-items-center gap-2"><i class="fas fa-university"></i><div><div class="fw-bold small">Virtual Account</div><div class="small text-muted" style="font-size:0.72rem;">BCA, Mandiri, BRI...</div></div></div></div></div>
-          <div class="col-md-4"><div class="method-tab" data-method="qris"><div class="d-flex align-items-center gap-2"><i class="fas fa-qrcode"></i><div><div class="fw-bold small">QRIS</div><div class="small text-muted" style="font-size:0.72rem;">Scan QR</div></div></div></div></div>
-          <div class="col-md-4"><div class="method-tab" data-method="ewallet"><div class="d-flex align-items-center gap-2"><i class="fas fa-wallet"></i><div><div class="fw-bold small">E-Wallet</div><div class="small text-muted" style="font-size:0.72rem;">OVO/DANA/ShopeePay</div></div></div></div></div>
-          <div class="col-md-6"><div class="method-tab" data-method="manual"><div class="d-flex align-items-center gap-2"><i class="fas fa-landmark"></i><div><div class="fw-bold small">Transfer Bank Manual</div><div class="small text-muted" style="font-size:0.72rem;">Upload bukti, verifikasi admin</div></div></div></div></div>
-          <div class="col-md-6"><div class="method-tab" data-method="cc"><div class="d-flex align-items-center gap-2"><i class="fas fa-credit-card"></i><div><div class="fw-bold small">Kartu Kredit/Debit</div><div class="small text-muted" style="font-size:0.72rem;">Tetap via halaman DOKU resmi</div></div></div></div></div>
+          <?php foreach ($pmCards as $c):
+              $st = $pm[$c['key']] ?? ['is_active' => false, 'note' => ''];
+              $pmOff = empty($st['is_active']);
+              $pmBadge = $pmOff ? ($st['note'] !== '' ? $st['note'] : 'Nonaktif') : '';
+          ?>
+          <div class="<?php echo $c['col']; ?>"><div class="method-tab<?php echo $c['method'] === $pmDefault ? ' active' : ''; ?><?php echo $pmOff ? ' disabled' : ''; ?>" data-method="<?php echo $c['method']; ?>"<?php echo $pmOff ? ' aria-disabled="true"' : ''; ?>><div class="d-flex align-items-center gap-2"><i class="fas <?php echo $c['icon']; ?>"></i><div><div class="fw-bold small"><?php echo $c['title']; ?></div><div class="small text-muted" style="font-size:0.72rem;"><?php echo $c['desc']; ?></div><?php if ($pmBadge !== ''): ?><span class="badge bg-secondary fw-normal mt-1" style="font-size:0.65rem;"><?php echo htmlspecialchars($pmBadge); ?></span><?php endif; ?></div></div></div></div>
+          <?php endforeach; ?>
         </div>
 
+        <?php $vaBanks = ['bca' => 'BCA Virtual Account', 'mandiri' => 'Mandiri Virtual Account', 'bri' => 'BRI Virtual Account', 'bni' => 'BNI Virtual Account', 'danamon' => 'Danamon Virtual Account', 'permata' => 'Permata Virtual Account', 'cimb' => 'CIMB Virtual Account']; ?>
         <!-- VA Panel -->
-        <div id="panel-va" class="method-panel">
-          <label class="small fw-bold mb-2">Pilih Bank VA</label>
-          <select id="vaBank" class="form-select rounded-pill mb-3">
-            <option value="bca" <?php echo $existingBank==='bca'?'selected':''; ?>>BCA Virtual Account</option>
-            <option value="mandiri" <?php echo $existingBank==='mandiri'?'selected':''; ?>>Mandiri Virtual Account</option>
-            <option value="bri" <?php echo $existingBank==='bri'?'selected':''; ?>>BRI Virtual Account</option>
-            <option value="bni" <?php echo $existingBank==='bni'?'selected':''; ?>>BNI Virtual Account</option>
-            <option value="danamon" <?php echo $existingBank==='danamon'?'selected':''; ?>>Danamon Virtual Account</option>
-            <option value="permata" <?php echo $existingBank==='permata'?'selected':''; ?>>Permata Virtual Account</option>
-            <option value="cimb" <?php echo $existingBank==='cimb'?'selected':''; ?>>CIMB Virtual Account</option>
-          </select>
+        <div id="panel-va" class="method-panel<?php echo $pmDefault === 'va' ? '' : ' d-none'; ?>">
+          <label class="small fw-bold mb-2" for="vaDropdownBtn">Pilih Bank VA</label>
+          <div class="manual-dd mb-3" id="vaDropdown">
+            <button type="button" class="manual-dd-btn" id="vaDropdownBtn" aria-haspopup="listbox" aria-expanded="false">
+              <span class="manual-dd-val" id="vaDropdownLabel"><?php echo htmlspecialchars($vaBanks[$existingBank] ?? $vaBanks['danamon']); ?></span>
+              <i class="fas fa-chevron-down manual-dd-chev"></i>
+            </button>
+            <div class="manual-dd-list d-none" id="vaDropdownList" role="listbox" aria-label="Pilih bank VA">
+              <?php foreach ($vaBanks as $vk => $vl): ?>
+              <button type="button" class="manual-dd-item<?php echo $vk === $existingBank ? ' active' : ''; ?>" role="option" data-key="<?php echo $vk; ?>" aria-selected="<?php echo $vk === $existingBank ? 'true' : 'false'; ?>">
+                <div class="fw-bold small text-dark"><?php echo htmlspecialchars($vl); ?></div>
+              </button>
+              <?php endforeach; ?>
+            </div>
+          </div>
+          <input type="hidden" id="vaBank" value="<?php echo htmlspecialchars($existingBank); ?>">
           <?php if ($isVAValid): ?>
             <div class="alert alert-success rounded-4 py-2 small mb-3"><i class="fas fa-check-circle me-1"></i>VA aktif untuk bank ini — nomor di bawah tetap sama walau refresh.</div>
             <button id="btnGenerateVA" class="btn btn-outline-primary w-100 rounded-pill"><i class="fas fa-sync me-2"></i>Generate Ulang VA</button>
@@ -149,8 +197,13 @@ $isAwaiting = (($order['payment_method'] ?? '') === 'manual_transfer') && ($orde
             <div class="va-box">
               <div class="small text-muted">Nomor Virtual Account</div>
               <div class="va-number" id="vaNumber"><?php echo $isVAValid ? htmlspecialchars($existingVA) : '-'; ?></div>
-              <div class="small text-muted">Bank: <span id="vaBankLabel" class="fw-bold text-dark"><?php echo $isVAValid ? htmlspecialchars(strtoupper($existingBank)) : '-'; ?></span> • Batas: <span id="vaExpiry" class="countdown"><?php echo $isVAValid ? htmlspecialchars($existingExpiry) : '-'; ?></span></div>
-              <button class="btn btn-outline-secondary btn-sm rounded-pill mt-2" onclick="navigator.clipboard.writeText(document.getElementById('vaNumber').textContent); Swal.fire('Disalin','Nomor VA disalin','success')"><i class="fas fa-copy me-1"></i>Salin VA</button>
+              <div class="small text-muted">Bank: <span id="vaBankLabel" class="fw-bold text-dark"><?php echo $isVAValid ? htmlspecialchars(strtoupper($existingBank)) : '-'; ?></span></div>
+              <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill mt-2" id="btnCopyVA"><i class="fas fa-copy me-1"></i>Salin VA</button>
+              <div class="mt-3 bg-white rounded-3 py-2 px-3 d-inline-block border">
+                <span class="small text-muted">Nominal transfer: </span>
+                <span class="fw-bold" style="color:#0c4a6e;">Rp <?php echo number_format($amount,0,',','.'); ?></span>
+              </div>
+              <div class="mt-2"><span class="badge bg-light text-dark border">Batas: <span id="vaExpiry" class="countdown"><?php echo $isVAValid ? htmlspecialchars($existingExpiry) : '-'; ?></span></span></div>
             </div>
             <div class="mt-3">
               <label class="small fw-bold">Cara Bayar</label>
@@ -165,7 +218,8 @@ $isAwaiting = (($order['payment_method'] ?? '') === 'manual_transfer') && ($orde
         </div>
 
         <!-- QRIS Panel -->
-        <div id="panel-qris" class="method-panel d-none text-center">
+        <div id="panel-qris" class="method-panel text-center<?php echo $pmDefault === 'qris' ? '' : ' d-none'; ?>">
+          <div class="small fw-bold mb-2 text-start">Kode QRIS</div>
           <button id="btnGenerateQRIS" class="btn btn-primary rounded-pill px-5"><i class="fas fa-qrcode me-2"></i>Tampilkan QRIS</button>
           <div id="qrisResult" class="mt-4 d-none">
             <div class="qr-box"><div id="qrisQR"></div></div>
@@ -175,27 +229,49 @@ $isAwaiting = (($order['payment_method'] ?? '') === 'manual_transfer') && ($orde
         </div>
 
         <!-- E-Wallet Panel -->
-        <div id="panel-ewallet" class="method-panel d-none">
-          <div class="d-flex gap-2 mb-3">
-            <button class="btn btn-outline-primary rounded-pill flex-fill ewallet-btn" data-ew="ovo">OVO</button>
-            <button class="btn btn-outline-primary rounded-pill flex-fill ewallet-btn" data-ew="dana">DANA</button>
-            <button class="btn btn-outline-primary rounded-pill flex-fill ewallet-btn" data-ew="shopeepay">ShopeePay</button>
-            <button class="btn btn-outline-primary rounded-pill flex-fill ewallet-btn" data-ew="linkaja">LinkAja</button>
+        <div id="panel-ewallet" class="method-panel<?php echo $pmDefault === 'ewallet' ? '' : ' d-none'; ?>">
+          <div class="small fw-bold mb-2">Pilih Provider</div>
+          <div class="row g-2 mb-4">
+            <div class="col-6 col-sm-3"><button class="btn btn-outline-primary rounded-pill w-100 ewallet-btn" data-ew="ovo">OVO</button></div>
+            <div class="col-6 col-sm-3"><button class="btn btn-outline-primary rounded-pill w-100 ewallet-btn" data-ew="dana">DANA</button></div>
+            <div class="col-6 col-sm-3"><button class="btn btn-outline-primary rounded-pill w-100 ewallet-btn" data-ew="shopeepay">ShopeePay</button></div>
+            <div class="col-6 col-sm-3"><button class="btn btn-outline-primary rounded-pill w-100 ewallet-btn" data-ew="linkaja">LinkAja</button></div>
           </div>
-          <div id="ewalletResult" class="d-none text-center">
-            <div class="qr-box"><div id="ewalletQR"></div></div>
-            <a id="ewalletLink" href="#" target="_blank" class="btn btn-success rounded-pill mt-3"><i class="fas fa-external-link-alt me-2"></i>Buka di Aplikasi</a>
-            <div class="mt-2 small text-muted">Atau scan QR di atas</div>
-            <div class="small">Batas: <span id="ewalletExpiry" class="countdown">-</span></div>
+          <div id="ewalletResult" class="d-none">
+            <div class="d-flex flex-column flex-sm-row align-items-center justify-content-center gap-3">
+              <div class="qr-box"><div id="ewalletQR"></div></div>
+              <div class="text-center text-sm-start">
+                <a id="ewalletLink" href="#" target="_blank" class="btn btn-success rounded-pill px-4"><i class="fas fa-external-link-alt me-2"></i>Buka di Aplikasi</a>
+                <div class="mt-2 small text-muted">Atau scan kode QR</div>
+                <div class="mt-2"><span class="badge bg-light text-dark border">Batas: <span id="ewalletExpiry" class="countdown">-</span></span></div>
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- Manual Panel -->
-        <div id="panel-manual" class="method-panel d-none">
+        <div id="panel-manual" class="method-panel<?php echo $pmDefault === 'manual' ? '' : ' d-none'; ?>">
           <div class="va-box">
             <div class="small text-muted">Transfer ke rekening berikut</div>
-            <div class="fw-bold mt-1" style="color:#0c4a6e;"><i class="fas fa-landmark me-1"></i><?php echo htmlspecialchars($bankName); ?> — a.n. <?php echo htmlspecialchars($bankHolder); ?></div>
-            <div class="va-number" id="manualAccount"><?php echo htmlspecialchars($bankAccount); ?></div>
+            <?php if (count($bankAccounts) > 1): ?>
+            <label class="small fw-bold mt-2 mb-1" for="manualDropdownBtn">Pilih Bank Tujuan</label>
+            <div class="manual-dd" id="manualDropdown">
+              <button type="button" class="manual-dd-btn" id="manualDropdownBtn" aria-haspopup="listbox" aria-expanded="false">
+                <span class="manual-dd-val" id="manualDropdownLabel"><?php echo htmlspecialchars($bankAccounts[0]['bank_name'] . ', ' . $bankAccounts[0]['account_number']); ?></span>
+                <i class="fas fa-chevron-down manual-dd-chev"></i>
+              </button>
+              <div class="manual-dd-list d-none" id="manualDropdownList" role="listbox" aria-label="Pilih bank tujuan">
+                <?php foreach (array_values($bankAccounts) as $i => $ba): ?>
+                <button type="button" class="manual-dd-item<?php echo $i === 0 ? ' active' : ''; ?>" role="option" data-idx="<?php echo $i; ?>" aria-selected="<?php echo $i === 0 ? 'true' : 'false'; ?>">
+                  <div class="fw-bold small text-dark manual-dd-bank"><?php echo htmlspecialchars($ba['bank_name']); ?></div>
+                  <div class="small text-muted"><?php echo htmlspecialchars($ba['account_number'] . ', a.n. ' . $ba['account_holder']); ?></div>
+                </button>
+                <?php endforeach; ?>
+              </div>
+            </div>
+            <?php endif; ?>
+            <div class="fw-bold mt-2" style="color:#0c4a6e;"><i class="fas fa-landmark me-1"></i><span id="manualBankLabel"><?php echo htmlspecialchars($bankAccounts[0]['bank_name']); ?>, a.n. <?php echo htmlspecialchars($bankAccounts[0]['account_holder']); ?></span></div>
+            <div class="va-number" id="manualAccount"><?php echo htmlspecialchars($bankAccounts[0]['account_number']); ?></div>
             <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill mt-2" id="btnCopyAccount"><i class="fas fa-copy me-1"></i>Salin Nomor Rekening</button>
             <div class="mt-3 bg-white rounded-3 py-2 px-3 d-inline-block border">
               <span class="small text-muted">Nominal transfer: </span>
@@ -219,7 +295,7 @@ $isAwaiting = (($order['payment_method'] ?? '') === 'manual_transfer') && ($orde
         </div>
 
         <!-- CC Panel -->
-        <div id="panel-cc" class="method-panel d-none text-center">
+        <div id="panel-cc" class="method-panel text-center<?php echo $pmDefault === 'cc' ? '' : ' d-none'; ?>">
           <p class="small text-muted">Kartu kredit/debit tetap via halaman DOKU resmi untuk keamanan (form kartu DOKU).</p>
           <button id="btnCC" class="btn btn-primary rounded-pill px-5"><i class="fas fa-credit-card me-2"></i>Bayar dengan Kartu</button>
         </div>
@@ -251,12 +327,67 @@ function startCountdown(expiryStr, elId){
 // Method tab switching
 document.querySelectorAll('.method-tab').forEach(tab=>{
   tab.addEventListener('click', ()=>{
+    if(tab.classList.contains('disabled')) return;
     document.querySelectorAll('.method-tab').forEach(t=>t.classList.remove('active'));
     tab.classList.add('active');
     const m = tab.dataset.method;
     document.querySelectorAll('.method-panel').forEach(p=>p.classList.add('d-none'));
     document.getElementById('panel-'+m).classList.remove('d-none');
   });
+});
+
+// VA — dropdown bank custom (pakai komponen yang sama dengan Transfer Manual)
+const vaWrap = document.getElementById('vaDropdown');
+const vaBtn = document.getElementById('vaDropdownBtn');
+const vaList = document.getElementById('vaDropdownList');
+const vaHidden = document.getElementById('vaBank');
+function vaSetOpen(open){
+  if (!vaWrap) return;
+  vaWrap.classList.toggle('open', open);
+  vaList.classList.toggle('d-none', !open);
+  vaList.classList.toggle('dd-fixed', open);
+  if (!open) { vaList.style.top = ''; vaList.style.left = ''; vaList.style.width = ''; vaList.style.maxHeight = ''; }
+  vaBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (open) vaPlace();
+}
+// Lapisan fixed lepas dari overflow:hidden .payment-card; flip ke atas bila ruang bawah sempit
+function vaPlace(){
+  if (!vaWrap || vaList.classList.contains('d-none')) return;
+  const r = vaBtn.getBoundingClientRect();
+  const gap = 6, pad = 8;
+  const maxH = Math.max(120, window.innerHeight - pad * 2);
+  vaList.style.maxHeight = maxH + 'px';
+  vaList.style.left = r.left + 'px';
+  vaList.style.width = r.width + 'px';
+  const need = Math.min(vaList.scrollHeight, maxH);
+  let top = r.bottom + gap;
+  if (top + need > window.innerHeight - pad) top = r.top - gap - need;
+  vaList.style.top = Math.max(pad, top) + 'px';
+}
+function vaPick(key, label){
+  vaHidden.value = key;
+  document.getElementById('vaDropdownLabel').textContent = label;
+  vaList.querySelectorAll('.manual-dd-item').forEach(function(el){
+    const sel = el.getAttribute('data-key') === key;
+    el.classList.toggle('active', sel);
+    el.setAttribute('aria-selected', sel ? 'true' : 'false');
+  });
+}
+vaBtn?.addEventListener('click', function(e){
+  e.stopPropagation();
+  vaSetOpen(vaList.classList.contains('d-none'));
+});
+vaList?.querySelectorAll('.manual-dd-item').forEach(function(el){
+  el.addEventListener('click', function(){
+    vaPick(el.getAttribute('data-key'), el.textContent.trim());
+    vaSetOpen(false);
+    vaBtn.focus();
+  });
+});
+document.addEventListener('click', function(e){ if (vaWrap && !vaWrap.contains(e.target)) vaSetOpen(false); });
+document.getElementById('btnCopyVA')?.addEventListener('click', ()=>{
+  navigator.clipboard.writeText(document.getElementById('vaNumber').textContent.trim());
+  Swal.fire('Disalin','Nomor VA disalin','success');
 });
 
 // VA — pakai URL absolut agar benar dari /payment/ maupun /pages/payment/ (wrapper)
@@ -325,7 +456,64 @@ document.querySelectorAll('.ewallet-btn').forEach(btn=>{
   });
 });
 
-// Transfer Manual — salin rekening, preview, upload bukti
+// Transfer Manual — dropdown rekening custom (multi-bank), salin rekening, preview, upload bukti
+const BANK_ACCOUNTS = <?php echo json_encode(array_values($bankAccounts), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+const ddWrap = document.getElementById('manualDropdown');
+const ddBtn = document.getElementById('manualDropdownBtn');
+const ddList = document.getElementById('manualDropdownList');
+function ddSetOpen(open){
+  if (!ddWrap) return;
+  ddWrap.classList.toggle('open', open);
+  ddList.classList.toggle('d-none', !open);
+  ddList.classList.toggle('dd-fixed', open);
+  if (!open) { ddList.style.top = ''; ddList.style.left = ''; ddList.style.width = ''; ddList.style.maxHeight = ''; }
+  ddBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (open) ddPlace();
+}
+function ddPlace(){
+  if (!ddWrap || ddList.classList.contains('d-none')) return;
+  const r = ddBtn.getBoundingClientRect();
+  const gap = 6, pad = 8;
+  const maxH = Math.max(120, window.innerHeight - pad * 2);
+  ddList.style.maxHeight = maxH + 'px';
+  ddList.style.left = r.left + 'px';
+  ddList.style.width = r.width + 'px';
+  const need = Math.min(ddList.scrollHeight, maxH);
+  let top = r.bottom + gap;
+  if (top + need > window.innerHeight - pad) top = r.top - gap - need;
+  ddList.style.top = Math.max(pad, top) + 'px';
+}
+function ddPick(i){
+  const ba = BANK_ACCOUNTS[i] || BANK_ACCOUNTS[0];
+  if (!ba) return;
+  document.getElementById('manualDropdownLabel').textContent = ba.bank_name + ', ' + ba.account_number;
+  document.getElementById('manualBankLabel').textContent = ba.bank_name + ', a.n. ' + ba.account_holder;
+  document.getElementById('manualAccount').textContent = ba.account_number;
+  ddList.querySelectorAll('.manual-dd-item').forEach(function(el){
+    const sel = parseInt(el.getAttribute('data-idx'), 10) === i;
+    el.classList.toggle('active', sel);
+    el.setAttribute('aria-selected', sel ? 'true' : 'false');
+  });
+}
+ddBtn?.addEventListener('click', function(e){
+  e.stopPropagation();
+  ddSetOpen(ddList.classList.contains('d-none'));
+});
+ddList?.querySelectorAll('.manual-dd-item').forEach(function(el){
+  el.addEventListener('click', function(){
+    ddPick(parseInt(el.getAttribute('data-idx'), 10));
+    ddSetOpen(false);
+    ddBtn.focus();
+  });
+});
+document.addEventListener('click', function(e){ if (ddWrap && !ddWrap.contains(e.target)) ddSetOpen(false); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') { ddSetOpen(false); vaSetOpen(false); } });
+function ddReposition(){
+  if (typeof ddList !== 'undefined' && ddList && !ddList.classList.contains('d-none')) ddPlace();
+  if (typeof vaList !== 'undefined' && vaList && !vaList.classList.contains('d-none')) vaPlace();
+}
+window.addEventListener('scroll', ddReposition, {passive:true});
+window.addEventListener('resize', ddReposition);
 document.getElementById('btnCopyAccount')?.addEventListener('click', ()=>{
   navigator.clipboard.writeText(document.getElementById('manualAccount').textContent.trim());
   Swal.fire('Disalin','Nomor rekening disalin','success');
